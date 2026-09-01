@@ -11,67 +11,44 @@
 :root{
   --ink:#0E1318; --panel:#161D25; --panel2:#1D262F; --line:#26313C;
   --text:#E3E8ED; --dim:#8B96A3; --faint:#5C6773;
-  --long:#2FBE8C; --short:#E45A50; --mark:#E5A03C;
-  --r:10px;
+  --long:#2FBE8C; --short:#E45A50; --mark:#E5A03C; --r:10px;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
-body{
-  background:var(--ink); color:var(--text);
+body{background:var(--ink);color:var(--text);
   font:400 15px/1.55 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
-  font-variant-numeric:tabular-nums;
-  padding:0 0 env(safe-area-inset-bottom);
-  -webkit-font-smoothing:antialiased;
-}
-.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
-
-header{
-  position:sticky;top:0;z-index:20;background:rgba(14,19,24,.94);
-  backdrop-filter:blur(12px);border-bottom:1px solid var(--line);
-  padding:calc(env(safe-area-inset-top) + 12px) 16px 0;
-}
+  font-variant-numeric:tabular-nums;padding:0 0 env(safe-area-inset-bottom);-webkit-font-smoothing:antialiased}
+header{position:sticky;top:0;z-index:20;background:rgba(14,19,24,.94);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);padding:calc(env(safe-area-inset-top) + 12px) 16px 0}
 h1{margin:0 0 2px;font-size:17px;font-weight:600;letter-spacing:-.2px}
 .sub{margin:0 0 10px;font-size:12.5px;color:var(--faint)}
 nav{display:flex;gap:4px}
-nav button{
-  flex:1;background:none;border:0;border-bottom:2px solid transparent;
-  color:var(--dim);font:500 14px/1 inherit;padding:11px 4px 10px;cursor:pointer;
-}
+nav button{flex:1;background:none;border:0;border-bottom:2px solid transparent;color:var(--dim);
+  font:500 14px/1 inherit;padding:11px 4px 10px;cursor:pointer}
 nav button[aria-selected=true]{color:var(--text);border-bottom-color:var(--mark)}
-
 main{padding:16px 16px 40px;max-width:640px;margin:0 auto}
 section[hidden]{display:none}
-
 .row{display:flex;gap:8px;margin-bottom:12px}
-input,select{
-  background:var(--panel);border:1px solid var(--line);color:var(--text);
-  border-radius:var(--r);padding:11px 12px;font:400 15px/1 inherit;width:100%;
-  appearance:none;
-}
+input,select{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:var(--r);
+  padding:11px 12px;font:400 15px/1 inherit;width:100%;appearance:none}
 input:focus,select:focus{outline:2px solid var(--mark);outline-offset:-1px}
-button.act{
-  background:var(--mark);border:0;color:#1A1206;font:600 15px/1 inherit;
-  padding:12px 18px;border-radius:var(--r);cursor:pointer;white-space:nowrap;
-}
-button.act:disabled{opacity:.45;cursor:default}
-button.ghost{
-  background:var(--panel);border:1px solid var(--line);color:var(--text);
-  font:500 14px/1 inherit;padding:11px 14px;border-radius:var(--r);cursor:pointer;
-}
-
+button.act{background:var(--mark);border:0;color:#1A1206;font:600 15px/1 inherit;padding:12px 18px;
+  border-radius:var(--r);cursor:pointer;white-space:nowrap}
+button.act:disabled{opacity:.45}
+button.ghost{background:var(--panel);border:1px solid var(--line);color:var(--text);font:500 14px/1 inherit;
+  padding:11px 14px;border-radius:var(--r);cursor:pointer}
 .note{font-size:13px;color:var(--faint);line-height:1.6;margin:14px 0 0}
-.warn{
-  background:#241A0E;border-left:2px solid var(--mark);border-radius:0;
-  padding:11px 13px;font-size:13.5px;color:#E8CBA0;margin:12px 0;line-height:1.55
-}
-.err{background:#2A1614;border-left:2px solid var(--short);padding:11px 13px;
-  font-size:13.5px;color:#F0B5B0;margin:12px 0;line-height:1.55}
-
+.warn{background:#241A0E;border-left:2px solid var(--mark);padding:11px 13px;font-size:13.5px;
+  color:#E8CBA0;margin:12px 0;line-height:1.55}
+.err{background:#2A1614;border-left:2px solid var(--short);padding:11px 13px;font-size:13.5px;
+  color:#F0B5B0;margin:12px 0;line-height:1.55}
 #prog{height:2px;background:var(--panel2);border-radius:2px;overflow:hidden;margin:14px 0 6px;display:none}
 #prog.on{display:block}
 #bar{height:100%;width:0;background:var(--mark);transition:width .25s}
-#stat{font-size:13px;color:var(--dim);min-height:19px}
-
+#stat,#stat1{font-size:13px;color:var(--dim);min-height:19px}
+.regime{display:flex;align-items:center;gap:8px;background:var(--panel);border-radius:var(--r);
+  padding:10px 12px;font-size:12.5px;color:var(--dim);margin-bottom:12px;line-height:1.45}
+.regime b{color:var(--text);font-weight:600}
 .card{border-top:1px solid var(--line);padding:14px 0}
 .card:first-of-type{border-top:0}
 .chead{display:flex;align-items:baseline;gap:9px;cursor:pointer}
@@ -83,38 +60,34 @@ button.ghost{
 .hz{font-size:12.5px;color:var(--faint)}
 .sc{margin-left:auto;font-size:19px;font-weight:600}
 .gr{font-size:11.5px;color:var(--faint);margin-left:5px}
-
 .seg{display:flex;height:5px;border-radius:3px;overflow:hidden;margin:11px 0 4px;background:var(--panel2)}
 .seg i{display:block;height:100%}
 .legend{display:flex;flex-wrap:wrap;gap:3px 13px;font-size:11.5px;color:var(--faint)}
 .legend span{display:flex;align-items:center;gap:4px}
 .legend b{width:6px;height:6px;border-radius:1px;display:inline-block}
-
 .body{display:none;padding-top:12px}
 .card.open .body{display:block}
 .card.open .chead .sym{color:var(--mark)}
-
 h3{font-size:12.5px;font-weight:600;color:var(--dim);margin:16px 0 8px;letter-spacing:.2px}
 h3:first-child{margin-top:0}
 canvas{width:100%;height:auto;display:block;border-radius:var(--r);background:var(--panel)}
-
+.hint{font-size:11.5px;color:var(--faint);margin:7px 0 0;text-align:center}
+.read p{font-size:14px;line-height:1.65;color:#C9D2DA;margin:0 0 9px}
+.read p:last-child{margin-bottom:0;color:#A8B3BE;border-top:1px solid var(--line);padding-top:10px}
+.tg{font-size:10.5px;padding:1px 6px;border-radius:3px;vertical-align:1px;white-space:nowrap}
+.tg.ok{background:#12362A;color:#63D6AC} .tg.no{background:#38201E;color:#F0938C}
+.tg.nt{background:#242C35;color:#96A2AE} .tg.st{background:#3A2E12;color:#E5BC6B}
 table{width:100%;border-collapse:collapse;font-size:13.5px}
 td{padding:6px 0;border-bottom:1px solid var(--line);vertical-align:top}
 td:last-child{text-align:right;white-space:nowrap}
 tr:last-child td{border-bottom:0}
 .k{color:var(--dim)}
 .pos{color:var(--long)} .neg{color:var(--short)} .mk{color:var(--mark)}
-
-.hint{font-size:11.5px;color:var(--faint);margin:7px 0 0;text-align:center}
-.read p{font-size:14px;line-height:1.65;color:#C9D2DA;margin:0 0 9px}
-.read p:last-child{margin-bottom:0;color:#A8B3BE;border-top:1px solid var(--line);padding-top:10px}
-.tg{font-size:10.5px;padding:1px 6px;border-radius:3px;vertical-align:1px;white-space:nowrap}
-.tg.ok{background:#12362A;color:#63D6AC} .tg.no{background:#38201E;color:#F0938C}
-.tg.nt{background:#242C35;color:#96A2AE}
 ul{margin:0;padding-left:17px}
-li{margin-bottom:6px;font-size:13.5px;line-height:1.55;color:#CBD3DB}
+li{margin-bottom:7px;font-size:13.5px;line-height:1.55;color:#CBD3DB}
 li.w{color:#E8C9A4}
-
+.opp{background:var(--panel);border-radius:var(--r);padding:10px 12px;font-size:12.5px;
+  color:var(--dim);margin-top:10px;line-height:1.5}
 .empty{text-align:center;padding:44px 20px;color:var(--faint);font-size:14px;line-height:1.7}
 .lg{font-size:15px;color:var(--dim);margin-bottom:6px}
 .fld{margin-bottom:13px}
@@ -123,7 +96,6 @@ li.w{color:#E8C9A4}
 </style>
 </head>
 <body>
-
 <header>
   <h1>Quét tín hiệu OKX</h1>
   <p class="sub">Phân tích futures ngay trên máy bạn — không cần server</p>
@@ -133,7 +105,6 @@ li.w{color:#E8C9A4}
     <button role="tab" aria-selected="false" data-t="cfg">Cài đặt</button>
   </nav>
 </header>
-
 <main>
   <section id="scan">
     <div class="row">
@@ -142,56 +113,50 @@ li.w{color:#E8C9A4}
         <option value="SWING" selected>Trung hạn · 4H/1D</option>
         <option value="POSITION">Dài hạn · 1D/1W</option>
       </select>
+      <select id="side" style="max-width:118px">
+        <option value="both">Cả hai chiều</option>
+        <option value="long">Chỉ Long</option>
+        <option value="short">Chỉ Short</option>
+      </select>
       <button class="act" id="go">Quét</button>
     </div>
     <div id="prog"><div id="bar"></div></div>
     <div id="stat"></div>
     <div id="out"></div>
   </section>
-
   <section id="one" hidden>
     <div class="row">
       <input id="sym" placeholder="BTC, ETH, SOL..." autocapitalize="characters" autocomplete="off">
       <button class="act" id="go1">Xem</button>
     </div>
-    <p class="note">Lệnh này bỏ qua ngưỡng lọc, luôn trả kết quả kể cả điểm thấp — vì bạn chủ động hỏi thì bạn muốn xem phân tích.</p>
+    <p class="note">Tab này bỏ qua ngưỡng lọc và luôn hiện điểm của <b>cả hai chiều</b>, để bạn thấy vì sao bot chọn hướng đó.</p>
     <div id="stat1" style="margin-top:12px"></div>
     <div id="out1"></div>
   </section>
-
   <section id="cfg" hidden>
-    <div class="fld">
-      <label for="cap">Vốn tham chiếu (USD)</label>
-      <input id="cap" type="number" inputmode="decimal" value="1000">
-    </div>
-    <div class="fld">
-      <label for="rk">Rủi ro mỗi lệnh (%)</label>
+    <div class="fld"><label for="cap">Vốn tham chiếu (USD)</label>
+      <input id="cap" type="number" inputmode="decimal" value="1000"></div>
+    <div class="fld"><label for="rk">Rủi ro mỗi lệnh (%)</label>
       <input id="rk" type="number" inputmode="decimal" step="0.1" value="1">
-      <small>Trên 2% là vùng nguy hiểm. Chuỗi 8-10 lệnh thua liên tiếp xảy ra thường xuyên hơn bạn nghĩ.</small>
-    </div>
-    <div class="fld">
-      <label for="ms">Ngưỡng điểm tối thiểu</label>
-      <input id="ms" type="number" inputmode="numeric" value="72">
-      <small>Hạ xuống thì nhiều tín hiệu hơn nhưng chất lượng thấp hơn.</small>
-    </div>
-    <div class="fld">
-      <label for="tn">Số cặp quét mỗi lần</label>
-      <input id="tn" type="number" inputmode="numeric" value="30">
-      <small>Quét nhiều tốn thời gian và dễ chạm giới hạn của OKX. 30 là mức cân bằng trên điện thoại.</small>
-    </div>
+      <small>Trên 2% là vùng nguy hiểm. Chuỗi 8-10 lệnh thua liên tiếp xảy ra thường xuyên hơn bạn nghĩ.</small></div>
+    <div class="fld"><label for="ms">Ngưỡng điểm tối thiểu</label>
+      <input id="ms" type="number" inputmode="numeric" value="70"></div>
+    <div class="fld"><label for="mr">Tỷ lệ lãi/lỗ tối thiểu (tới TP2)</label>
+      <input id="mr" type="number" inputmode="decimal" step="0.1" value="2"></div>
+    <div class="fld"><label for="tn">Số cặp quét mỗi lần</label>
+      <input id="tn" type="number" inputmode="numeric" value="40">
+      <small>Các cặp xếp sau top 40 thường thanh khoản mỏng, dễ trượt giá và bị quét râu bất thường.</small></div>
     <button class="ghost" id="save">Lưu cài đặt</button>
     <p class="note" id="saved"></p>
     <p class="note" style="margin-top:22px;border-top:1px solid var(--line);padding-top:16px">
-      Toàn bộ tính toán chạy trên thiết bị của bạn. Không có máy chủ nào lưu dữ liệu, và trang này
-      không thể tự báo khi bạn đóng nó — muốn tự động báo thì cần chạy bot trên máy tính hoặc VPS.
+      Toàn bộ tính toán chạy trên thiết bị của bạn. Trang này không thể tự báo khi bạn đóng nó.
     </p>
   </section>
 </main>
-
 <script>
 const API='https://www.okx.com';
-const C={cap:1000,risk:1,minScore:72,topN:30};
-try{const s=JSON.parse(localStorage.getItem('okxcfg')||'{}');Object.assign(C,s);}catch(e){}
+const C={cap:1000,risk:1,minScore:70,minRR:2,topN:40};
+try{Object.assign(C,JSON.parse(localStorage.getItem('okxcfg')||'{}'));}catch(e){}
 
 const HZ={
   INTRADAY:{label:'Ngắn hạn',entry:'15m',trend:'4H',hold:'vài giờ đến 1-2 ngày',slm:1.2},
@@ -202,37 +167,33 @@ const WMAX={htf:20,str:18,mom:12,vol:20,pat:12,der:18};
 const WCOL={htf:'#5B8FD6',str:'#7C6BC7',mom:'#4FA8A0',vol:'#E5A03C',pat:'#C77BA8',der:'#8A9BA8'};
 const WNAME={htf:'Khung lớn',str:'Cấu trúc',mom:'Động lượng',vol:'Khối lượng',pat:'Mô hình nến',der:'Phái sinh'};
 
-/* ---------------------------------------------------------- tiện ích */
 const $=s=>document.querySelector(s);
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 let lastCall=0;
 async function api(path,params={}){
-  const wait=Math.max(0,lastCall+110-Date.now());
-  if(wait) await sleep(wait);
-  lastCall=Date.now();
+  const w=Math.max(0,lastCall+110-Date.now()); if(w)await sleep(w); lastCall=Date.now();
   const q=new URLSearchParams(params).toString();
   const r=await fetch(`${API}${path}${q?'?'+q:''}`);
-  if(!r.ok) throw new Error('HTTP '+r.status);
+  if(!r.ok)throw new Error('HTTP '+r.status);
   const j=await r.json();
-  if(j.code!=='0') throw new Error(j.msg||'Lỗi OKX');
+  if(j.code!=='0')throw new Error(j.msg||'Lỗi OKX');
   return j.data||[];
 }
 function fmt(p){
-  if(p>=1000) return p.toLocaleString('en-US',{maximumFractionDigits:1});
-  if(p>=1) return p.toFixed(4);
+  if(p>=1000)return p.toLocaleString('en-US',{maximumFractionDigits:1});
+  if(p>=1)return p.toFixed(4);
   return p.toPrecision(4);
 }
 const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 
-/* ---------------------------------------------------------- chỉ báo */
+/* ============================================================ CHỈ BÁO */
 const ema=(a,n)=>{const k=2/(n+1),o=[];let p=a[0];for(let i=0;i<a.length;i++){p=i?a[i]*k+p*(1-k):a[0];o.push(p);}return o;};
 const sma=(a,n)=>a.map((_,i)=>i<n-1?NaN:a.slice(i-n+1,i+1).reduce((x,y)=>x+y,0)/n);
 function rsi(c,n=14){
   const o=[50];let ag=0,al=0;
   for(let i=1;i<c.length;i++){
     const d=c[i]-c[i-1],g=Math.max(d,0),l=Math.max(-d,0);
-    if(i<=n){ag=(ag*(i-1)+g)/i;al=(al*(i-1)+l)/i;}
-    else{ag=(ag*(n-1)+g)/n;al=(al*(n-1)+l)/n;}
+    if(i<=n){ag=(ag*(i-1)+g)/i;al=(al*(i-1)+l)/i;}else{ag=(ag*(n-1)+g)/n;al=(al*(n-1)+l)/n;}
     o.push(al===0?100:100-100/(1+ag/al));
   }return o;
 }
@@ -240,33 +201,39 @@ function tr(h,l,c){const o=[h[0]-l[0]];for(let i=1;i<h.length;i++)o.push(Math.ma
 function atr(h,l,c,n=14){const t=tr(h,l,c),o=[t[0]];for(let i=1;i<t.length;i++)o.push((o[i-1]*(n-1)+t[i])/n);return o;}
 function macd(c){const f=ema(c,12),s=ema(c,26),m=c.map((_,i)=>f[i]-s[i]),g=ema(m,9);return{m,g,h:m.map((v,i)=>v-g[i])};}
 function adx(h,l,c,n=14){
-  const t=tr(h,l,c);let atr_=t[0],pdi=0,mdi=0,adxv=0;const out=[0];
+  const t=tr(h,l,c);let a=t[0],pd=0,md=0,av=0;const out=[0],di=[[0,0]];
   for(let i=1;i<h.length;i++){
     const up=h[i]-h[i-1],dn=l[i-1]-l[i];
     const pdm=(up>dn&&up>0)?up:0, mdm=(dn>up&&dn>0)?dn:0;
-    atr_=(atr_*(n-1)+t[i])/n;
-    pdi=(pdi*(n-1)+pdm)/n; mdi=(mdi*(n-1)+mdm)/n;
-    const p=100*pdi/(atr_||1e-9), m=100*mdi/(atr_||1e-9);
+    a=(a*(n-1)+t[i])/n; pd=(pd*(n-1)+pdm)/n; md=(md*(n-1)+mdm)/n;
+    const p=100*pd/(a||1e-9), m=100*md/(a||1e-9);
+    di.push([p,m]);
     const dx=Math.abs(p-m)/((p+m)||1e-9)*100;
-    adxv=i<=n?dx:(adxv*(n-1)+dx)/n;
-    out.push(adxv);
-  }return out;
+    av=i<=n?dx:(av*(n-1)+dx)/n; out.push(av);
+  }return{adx:out,di};
 }
 function obv(c,v){const o=[0];for(let i=1;i<c.length;i++)o.push(o[i-1]+(c[i]>c[i-1]?v[i]:c[i]<c[i-1]?-v[i]:0));return o;}
-
+function bbw(c,n=20){
+  const m=sma(c,n);
+  return c.map((_,i)=>{
+    if(i<n-1)return NaN;
+    const seg=c.slice(i-n+1,i+1), mu=m[i];
+    const sd=Math.sqrt(seg.reduce((s,x)=>s+(x-mu)**2,0)/n);
+    return sd*4/mu*100;
+  });
+}
 function enrich(k){
-  const c=k.c,h=k.h,l=k.l,v=k.v;
-  const d={...k};
+  const c=k.c,h=k.h,l=k.l,v=k.v,d={...k};
   d.ema20=ema(c,20);d.ema50=ema(c,50);d.ema200=ema(c,200);
-  d.rsi=rsi(c);d.atr=atr(h,l,c);d.adx=adx(h,l,c);
-  const M=macd(c);d.mh=M.h;
-  d.obv=obv(c,v);d.obvE=ema(d.obv,21);
-  d.vs=sma(v,20);
-  d.vr=v.map((x,i)=>isNaN(d.vs[i])||!d.vs[i]?1:x/d.vs[i]);
+  d.rsi=rsi(c);d.atr=atr(h,l,c);
+  const A=adx(h,l,c);d.adx=A.adx;d.di=A.di;
+  d.mh=macd(c).h; d.obv=obv(c,v);d.obvE=ema(d.obv,21);
+  d.vs=sma(v,20); d.vr=v.map((x,i)=>isNaN(d.vs[i])||!d.vs[i]?1:x/d.vs[i]);
+  d.bbw=bbw(c);
   return d;
 }
 
-/* ---------------------------------------------------------- cấu trúc */
+/* ============================================================ CẤU TRÚC */
 function swings(k,L=2,R=2){
   const hi=[],lo=[];
   for(let i=L;i<k.c.length-R;i++){
@@ -279,96 +246,518 @@ function structure(k){
   const s=swings(k),n=k.c.length-1;
   const out={bias:'range',event:'',label:'Cấu trúc đi ngang, chưa có phá vỡ rõ ràng',
     hh:Math.max(...k.h.slice(-20)),ll:Math.min(...k.l.slice(-20))};
-  if(s.hi.length<2||s.lo.length<2) return out;
+  if(s.hi.length<2||s.lo.length<2)return out;
   const h1=k.h[s.hi.at(-2)],h2=k.h[s.hi.at(-1)],l1=k.l[s.lo.at(-2)],l2=k.l[s.lo.at(-1)];
   out.hh=h2;out.ll=l2;
   const c=k.c[n];
-  if(h2>h1&&l2>l1){
-    out.bias='bullish';out.label='Đỉnh cao hơn và đáy cao hơn — xu hướng tăng còn nguyên vẹn';
-    if(c>h2){out.event='BOS';out.label='Phá đỉnh cũ (BOS tăng) — xu hướng tăng được xác nhận tiếp diễn';}
-  }else if(h2<h1&&l2<l1){
-    out.bias='bearish';out.label='Đỉnh thấp hơn và đáy thấp hơn — xu hướng giảm còn nguyên vẹn';
-    if(c<l2){out.event='BOS';out.label='Thủng đáy cũ (BOS giảm) — xu hướng giảm được xác nhận tiếp diễn';}
-  }else if(l2<l1&&h2>h1){
-    out.label='Biên độ mở rộng hai đầu — thị trường thiếu định hướng, dễ bị quét cả hai chiều';
-  }else if(l2<l1){
-    out.event='CHoCH';out.label='Thủng đáy trong xu hướng tăng — cảnh báo mất đà tăng';
-  }else if(h2>h1){
-    out.event='CHoCH';out.label='Phá đỉnh trong xu hướng giảm — cảnh báo mất đà giảm';
-  }
+  if(h2>h1&&l2>l1){out.bias='bullish';out.label='đỉnh cao hơn và đáy cao hơn — xu hướng tăng còn nguyên vẹn';
+    if(c>h2){out.event='BOS';out.label='giá phá đỉnh cũ (BOS tăng) — xu hướng tăng được xác nhận tiếp diễn';}}
+  else if(h2<h1&&l2<l1){out.bias='bearish';out.label='đỉnh thấp hơn và đáy thấp hơn — xu hướng giảm còn nguyên vẹn';
+    if(c<l2){out.event='BOS';out.label='giá thủng đáy cũ (BOS giảm) — xu hướng giảm được xác nhận tiếp diễn';}}
+  else if(l2<l1&&h2>h1){out.label='biên độ mở rộng hai đầu — thị trường thiếu định hướng, dễ bị quét cả hai chiều';}
+  else if(l2<l1){out.event='CHoCH';out.bias='weak_bull';out.label='giá thủng đáy trong xu hướng tăng (CHoCH) — cảnh báo mất đà tăng';}
+  else if(h2>h1){out.event='CHoCH';out.bias='weak_bear';out.label='giá phá đỉnh trong xu hướng giảm (CHoCH) — cảnh báo mất đà giảm';}
   return out;
 }
 function sweep(k,lb=30){
   const n=k.c.length-1;
-  if(n<lb+2) return null;
-  const pl=Math.min(...k.l.slice(n-lb,n)), ph=Math.max(...k.h.slice(n-lb,n));
+  if(n<lb+2)return null;
+  const pl=Math.min(...k.l.slice(n-lb,n)),ph=Math.max(...k.h.slice(n-lb,n));
   const o=k.o[n],c=k.c[n],h=k.h[n],l=k.l[n],rg=(h-l)||1e-9;
-  const dw=Math.min(o,c)-l, uw=h-Math.max(o,c);
+  const dw=Math.min(o,c)-l,uw=h-Math.max(o,c);
   if(l<pl&&c>pl&&dw/rg>.35)
-    return{d:'long',note:`Quét đáy ${lb} nến (xuyên ${((pl-l)/pl*100).toFixed(2)}% dưới ${fmt(pl)}) rồi đóng cửa quay lại trên mức đó — lệnh dừng lỗ phe Long đã bị dọn sạch.`};
+    return{d:'long',note:`Râu nến vừa xuyên xuống dưới đáy ${lb} phiên (sâu ${((pl-l)/pl*100).toFixed(2)}% dưới ${fmt(pl)}) rồi đóng cửa quay lại trên mức đó. Lệnh dừng lỗ của phe Long đã bị dọn sạch và giá lập tức bị mua ngược lại — đây là dấu chân của dòng tiền lớn.`};
   if(h>ph&&c<ph&&uw/rg>.35)
-    return{d:'short',note:`Quét đỉnh ${lb} nến (xuyên ${((h-ph)/ph*100).toFixed(2)}% trên ${fmt(ph)}) rồi đóng cửa quay lại dưới mức đó — lệnh dừng lỗ phe Short đã bị dọn sạch.`};
+    return{d:'short',note:`Râu nến vừa xuyên lên trên đỉnh ${lb} phiên (cao ${((h-ph)/ph*100).toFixed(2)}% trên ${fmt(ph)}) rồi đóng cửa quay lại dưới mức đó. Lệnh dừng lỗ của phe Short đã bị dọn sạch — đây là dấu chân của dòng tiền lớn.`};
   return null;
 }
+function keyLevels(k,lb=140,tol=.7){
+  const s=k.c.length-Math.min(lb,k.c.length);
+  const sub={...k};['o','h','l','c','v','t'].forEach(f=>sub[f]=k[f].slice(s));
+  const sw=swings(sub,2,2);
+  const pts=[...sw.hi.map(i=>sub.h[i]),...sw.lo.map(i=>sub.l[i])].sort((a,b)=>a-b);
+  if(!pts.length)return[];
+  const cl=[];
+  pts.forEach(p=>{
+    const last=cl.at(-1);
+    if(last&&Math.abs(p-last.reduce((x,y)=>x+y,0)/last.length)/p*100<=tol)last.push(p);
+    else cl.push([p]);
+  });
+  const c=k.c[k.c.length-1];
+  return cl.map(g=>({lvl:g.reduce((x,y)=>x+y,0)/g.length,n:g.length}))
+    .map(o=>({...o,dist:Math.abs(o.lvl-c)/c*100,side:o.lvl>c?'res':'sup'}))
+    .sort((a,b)=>a.dist-b.dist);
+}
+function rsiDiv(k,lb=45){
+  const n=k.c.length-1;
+  if(n<lb+5)return'';
+  const s=n-lb, sub={...k};['o','h','l','c','v','t'].forEach(f=>sub[f]=k[f].slice(s));
+  const rs=k.rsi.slice(s), sw=swings(sub,2,2);
+  if(sw.lo.length>=2){
+    const a=sw.lo.at(-2),b=sw.lo.at(-1);
+    if(sub.l[b]<sub.l[a]&&rs[b]>rs[a]+1.5)return'bull';
+  }
+  if(sw.hi.length>=2){
+    const a=sw.hi.at(-2),b=sw.hi.at(-1);
+    if(sub.h[b]>sub.h[a]&&rs[b]<rs[a]-1.5)return'bear';
+  }
+  return'';
+}
+/* Chế độ thị trường — quyết định loại setup nào có nghĩa */
+function regime(k){
+  const n=k.c.length-1, ax=k.adx[n], bw=k.bbw[n];
+  const bwAvg=k.bbw.slice(-60).filter(x=>!isNaN(x));
+  const bwMed=bwAvg.length?bwAvg.slice().sort((a,b)=>a-b)[Math.floor(bwAvg.length/2)]:bw;
+  const squeeze=bw<bwMed*.75;
+  if(ax>=25)return{t:'trend',adx:ax,squeeze,
+    label:'Xu hướng mạnh',note:'Setup theo xu hướng (mua nhịp chỉnh) có lợi thế. Bắt đỉnh bắt đáy ở đây rất tốn kém.'};
+  if(ax<18)return{t:'range',adx:ax,squeeze,
+    label:squeeze?'Đi ngang, biên độ đang nén':'Đi ngang',
+    note:squeeze?'Biên độ nén chặt — thường đi trước một cú bứt phá. Chờ phá vỡ có volume thay vì đoán hướng.'
+      :'Setup đảo chiều ở hai biên có lợi thế. Phá vỡ trong thị trường đi ngang phần lớn là giả.'};
+  return{t:'mixed',adx:ax,squeeze,label:'Chuyển tiếp',
+    note:'Xu hướng đang hình thành hoặc đang tan. Giảm kỳ vọng và giảm khối lượng.'};
+}
 
-/* ---------------------------------------------------------- mô hình nến */
+/* ============================================================ MÔ HÌNH NẾN */
 function cndl(k,i){
   const o=k.o[i],h=k.h[i],l=k.l[i],c=k.c[i],rg=(h-l)||1e-9,b=Math.abs(c-o);
-  return{o,h,l,c,rg,b,bp:b/rg*100,uw:h-Math.max(o,c),dw:Math.min(o,c)-l,bull:c>o,bear:c<o};
+  return{o,h,l,c,rg,b,bp:b/rg*100,uw:h-Math.max(o,c),dw:Math.min(o,c)-l,
+    bull:c>o,bear:c<o,mid:(o+c)/2};
 }
-function localTrend(k,i,lb=8){
-  if(i-lb<0) return'flat';
+function trendCtx(k,i,lb=10){
+  if(i-lb<0)return{d:'flat',ext:0};
   const a=k.c[i-lb],b=k.c[i-1],ch=(b-a)/a*100;
-  return ch>1.2?'up':ch<-1.2?'down':'flat';
+  const atrp=k.atr[i]/k.c[i]*100||1e-9;
+  const ext=Math.abs(ch)/(atrp*lb)*3;  // mức độ kéo giãn so với biến động thường
+  return{d:ch>1.2?'up':ch<-1.2?'down':'flat',ch,ext};
 }
-function patterns(k){
-  const n=k.c.length-1,out=[];
-  const a=n>=2?cndl(k,n-2):null, b=n>=1?cndl(k,n-1):null, x=cndl(k,n);
 
-  if(b&&x.b>b.b*1.05){
-    if(b.bear&&x.bull&&x.c>=b.o&&x.o<=b.c)
-      out.push({n:'Bullish Engulfing',d:'long',s:3,t:'Nến tăng bao trọn nến giảm trước đó — dòng tiền mua áp đảo.'});
-    if(b.bull&&x.bear&&x.c<=b.o&&x.o>=b.c)
-      out.push({n:'Bearish Engulfing',d:'short',s:3,t:'Nến giảm bao trọn nến tăng trước đó — bên bán giành quyền kiểm soát.'});
-  }
-  if(a&&b&&b.b<a.b*.5&&b.b<x.b*.5){
-    if(a.bear&&x.bull&&x.c>(a.o+a.c)/2)
-      out.push({n:'Morning Star',d:'long',s:3,t:'Giảm rồi do dự rồi tăng mạnh. Mô hình đảo chiều đáy kinh điển.'});
-    if(a.bull&&x.bear&&x.c<(a.o+a.c)/2)
-      out.push({n:'Evening Star',d:'short',s:3,t:'Tăng rồi do dự rồi giảm mạnh. Mô hình đảo chiều đỉnh kinh điển.'});
-  }
-  if(x.bp<=40){
-    const tr_=localTrend(k,n);
-    if(x.dw>=2*x.b&&x.uw<=x.b*.9)
-      out.push(tr_==='down'
-        ?{n:'Hammer',d:'long',s:3,t:'Râu dưới dài sau nhịp giảm — lực bán bị hấp thụ, khả năng đảo chiều tăng.'}
-        :{n:'Hanging Man',d:'short',s:2,t:'Râu dưới dài xuất hiện ở đỉnh — cảnh báo lực bán đang thăm dò.'});
-    if(x.uw>=2*x.b&&x.dw<=x.b*.9)
-      out.push(tr_==='up'
-        ?{n:'Shooting Star',d:'short',s:3,t:'Râu trên dài sau nhịp tăng — bên mua bị từ chối ở vùng giá cao.'}
-        :{n:'Inverted Hammer',d:'long',s:2,t:'Râu trên dài ở đáy — bên mua bắt đầu thăm dò, cần nến xác nhận.'});
-  }
-  if(a&&b){
-    const ks=[a,b,x];
-    if(ks.every(v=>v.bull&&v.bp>55)&&a.c<b.c&&b.c<x.c)
-      out.push({n:'Three White Soldiers',d:'long',s:3,t:'Ba nến tăng thân dày liên tiếp — đà tăng có tổ chức.'});
-    if(ks.every(v=>v.bear&&v.bp>55)&&a.c>b.c&&b.c>x.c)
-      out.push({n:'Three Black Crows',d:'short',s:3,t:'Ba nến giảm thân dày liên tiếp — áp lực bán duy trì đều.'});
-  }
-  if(b){
-    const tol=Math.max(b.rg,x.rg)*.08;
-    if(Math.abs(b.l-x.l)<=tol&&b.bear&&x.bull)
-      out.push({n:'Tweezer Bottom',d:'long',s:2,t:'Hai đáy bằng nhau — vùng giá này liên tục bị từ chối đi xuống.'});
-    if(Math.abs(b.h-x.h)<=tol&&b.bull&&x.bear)
-      out.push({n:'Tweezer Top',d:'short',s:2,t:'Hai đỉnh bằng nhau — kháng cự đang giữ vững.'});
-  }
-  if(x.bp>=88) out.push({n:'Marubozu',d:x.bull?'long':'short',s:2,t:'Nến thân đặc gần như không râu — một phe kiểm soát toàn phiên.'});
+/* Thư viện mô hình nến. Mỗi mục: tên, hướng, sức mạnh nền (1-3), loại, mô tả.
+   type: 'rev' = đảo chiều (cần bối cảnh xu hướng trước đó), 'cont' = tiếp diễn, 'ind' = lưỡng lự */
+function patterns(k){
+  const n=k.c.length-1,P=[];
+  const x=cndl(k,n), b=n>=1?cndl(k,n-1):null, a=n>=2?cndl(k,n-2):null, z=n>=3?cndl(k,n-3):null;
+  const T=trendCtx(k,n);
+  const atrv=k.atr[n]||1e-9;
+  const big=v=>v.b>atrv*.6;
+
+  /* ---------- 1 nến ---------- */
+  if(x.bp>=88)P.push({n:'Marubozu',d:x.bull?'long':'short',s:2,ty:'cont',
+    t:'nến thân đặc gần như không có râu, một phe kiểm soát từ đầu đến cuối phiên'});
+  if(x.bp>=70&&x.bp<88&&((x.bull&&x.dw<x.rg*.04)||(x.bear&&x.uw<x.rg*.04)))
+    P.push({n:x.bull?'Bullish Belt Hold':'Bearish Belt Hold',d:x.bull?'long':'short',s:2,ty:'rev',
+      t:'nến mở cửa ngay tại cực trị rồi chạy một mạch theo hướng ngược lại — phe kia bị áp đảo ngay từ tiếng chuông đầu'});
   if(x.bp<=6){
-    if(x.dw>x.rg*.6) out.push({n:'Dragonfly Doji',d:'long',s:2,t:'Giá bị đẩy xuống sâu rồi kéo về mở cửa — bên mua giành lại kiểm soát.'});
-    else if(x.uw>x.rg*.6) out.push({n:'Gravestone Doji',d:'short',s:2,t:'Giá bị đẩy lên cao rồi ép về mở cửa — bên bán chặn đà tăng.'});
-    else out.push({n:'Doji',d:'neutral',s:1,t:'Mở và đóng gần bằng nhau — hai phe cân bằng.'});
+    if(x.dw>x.rg*.6)P.push({n:'Dragonfly Doji',d:'long',s:2,ty:'rev',
+      t:'giá bị đẩy xuống rất sâu rồi kéo ngược về đúng chỗ mở cửa, toàn bộ nỗ lực bán bị vô hiệu'});
+    else if(x.uw>x.rg*.6)P.push({n:'Gravestone Doji',d:'short',s:2,ty:'rev',
+      t:'giá bị đẩy lên rất cao rồi ép ngược về đúng chỗ mở cửa, toàn bộ nỗ lực mua bị vô hiệu'});
+    else if(x.uw>x.rg*.3&&x.dw>x.rg*.3)P.push({n:'Long-legged Doji',d:'neutral',s:1,ty:'ind',
+      t:'hai phe giằng co dữ dội cả hai đầu rồi hòa nhau — thường xuất hiện ở điểm ngoặt'});
+    else P.push({n:'Doji',d:'neutral',s:1,ty:'ind',t:'mở và đóng gần bằng nhau, hai phe cân bằng'});
   }
-  return out.sort((p,q)=>q.s-p.s);
+  else if(x.bp<=25&&x.uw>x.b&&x.dw>x.b)
+    P.push({n:'Spinning Top',d:'neutral',s:1,ty:'ind',t:'thân nhỏ râu hai đầu, đà hiện tại đang mất dần'});
+  if(x.bp<=40){
+    if(x.dw>=2*x.b&&x.uw<=x.b*.9)
+      P.push(T.d==='down'
+        ?{n:'Hammer',d:'long',s:3,ty:'rev',t:'sau nhịp giảm, giá bị dìm xuống sâu nhưng bị mua ngược lên hết, để lại râu dưới dài'}
+        :{n:'Hanging Man',d:'short',s:2,ty:'rev',t:'cùng hình dạng cây búa nhưng xuất hiện ở đỉnh — có người đang âm thầm bán ra'});
+    if(x.uw>=2*x.b&&x.dw<=x.b*.9)
+      P.push(T.d==='up'
+        ?{n:'Shooting Star',d:'short',s:3,ty:'rev',t:'sau nhịp tăng, giá bị đẩy lên cao rồi bị bán ép về, để lại râu trên dài'}
+        :{n:'Inverted Hammer',d:'long',s:2,ty:'rev',t:'râu trên dài ở vùng đáy, bên mua đang thăm dò nhưng cần nến sau xác nhận'});
+  }
+
+  /* ---------- 2 nến ---------- */
+  if(b){
+    if(x.b>b.b*1.05){
+      if(b.bear&&x.bull&&x.c>=b.o&&x.o<=b.c)P.push({n:'Bullish Engulfing',d:'long',s:3,ty:'rev',
+        t:'nến tăng nuốt trọn cả thân nến giảm trước đó — mọi người bán ở phiên trước giờ đều đang lỗ'});
+      if(b.bull&&x.bear&&x.c<=b.o&&x.o>=b.c)P.push({n:'Bearish Engulfing',d:'short',s:3,ty:'rev',
+        t:'nến giảm nuốt trọn cả thân nến tăng trước đó — mọi người mua ở phiên trước giờ đều đang lỗ'});
+    }
+    if(b.bear&&x.bull&&x.o<b.c&&x.c>b.mid&&x.c<b.o)P.push({n:'Piercing Line',d:'long',s:2,ty:'rev',
+      t:'mở cửa thấp hơn nến giảm trước nhưng đóng cửa vượt qua nửa thân nó — bên mua phản công mạnh'});
+    if(b.bull&&x.bear&&x.o>b.c&&x.c<b.mid&&x.c>b.o)P.push({n:'Dark Cloud Cover',d:'short',s:2,ty:'rev',
+      t:'mở cửa cao hơn nến tăng trước nhưng đóng cửa xuyên xuống dưới nửa thân nó — lực bán xuất hiện'});
+    if(x.b<b.b*.55&&Math.max(x.o,x.c)<Math.max(b.o,b.c)&&Math.min(x.o,x.c)>Math.min(b.o,b.c)){
+      const dj=x.bp<=6;
+      if(b.bear&&big(b))P.push({n:dj?'Bullish Harami Cross':'Bullish Harami',d:'long',s:dj?3:2,ty:'rev',
+        t:'sau một nến giảm lớn, nến tiếp theo co lại nằm gọn bên trong — lực bán đột ngột cạn'});
+      if(b.bull&&big(b))P.push({n:dj?'Bearish Harami Cross':'Bearish Harami',d:'short',s:dj?3:2,ty:'rev',
+        t:'sau một nến tăng lớn, nến tiếp theo co lại nằm gọn bên trong — lực mua đột ngột cạn'});
+    }
+    if(b.bear&&x.bull&&x.o>=b.o&&big(x)&&big(b))P.push({n:'Bullish Kicker',d:'long',s:3,ty:'rev',
+      t:'nến tăng mở cửa nhảy vọt lên trên cả nến giảm trước, không thèm lấp khoảng trống — chuyển pha dứt khoát'});
+    if(b.bull&&x.bear&&x.o<=b.o&&big(x)&&big(b))P.push({n:'Bearish Kicker',d:'short',s:3,ty:'rev',
+      t:'nến giảm mở cửa rơi thẳng xuống dưới cả nến tăng trước — chuyển pha dứt khoát'});
+    const tol=Math.max(b.rg,x.rg)*.08;
+    if(Math.abs(b.l-x.l)<=tol&&b.bear&&x.bull)P.push({n:'Tweezer Bottom',d:'long',s:2,ty:'rev',
+      t:'hai phiên liên tiếp chạm đúng một mức đáy rồi bật lên — có lệnh mua lớn nằm chờ ở đó'});
+    if(Math.abs(b.h-x.h)<=tol&&b.bull&&x.bear)P.push({n:'Tweezer Top',d:'short',s:2,ty:'rev',
+      t:'hai phiên liên tiếp chạm đúng một mức đỉnh rồi bị đẩy xuống — có lệnh bán lớn nằm chờ ở đó'});
+    if(Math.abs(b.c-x.c)<=tol&&b.bear&&x.bear)P.push({n:'Matching Low',d:'long',s:2,ty:'rev',
+      t:'hai nến giảm đóng cửa đúng cùng một giá — vùng này đang có người đỡ'});
+    if(b.h<=x.h&&b.l>=x.l)P.push({n:'Outside Bar',d:x.bull?'long':'short',s:2,ty:'rev',
+      t:'nến này quét cả đỉnh lẫn đáy nến trước rồi đóng dứt khoát một phía — thanh khoản hai đầu bị lấy sạch'});
+    else if(x.h<=b.h&&x.l>=b.l)P.push({n:'Inside Bar',d:'neutral',s:1,ty:'ind',
+      t:'biên độ co gọn trong nến mẹ, thị trường nín thở — thường đi trước một cú bứt phá'});
+  }
+
+  /* ---------- 3 nến ---------- */
+  if(a&&b){
+    const small=b.b<a.b*.5&&b.b<x.b*.5;
+    if(small){
+      const dj=b.bp<=6;
+      if(a.bear&&x.bull&&x.c>a.mid)P.push({n:dj?'Morning Doji Star':'Morning Star',d:'long',s:3,ty:'rev',
+        t:'giảm mạnh rồi do dự rồi tăng mạnh — ba phiên kể trọn câu chuyện đổi chủ, mô hình đảo chiều đáy kinh điển'});
+      if(a.bull&&x.bear&&x.c<a.mid)P.push({n:dj?'Evening Doji Star':'Evening Star',d:'short',s:3,ty:'rev',
+        t:'tăng mạnh rồi do dự rồi giảm mạnh — ba phiên kể trọn câu chuyện đổi chủ, mô hình đảo chiều đỉnh kinh điển'});
+      if(a.bear&&x.bull&&b.h<a.l&&b.h<x.l)P.push({n:'Bullish Abandoned Baby',d:'long',s:3,ty:'rev',
+        t:'nến giữa bị bỏ rơi hoàn toàn dưới cả hai nến hai bên — mô hình đảo chiều hiếm và rất mạnh'});
+      if(a.bull&&x.bear&&b.l>a.h&&b.l>x.h)P.push({n:'Bearish Abandoned Baby',d:'short',s:3,ty:'rev',
+        t:'nến giữa bị bỏ rơi hoàn toàn trên cả hai nến hai bên — mô hình đảo chiều hiếm và rất mạnh'});
+    }
+    const K=[a,b,x];
+    if(K.every(v=>v.bull&&v.bp>55)&&a.c<b.c&&b.c<x.c){
+      const shrink=x.b<b.b*.7&&b.b<a.b*.85;
+      if(shrink)P.push({n:'Advance Block',d:'short',s:2,ty:'rev',
+        t:'ba nến tăng nhưng thân nhỏ dần và râu trên dài dần — đà tăng đang hụt hơi ngay lúc trông đẹp nhất'});
+      else P.push({n:'Three White Soldiers',d:'long',s:3,ty:'cont',
+        t:'ba nến tăng thân dày liên tiếp, mỗi nến đóng cao hơn nến trước — đà tăng có tổ chức chứ không phải cú nhảy đơn lẻ'});
+    }
+    if(K.every(v=>v.bear&&v.bp>55)&&a.c>b.c&&b.c>x.c)P.push({n:'Three Black Crows',d:'short',s:3,ty:'cont',
+      t:'ba nến giảm thân dày liên tiếp — áp lực bán duy trì đều đặn, không phải một cú hoảng loạn'});
+    if(a.bear&&b.b<a.b*.6&&Math.max(b.o,b.c)<a.o&&Math.min(b.o,b.c)>a.c&&x.bull&&x.c>a.o)
+      P.push({n:'Three Inside Up',d:'long',s:3,ty:'rev',t:'mô hình harami tăng được nến thứ ba xác nhận dứt khoát'});
+    if(a.bull&&b.b<a.b*.6&&Math.max(b.o,b.c)<a.c&&Math.min(b.o,b.c)>a.o&&x.bear&&x.c<a.o)
+      P.push({n:'Three Outside Down',d:'short',s:3,ty:'rev',t:'mô hình nhấn chìm giảm được nến thứ ba xác nhận dứt khoát'});
+    if(a.bear&&b.bull&&b.c>=a.o&&b.o<=a.c&&x.bull&&x.c>b.c)
+      P.push({n:'Three Outside Up',d:'long',s:3,ty:'rev',t:'mô hình nhấn chìm tăng được nến thứ ba xác nhận dứt khoát'});
+    if(a.bear&&b.bear&&x.bear&&Math.abs(x.c-a.c)<atrv*.15&&b.c<a.c)
+      P.push({n:'Stick Sandwich',d:'long',s:2,ty:'rev',t:'hai nến giảm đóng cùng một mức, kẹp giữa là một nhịp bật — mức đó đang được bảo vệ'});
+  }
+
+  /* ---------- 5 nến: tiếp diễn ---------- */
+  if(z&&a&&b&&n>=4){
+    const w=cndl(k,n-4);
+    const mid=[z,a,b];
+    if(w.bull&&big(w)&&mid.every(v=>v.b<w.b*.6&&v.h<w.h&&v.l>w.l)&&x.bull&&x.c>w.c)
+      P.push({n:'Rising Three Methods',d:'long',s:3,ty:'cont',
+        t:'một nến tăng lớn, ba phiên nghỉ nhỏ nằm gọn bên trong, rồi lại một nến tăng phá đỉnh — nhịp nghỉ lành mạnh giữa xu hướng'});
+    if(w.bear&&big(w)&&mid.every(v=>v.b<w.b*.6&&v.h<w.h&&v.l>w.l)&&x.bear&&x.c<w.c)
+      P.push({n:'Falling Three Methods',d:'short',s:3,ty:'cont',
+        t:'một nến giảm lớn, ba phiên hồi nhỏ nằm gọn bên trong, rồi lại một nến giảm thủng đáy — nhịp nghỉ giữa xu hướng giảm'});
+  }
+  return P;
+}
+
+/* Bối cảnh quyết định giá trị của mô hình.
+   Cùng một cây búa: ở giữa vùng trống là nhiễu, tại mức đã giữ ba lần với volume là tín hiệu. */
+function ratePatterns(k,dir,rg,lv){
+  const P=patterns(k), n=k.c.length-1;
+  const T=trendCtx(k,n), vr=k.vr[n], c=k.c[n], atrv=k.atr[n]||1e-9;
+  const near=lv.filter(L=>L.dist<Math.max(.6,atrv/c*100*1.2)&&L.n>=2);
+  const atLevel=near.length?near[0]:null;
+
+  const out=P.map(p=>{
+    let m=1, why=[];
+    if(p.ty==='rev'){
+      const need=p.d==='long'?'down':'up';
+      if(T.d===need){m*=1.25;why.push('xuất hiện đúng sau nhịp đi ngược, đủ điều kiện đảo chiều');}
+      else if(T.d==='flat'){m*=.75;why.push('xuất hiện trong vùng đi ngang nên ý nghĩa đảo chiều yếu');}
+      else{m*=.45;why.push('xuất hiện giữa xu hướng cùng chiều nên chỉ là nhiễu, không phải đảo chiều');}
+      if(T.ext>1.6){m*=1.2;why.push('giá đã kéo giãn bất thường trước đó, khả năng kiệt sức cao');}
+      if(rg.t==='trend'&&T.d!==need){m*=.7;}
+    }else if(p.ty==='cont'){
+      if(rg.t==='trend'){m*=1.2;why.push('thị trường đang có xu hướng mạnh nên mô hình tiếp diễn đáng tin');}
+      if(rg.t==='range'){m*=.6;why.push('thị trường đi ngang nên tín hiệu tiếp diễn phần lớn là giả');}
+    }
+    if(atLevel&&p.d!=='neutral'){
+      const right=(p.d==='long'&&atLevel.side==='sup')||(p.d==='short'&&atLevel.side==='res');
+      if(right){m*=1.35;why.push(`nằm ngay tại vùng ${atLevel.side==='sup'?'hỗ trợ':'kháng cự'} đã được chạm ${atLevel.n} lần`);}
+    }else if(p.d!=='neutral'&&p.ty==='rev'){
+      m*=.8;why.push('không nằm tại mức giá nào đáng kể, chỉ là mô hình lơ lửng giữa vùng trống');
+    }
+    if(vr>=1.5&&p.d!=='neutral'){
+      const bull=k.c[n]>k.o[n];
+      if((p.d==='long'&&bull)||(p.d==='short'&&!bull)){m*=1.2;why.push(`khối lượng ${vr.toFixed(1)} lần trung bình xác nhận`);}
+    }else if(vr<.7&&p.ty==='rev'){m*=.75;why.push('khối lượng mỏng nên chưa có ai thực sự tham gia');}
+    return{...p,eff:p.s*m,why};
+  }).sort((a,b)=>b.eff-a.eff);
+
+  let sc=0;const R=[];
+  const al=out.filter(p=>p.d===dir), op=out.filter(p=>p.d!==dir&&p.d!=='neutral');
+  if(al.length){
+    const t=al[0];
+    sc+=Math.min(10,t.eff*3.2);
+    R.push(`${t.n}: ${t.t}${t.why.length?'. Bối cảnh: '+t.why.join(', '):''}.`);
+    if(al[1]&&al[1].eff>1.2){sc+=2;R.push(`Kèm theo ${al[1].n}: ${al[1].t}.`);}
+  }
+  if(op.length&&op[0].eff>1.4){sc-=Math.min(5,op[0].eff*1.6);
+    R.push(`⚠ Cùng lúc xuất hiện ${op[0].n} ngược hướng — ${op[0].t}.`);}
+  if(!out.length)R.push('Nến gần nhất không tạo thành mô hình đặc trưng nào.');
+  return[Math.max(0,Math.min(sc,12)),R,out];
+}
+
+/* ============================================================ CHẤM ĐIỂM */
+function scoreHTF(t,dir){
+  let s=0;const R=[],n=t.c.length-1;
+  const c=t.c[n],e50=t.ema50[n],e200=t.ema200[n],ax=t.adx[n];
+  if(dir==='long'&&e50>e200&&c>e50){s+=8;R.push('Khung lớn: EMA50 nằm trên EMA200 và giá ở trên cả hai — xu hướng tăng rõ ràng.');}
+  else if(dir==='short'&&e50<e200&&c<e50){s+=8;R.push('Khung lớn: EMA50 nằm dưới EMA200 và giá ở dưới cả hai — xu hướng giảm rõ ràng.');}
+  else if(dir==='long'&&c>e200){s+=4;R.push('Khung lớn: giá còn trên EMA200 nhưng các đường chưa xếp thẳng hàng.');}
+  else if(dir==='short'&&c<e200){s+=4;R.push('Khung lớn: giá còn dưới EMA200 nhưng các đường chưa xếp thẳng hàng.');}
+  else R.push('⚠ Khung lớn không ủng hộ hướng này — đây là lệnh ngược xu hướng chính, cần lý do rất mạnh mới đáng vào.');
+  if(n>12){
+    const sl=(e50-t.ema50[n-10])/Math.abs(e50||1e-9)*100;
+    if((dir==='long'&&sl>.4)||(dir==='short'&&sl<-.4)){s+=4;R.push(`EMA50 khung lớn đang dốc theo hướng vào lệnh (${sl>0?'+':''}${sl.toFixed(2)}%).`);}
+    else if(Math.abs(sl)<.15)R.push('EMA50 khung lớn đi ngang — xu hướng lớn chưa có động lực.');
+  }
+  const[p,m]=t.di[n]||[0,0];
+  if(ax>=25){s+=4;R.push(`ADX ${ax.toFixed(0)} — xu hướng có sức mạnh thực sự (DI+ ${p.toFixed(0)} / DI− ${m.toFixed(0)}).`);}
+  else if(ax>=20){s+=2;R.push(`ADX ${ax.toFixed(0)} — xu hướng đang hình thành.`);}
+  else R.push(`⚠ ADX ${ax.toFixed(0)} — khung lớn đi ngang, chiến lược theo xu hướng dễ bị quét cả hai đầu.`);
+  const ms=structure(t);
+  if((dir==='long'&&ms.bias==='bullish')||(dir==='short'&&ms.bias==='bearish')){s+=4;R.push('Cấu trúc khung lớn: '+ms.label+'.');}
+  else if(ms.event==='CHoCH'){
+    const fav=ms.bias==='weak_bull'?'short':'long';
+    if(fav===dir){s+=2;R.push('Khung lớn vừa có tín hiệu chuyển pha (CHoCH) nghiêng về hướng này.');}
+    else R.push('⚠ Khung lớn: '+ms.label+'.');
+  }
+  return[Math.max(0,Math.min(s,20)),R];
+}
+function scoreStr(k,dir,rg,lv){
+  let s=0;const R=[];
+  const ms=structure(k),n=k.c.length-1;
+  if((dir==='long'&&ms.bias==='bullish')||(dir==='short'&&ms.bias==='bearish')){
+    s+=4;R.push('Cấu trúc khung vào lệnh: '+ms.label+'.');
+    if(ms.event==='BOS'){s+=2;R.push('Vừa có phá vỡ cấu trúc theo đúng hướng xu hướng.');}
+  }else if(ms.event==='CHoCH'){
+    const fav=ms.bias==='weak_bull'?'short':'long';
+    if(fav===dir){s+=4;R.push(ms.label.charAt(0).toUpperCase()+ms.label.slice(1)+' — đây chính là tín hiệu vào lệnh đảo chiều sớm.');}
+    else{s-=2;R.push('⚠ '+ms.label+'.');}
+  }else R.push('Cấu trúc: '+ms.label+'.');
+
+  const sw=sweep(k);
+  if(sw&&sw.d===dir){s+=5;R.push('◆ '+sw.note);}
+  else if(sw){s-=2;R.push('⚠ Vừa có cú quét thanh khoản ngược hướng vào lệnh.');}
+
+  const c=k.c[n],e20=k.ema20[n],e50=k.ema50[n],a=k.atr[n]||1e-9;
+  const d20=Math.abs(c-e20)/a;
+  if(rg.t==='trend'){
+    if(d20<1){s+=2.5;R.push('Giá bám sát EMA20 trong xu hướng mạnh — đây là vùng vào lệnh chuẩn mực nhất.');}
+    else if(d20<2.2)s+=1.2;
+    else R.push(`⚠ Giá đã kéo giãn ${d20.toFixed(1)} lần biên độ trung bình khỏi EMA20 — vào ở đây là đuổi giá.`);
+  }else{
+    const near=lv.filter(L=>L.dist<1.2&&L.n>=2);
+    const right=near.find(L=>(dir==='long'&&L.side==='sup')||(dir==='short'&&L.side==='res'));
+    if(right){s+=2.5;R.push(`Giá đang ở sát ${right.side==='sup'?'hỗ trợ':'kháng cự'} ${fmt(right.lvl)} đã được chạm ${right.n} lần — biên của vùng đi ngang.`);}
+    else R.push('Giá nằm giữa vùng đi ngang, không sát biên nào — vị trí vào lệnh kém lợi thế.');
+  }
+  const rr=k.h.slice(-4).map((h,i)=>h-k.l.slice(-4)[i]).reduce((x,y)=>x+y,0)/4;
+  const br=k.h.slice(-20).map((h,i)=>h-k.l.slice(-20)[i]).reduce((x,y)=>x+y,0)/20||1e-9;
+  if(rr<br*.8){s+=1.7;R.push('Biên độ nến co lại trong nhịp gần đây — áp lực phía đối diện đang cạn dần.');}
+  const vm=k.vr.slice(-4).reduce((x,y)=>x+y,0)/4;
+  if(vm<.85){s+=1.7;R.push('Khối lượng co lại trong nhịp chỉnh — không có bán tháo hay mua đuổi thật sự.');}
+  if((dir==='long'&&c>e50)||(dir==='short'&&c<e50))s+=1.2;
+  else R.push('⚠ Giá đã vượt qua EMA50 theo hướng ngược — nhịp chỉnh sâu hơn bình thường.');
+
+  const ahead=lv.find(L=>L.dist>.3&&L.dist<3.5&&((dir==='long'&&L.side==='res')||(dir==='short'&&L.side==='sup'))&&L.n>=3);
+  if(ahead){s-=2;R.push(`⚠ Có ${ahead.side==='res'?'kháng cự':'hỗ trợ'} mạnh tại ${fmt(ahead.lvl)} (chạm ${ahead.n} lần) chỉ cách ${ahead.dist.toFixed(1)}% — cản đường tới mục tiêu.`);}
+  return[Math.max(0,Math.min(s,18)),R];
+}
+function scoreMom(k,dir,rg){
+  let s=0;const R=[],n=k.c.length-1;
+  const r=k.rsi[n],h=k.mh[n],hp=k.mh[n-1];
+  if(dir==='long'){
+    if(r>=45&&r<=68){s+=5;R.push(`RSI ${r.toFixed(0)} — vùng động lượng tăng lành mạnh, vẫn còn dư địa chạy.`);}
+    else if(r>78){s-=2;R.push(`⚠ RSI ${r.toFixed(0)} — quá mua, phần lớn nhịp đã đi qua.`);}
+    else if(r<32){s+=rg.t==='range'?4:1;R.push(`RSI ${r.toFixed(0)} — quá bán${rg.t==='range'?', hợp với lệnh bắt đáy trong thị trường đi ngang':', nhưng bắt đáy giữa xu hướng giảm rất tốn kém'}.`);}
+    else s+=3;
+  }else{
+    if(r>=32&&r<=55){s+=5;R.push(`RSI ${r.toFixed(0)} — vùng động lượng giảm lành mạnh, vẫn còn dư địa rơi.`);}
+    else if(r<22){s-=2;R.push(`⚠ RSI ${r.toFixed(0)} — quá bán, phần lớn nhịp giảm đã đi qua.`);}
+    else if(r>68){s+=rg.t==='range'?4:1;R.push(`RSI ${r.toFixed(0)} — quá mua${rg.t==='range'?', hợp với lệnh bắt đỉnh trong thị trường đi ngang':', nhưng bắt đỉnh giữa xu hướng tăng rất tốn kém'}.`);}
+    else s+=3;
+  }
+  if(dir==='long'&&h>hp&&h>0){s+=2;R.push('MACD histogram dương và đang mở rộng — động lượng tăng tích tụ.');}
+  else if(dir==='short'&&h<hp&&h<0){s+=2;R.push('MACD histogram âm và đang mở rộng — động lượng giảm tích tụ.');}
+  else if((dir==='long'&&h>hp)||(dir==='short'&&h<hp)){s+=1.5;R.push('MACD histogram đang chuyển pha theo hướng vào lệnh.');}
+  const dv=rsiDiv(k);
+  if(dv==='bull'&&dir==='long'){s+=4;R.push('◆ Phân kỳ tăng: giá tạo đáy thấp hơn nhưng RSI lại tạo đáy cao hơn — lực bán đang yếu dần dù giá vẫn xuống.');}
+  else if(dv==='bear'&&dir==='short'){s+=4;R.push('◆ Phân kỳ giảm: giá tạo đỉnh cao hơn nhưng RSI lại tạo đỉnh thấp hơn — lực mua đang yếu dần dù giá vẫn lên.');}
+  else if(dv){s-=3;R.push(`⚠ Đang có phân kỳ ${dv==='bull'?'tăng':'giảm'} ngược hướng vào lệnh.`);}
+  return[Math.max(0,Math.min(s,12)),R];
+}
+function scoreVol(k,dir){
+  let s=0;const R=[],n=k.c.length-1;
+  const ratio=k.vr[n];
+  const lab=ratio>=3?'bùng nổ':ratio>=2?'rất cao':ratio>=1.3?'cao':ratio>=.75?'trung bình':ratio>=.45?'thấp':'cạn kiệt';
+  const bull=k.c[n]>k.o[n], al=(dir==='long'&&bull)||(dir==='short'&&!bull);
+  if(ratio>=1.3&&al){s+=Math.min(8,4+(ratio-1.3)*3);R.push(`Khối lượng ${lab} (${ratio.toFixed(1)}× trung bình 20 phiên) xác nhận nến theo hướng vào lệnh.`);}
+  else if(ratio>=1.3&&!al){s-=3;R.push(`⚠ Khối lượng ${lab} nhưng nến lại ngược hướng — phe đối diện mới là bên chủ động.`);}
+  else if(ratio<.6)R.push(`Khối lượng ${lab} (${ratio.toFixed(1)}×) — chuyển động thiếu lực đỡ.`);
+  else{s+=2;R.push(`Khối lượng ${lab} (${ratio.toFixed(1)}×).`);}
+  const ov=k.obv[n],oe=k.obvE[n],os=k.obv[n]-k.obv[Math.max(0,n-10)];
+  if(dir==='long'&&ov>oe&&os>0){s+=6;R.push('OBV nằm trên trung bình và đang dốc lên — dòng tiền đang tích lũy.');}
+  else if(dir==='short'&&ov<oe&&os<0){s+=6;R.push('OBV nằm dưới trung bình và đang dốc xuống — dòng tiền đang phân phối.');}
+  else R.push('OBV chưa đồng thuận với hướng vào lệnh.');
+  const rec=k.vr.slice(n-4,n).reduce((x,y)=>x+y,0)/4;
+  if(rec<.8&&ratio>=1.2){s+=4;R.push('Khối lượng cạn dần suốt nhịp chỉnh rồi bật lại ở nến này — mô hình pullback chất lượng cao.');}
+  const x=cndl(k,n);
+  if(ratio>=3){
+    if(dir==='long'&&x.uw>x.b*1.5){s-=5;R.push('⚠ Khối lượng bùng nổ kèm râu trên dài — dấu hiệu phân phối ở đỉnh, người lớn đang bán cho người mới.');}
+    if(dir==='short'&&x.dw>x.b*1.5){s-=5;R.push('⚠ Khối lượng bùng nổ kèm râu dưới dài — dấu hiệu gom hàng ở đáy.');}
+  }
+  if(ratio>=2){
+    const avgRg=k.h.slice(-20).map((h,i)=>h-k.l.slice(-20)[i]).reduce((a,b)=>a+b,0)/20||1e-9;
+    if(x.rg<avgRg*.7){s-=3;R.push('⚠ Khối lượng lớn nhưng giá gần như không đi đâu — có lực cản ẩn đang hấp thụ toàn bộ lệnh.');}
+  }
+  return[Math.max(0,Math.min(s,20)),R,{ratio,lab}];
+}
+function oiMatrix(pc,oc,th=.3){
+  const pu=pc>th,pd=pc<-th,ou=oc>th,od=oc<-th;
+  if(pu&&ou)return{cell:'nl',fav:'long',label:'Giá tăng và OI tăng',note:'tiền mới đang mở vị thế Long, sóng tăng có nền tảng chứ không phải do ép Short'};
+  if(pu&&od)return{cell:'sc',fav:null,bad:1,label:'Giá tăng nhưng OI giảm',note:'sóng tăng này do phe Short đóng lệnh chứ không phải tiền mới vào. Hết Short để ép thì hết đà'};
+  if(pd&&ou)return{cell:'ns',fav:'short',label:'Giá giảm và OI tăng',note:'tiền mới đang mở vị thế Short, áp lực giảm có nền tảng'};
+  if(pd&&od)return{cell:'ll',fav:null,bad:1,label:'Giá giảm và OI giảm',note:'phe Long đang bị đẩy khỏi thị trường. Đây thường là pha cuối của nhịp giảm'};
+  return{cell:'n',fav:null,label:'Giá và OI đi ngang',note:'không có dòng tiền phái sinh rõ rệt'};
+}
+function scoreDer(dir,fund,oiM){
+  let s=9;const R=[];
+  if(oiM){
+    if(oiM.fav===dir){s+=5;R.push(`${oiM.label}: ${oiM.note}.`);}
+    else if(oiM.bad&&((oiM.cell==='sc'&&dir==='long')||(oiM.cell==='ll'&&dir==='short'))){s-=4;R.push(`⚠ ${oiM.label}: ${oiM.note}.`);}
+    else if(oiM.fav){s-=3;R.push(`⚠ ${oiM.label} — dòng tiền phái sinh đang nghiêng về phía ngược lại.`);}
+    else R.push(`${oiM.label}: ${oiM.note}.`);
+  }
+  if(fund!=null){
+    const p=fund*100,d=p*3;
+    let st,fav,str;
+    if(p>=.10){st='cực cao';fav='short';str=2;}
+    else if(p>=.05){st='cao';fav='short';str=1;}
+    else if(p<=-.10){st='cực thấp';fav='long';str=2;}
+    else if(p<=-.05){st='thấp';fav='long';str=1;}
+    else{st='bình thường';fav=null;str=0;}
+    const sgn=p>0?'+':'';
+    if(fav===dir&&str===2){s+=4;R.push(`Funding ${st} (${sgn}${p.toFixed(4)}%/8h) — phe đối diện đang quá tải và trả phí nặng, chính họ là nhiên liệu cho hướng bạn chọn.`);}
+    else if(fav===dir){s+=2;R.push(`Funding ${st} (${sgn}${p.toFixed(4)}%/8h) hỗ trợ hướng vào lệnh.`);}
+    else if(fav&&str===2){s-=5;R.push(`⚠ Funding ${st} (${sgn}${p.toFixed(4)}%/8h) ngược hướng vào lệnh — bạn đang định đứng cùng phía với đám đông đã quá tải, đây là nhóm dễ bị quét nhất.`);}
+    else if(fav){s-=2;R.push(`⚠ Funding ${st} (${sgn}${p.toFixed(4)}%/8h) hơi nghịch hướng vào lệnh.`);}
+    else R.push(`Funding ${sgn}${p.toFixed(4)}%/8h — bình thường, không phe nào quá tải.`);
+    if(dir==='long'&&d>.09)R.push(`Giữ lệnh Long tốn khoảng ${d.toFixed(3)}%/ngày tiền funding.`);
+    if(dir==='short'&&d<-.09)R.push(`Giữ lệnh Short tốn khoảng ${Math.abs(d).toFixed(3)}%/ngày tiền funding.`);
+  }
+  return[Math.max(0,Math.min(s,18)),R];
+}
+
+/* ============================================================ KẾ HOẠCH */
+function plan(dir,trig,a,lvl,sl,tps){
+  const W=[.25,.35,.40],M=[0,.6,1.2];
+  let L=M.map(m=>{
+    let p=dir==='long'?trig-a*m:trig+a*m;
+    return dir==='long'?Math.max(p,lvl*1.001):Math.min(p,lvl*.999);
+  });
+  const u=[];L.forEach((p,i)=>{if(!u.length||Math.abs(p-u.at(-1).p)/p>8e-4)u.push({p,w:W[i]});});
+  const ws=u.reduce((x,y)=>x+y.w,0);u.forEach(l=>l.w/=ws);
+  const avg=u.reduce((x,l)=>x+l.p*l.w,0),deep=u.at(-1).p;
+  if(dir==='long'&&sl>=deep)sl=deep-a*.4;
+  if(dir==='short'&&sl<=deep)sl=deep+a*.4;
+  const rpu=Math.abs(avg-sl);
+  if(rpu<=0)return null;
+  const riskUsd=C.cap*C.risk/100,qty=riskUsd/rpu;
+  u.forEach((l,i)=>{l.q=qty*l.w;l.i=i+1;});
+  const slPct=rpu/avg,lev=Math.max(1,Math.min(10,Math.floor(1/(1.6*slPct+.005))));
+  const liq=dir==='long'?avg*(1-1/lev+.005):avg*(1+1/lev-.005);
+  const rr=(e,t)=>{const r=Math.abs(e-sl);return r?((dir==='long'?t-e:e-t)/r):0;};
+  const sc=u.map((_,i)=>{
+    const sub=u.slice(0,i+1),w=sub.reduce((x,y)=>x+y.w,0)||1;
+    const ae=sub.reduce((x,y)=>x+y.p*y.w,0)/w,q=sub.reduce((x,y)=>x+y.q,0);
+    const rk=Math.abs(ae-sl)*q;
+    return{n:i+1,ae,rk,rp:rk/C.cap*100,r2:rr(ae,tps[1])};
+  });
+  return{dir,legs:u,sl,tps,avg,qty,lev,liq,riskUsd,sc};
+}
+
+/* ============================================================ PHÂN TÍCH */
+async function candles(sym,bar,limit=300){
+  const d=await api('/api/v5/market/candles',{instId:sym,bar,limit:String(limit)});
+  const rows=d.filter(r=>r[8]==='1').reverse();
+  if(!rows.length)throw new Error('Không có dữ liệu nến');
+  return{t:rows.map(r=>+r[0]),o:rows.map(r=>+r[1]),h:rows.map(r=>+r[2]),
+    l:rows.map(r=>+r[3]),c:rows.map(r=>+r[4]),v:rows.map(r=>+r[5])};
+}
+async function analyze(sym,hzKey,opt={}){
+  const H=HZ[hzKey];
+  const kr=await candles(sym,H.entry);
+  if(kr.c.length<210)return null;
+  const trr=await candles(sym,H.trend);
+  if(trr.c.length<60)return null;
+  const k=enrich(kr),t=enrich(trr);
+  const n=k.c.length-1,price=k.c[n],a=k.atr[n],atrPct=a/price*100;
+  if(!opt.force&&(atrPct<.3||atrPct>12))return null;
+
+  let fund=null,oiM=null;
+  try{const f=await api('/api/v5/public/funding-rate',{instId:sym});if(f[0])fund=+f[0].fundingRate;}catch(e){}
+  if(opt.full){
+    try{
+      const oi=await api('/api/v5/rubik/stat/contracts/open-interest-volume',{ccy:sym.split('-')[0],period:'1H'});
+      if(oi.length>7){
+        const s=oi.slice().sort((x,y)=>+x[0]-+y[0]);
+        oiM=oiMatrix((k.c[n]-k.c[n-6])/k.c[n-6]*100,(+s.at(-1)[1]-+s.at(-7)[1])/+s.at(-7)[1]*100);
+      }
+    }catch(e){}
+  }
+
+  const rg=regime(k), lv=keyLevels(k);
+  const results=[];
+  /* Luôn chấm cả hai hướng. Điểm số tự quyết định, không dùng cổng lọc cứng. */
+  for(const dir of ['long','short']){
+    const[sh,rh]=scoreHTF(t,dir);
+    const[ss,rs]=scoreStr(k,dir,rg,lv);
+    const[sm,rm]=scoreMom(k,dir,rg);
+    const[sv,rv,vi]=scoreVol(k,dir);
+    const[sp,rp,ps]=ratePatterns(k,dir,rg,lv);
+    const[sd,rd]=scoreDer(dir,fund,oiM);
+    const total=sh+ss+sm+sv+sp+sd;
+    const ms=structure(k);
+    let lvl,sl,tps;
+    if(dir==='long'){
+      lvl=Math.min(ms.ll,Math.min(...k.l.slice(-20)));
+      sl=lvl-a*H.slm*.4;const r=price-sl;
+      if(r<=0)continue;
+      tps=[price+r*1.5,price+r*2.5,price+r*4];
+    }else{
+      lvl=Math.max(ms.hh,Math.max(...k.h.slice(-20)));
+      sl=lvl+a*H.slm*.4;const r=sl-price;
+      if(r<=0)continue;
+      tps=[price-r*1.5,price-r*2.5,price-r*4];
+    }
+    const P=plan(dir,price,a,lvl,sl,tps);
+    if(!P)continue;
+    const all=[...rh,...rs,...rm,...rv,...rp,...rd];
+    results.push({sym,hz:hzKey,hzLabel:H.label,hold:H.hold,entryTf:H.entry,trendTf:H.trend,
+      dir,score:total,grade:total>=88?'A+':total>=80?'A':total>=72?'B':total>=64?'C':'D',
+      price,parts:{htf:sh,str:ss,mom:sm,vol:sv,pat:sp,der:sd},
+      reasons:all.filter(x=>!x.startsWith('⚠')),warns:all.filter(x=>x.startsWith('⚠')),
+      pats:ps,vi,plan:P,k,candleDesc:describeCandle(k),fund,oiM,rg,lv});
+  }
+  if(!results.length)return null;
+  results.sort((x,y)=>y.score-x.score);
+  const best=results[0];
+  best.other=results[1]||null;
+  if(opt.side&&opt.side!=='both'){
+    const want=results.find(r=>r.dir===opt.side);
+    if(!want)return null;
+    want.other=results.find(r=>r.dir!==opt.side)||null;
+    if(!opt.force&&(want.score<C.minScore||want.plan.sc[0].r2<C.minRR))return null;
+    return want;
+  }
+  if(!opt.force&&(best.score<C.minScore||best.plan.sc[0].r2<C.minRR))return null;
+  return best;
 }
 function describeCandle(k){
   const x=cndl(k,k.c.length-1);
@@ -380,356 +769,128 @@ function describeCandle(k){
   return `Nến ${col} ${bt}, ${w.length?w.join(' và '):'râu ngắn hai đầu'} (thân chiếm ${x.bp.toFixed(0)}% biên độ)`;
 }
 
-/* ---------------------------------------------------------- chấm điểm */
-function scoreHTF(t,dir){
-  let s=0;const R=[],n=t.c.length-1;
-  const c=t.c[n],e50=t.ema50[n],e200=t.ema200[n],ax=t.adx[n];
-  if(dir==='long'&&e50>e200&&c>e50){s+=8;R.push('Khung lớn: EMA50 trên EMA200 và giá trên EMA50 — xu hướng tăng rõ ràng.');}
-  else if(dir==='short'&&e50<e200&&c<e50){s+=8;R.push('Khung lớn: EMA50 dưới EMA200 và giá dưới EMA50 — xu hướng giảm rõ ràng.');}
-  else if(dir==='long'&&c>e200){s+=4;R.push('Khung lớn: giá còn trên EMA200 nhưng EMA chưa xếp thẳng hàng.');}
-  else if(dir==='short'&&c<e200){s+=4;R.push('Khung lớn: giá còn dưới EMA200 nhưng EMA chưa xếp thẳng hàng.');}
-  else R.push('⚠ Khung lớn không ủng hộ hướng vào lệnh — đây là lệnh ngược xu hướng.');
-  if(n>12){
-    const sl=(e50-t.ema50[n-10])/Math.abs(e50||1e-9)*100;
-    if((dir==='long'&&sl>.4)||(dir==='short'&&sl<-.4)){s+=4;R.push(`EMA50 khung lớn đang dốc theo hướng vào lệnh (${sl>0?'+':''}${sl.toFixed(2)}%).`);}
-  }
-  if(ax>=25){s+=4;R.push(`ADX ${ax.toFixed(0)} — xu hướng có sức mạnh thực sự.`);}
-  else if(ax>=20){s+=2;R.push(`ADX ${ax.toFixed(0)} — xu hướng đang hình thành.`);}
-  else R.push(`⚠ ADX ${ax.toFixed(0)} — thị trường đi ngang, chiến lược theo xu hướng dễ bị quét hai đầu.`);
-  const ms=structure(t);
-  if((dir==='long'&&ms.bias==='bullish')||(dir==='short'&&ms.bias==='bearish')){s+=4;R.push('Cấu trúc khung lớn: '+ms.label);}
-  else if(ms.event==='CHoCH') R.push('⚠ Khung lớn: '+ms.label);
-  return[Math.min(s,20),R];
-}
-function scoreStr(k,dir){
-  let s=0;const R=[];
+/* ============================================================ ĐỌC BẰNG LỜI */
+function narrate(sig){
+  const k=sig.k,n=k.c.length-1,P=sig.plan,S=[];
+  const dirVi=sig.dir==='long'?'mua lên':'bán xuống';
+  const c=k.c[n],e20=k.ema20[n],a=k.atr[n]||1e-9;
+
+  S.push(`Thị trường trên khung ${sig.entryTf} đang ở chế độ "${sig.rg.label.toLowerCase()}" (ADX ${sig.rg.adx.toFixed(0)}). ${sig.rg.note}`);
   const ms=structure(k);
-  if((dir==='long'&&ms.bias==='bullish')||(dir==='short'&&ms.bias==='bearish')){
-    s+=4;R.push('Cấu trúc khung vào lệnh: '+ms.label);
-    if(ms.event==='BOS'){s+=2;R.push('Vừa có phá vỡ cấu trúc theo hướng xu hướng.');}
-  }else if(ms.event==='CHoCH'){
-    const exp=ms.label.includes('giảm')?'long':'short';
-    if(exp===dir){s+=3;R.push(ms.label+' — phù hợp với lệnh đảo chiều sớm.');}
-    else{s-=2;R.push('⚠ '+ms.label);}
-  }else R.push('Cấu trúc: '+ms.label);
+  S.push(`Về cấu trúc, ${ms.label}.`);
+
+  const d20=(c-e20)/a;
+  if(Math.abs(d20)<1)S.push('Giá đang nằm sát EMA20, cách chưa tới một lần biên độ trung bình — đây là vùng mà các nhịp điều chỉnh thường kết thúc.');
+  else if(Math.abs(d20)<2.2)S.push(`Giá cách EMA20 khoảng ${Math.abs(d20).toFixed(1)} lần biên độ trung bình, vẫn trong vùng hợp lý.`);
+  else S.push(`Giá đã kéo giãn ${Math.abs(d20).toFixed(1)} lần biên độ trung bình khỏi EMA20 — vào lệnh ở đây là đuổi giá, dễ ăn ngay một nhịp hồi ngược.`);
+
+  S.push(sig.candleDesc+'.');
+  const al=sig.pats.filter(p=>p.d===sig.dir&&p.eff>1);
+  const op=sig.pats.filter(p=>p.d!==sig.dir&&p.d!=='neutral'&&p.eff>1.4);
+  if(al.length)S.push(`Đây là mô hình ${al[0].n}: ${al[0].t}${al[0].why.length?'. Xét bối cảnh, nó '+al[0].why.join(', '):''}.`);
+  else if(op.length)S.push(`Cây nến này tạo thành ${op[0].n}, tức ngược với hướng ${dirVi}. Đây là mâu thuẫn đáng cân nhắc.`);
+  else S.push('Cây nến này không tạo thành mô hình đảo chiều hay tiếp diễn đáng kể nào.');
+
+  const vr=Math.round(sig.vi.ratio*10)/10, bull=k.c[n]>k.o[n];
+  const alv=(sig.dir==='long'&&bull)||(sig.dir==='short'&&!bull);
+  if(vr>=2&&alv)S.push(`Khối lượng ${sig.vi.lab}, gấp ${vr.toFixed(1)} lần trung bình 20 phiên, và nến đi cùng hướng vào lệnh — có dòng tiền thật đứng sau, không phải nến rỗng.`);
+  else if(vr>=1.3&&alv)S.push(`Khối lượng ${vr.toFixed(1)} lần trung bình, cao hơn nền và cùng hướng vào lệnh — mức xác nhận chấp nhận được.`);
+  else if(vr>=1.3)S.push(`Khối lượng ${vr.toFixed(1)} lần trung bình nhưng nến lại ngược hướng vào lệnh — phe đối diện mới là bên chủ động.`);
+  else if(vr<0.6)S.push(`Khối lượng chỉ ${vr.toFixed(1)} lần trung bình. Chuyển động thiếu lực đỡ, dễ bị đảo ngược khi có lệnh lớn vào.`);
+  else S.push(`Khối lượng ${vr.toFixed(1)} lần trung bình — quanh mức nền, không nói lên điều gì đặc biệt.`);
 
   const sw=sweep(k);
-  if(sw&&sw.d===dir){s+=5;R.push('◆ '+sw.note);}
-  else if(sw){s-=2;R.push('⚠ Có quét thanh khoản ngược hướng vào lệnh.');}
+  if(sw&&sw.d===sig.dir)S.push(sw.note);
 
-  const n=k.c.length-1,c=k.c[n],e20=k.ema20[n],e50=k.ema50[n],a=k.atr[n]||1e-9;
-  const d20=Math.abs(c-e20)/a;
-  if(d20<1){s+=2.3;R.push('Giá đang bám sát EMA20 — vùng vào lệnh theo xu hướng chuẩn mực.');}
-  else if(d20<2)s+=1.2;
-  else R.push(`⚠ Giá cách EMA20 tới ${d20.toFixed(1)} ATR — đã kéo giãn, dễ bị hồi ngược.`);
-  const rr=k.h.slice(-4).map((h,i)=>h-k.l.slice(-4)[i]).reduce((x,y)=>x+y,0)/4;
-  const br=k.h.slice(-20).map((h,i)=>h-k.l.slice(-20)[i]).reduce((x,y)=>x+y,0)/20||1e-9;
-  if(rr<br*.8){s+=1.7;R.push('Biên độ nến co lại trong nhịp chỉnh — áp lực đối lập đang cạn.');}
-  const vm=k.vr.slice(-4).reduce((x,y)=>x+y,0)/4;
-  if(vm<.85){s+=1.7;R.push('Volume co lại trong nhịp chỉnh — không có bán tháo hay mua đuổi thật.');}
-  if((dir==='long'&&c>e50)||(dir==='short'&&c<e50))s+=1.2;
-  else R.push('⚠ Giá đã vượt qua EMA50 ngược hướng — nhịp chỉnh sâu hơn bình thường.');
-  return[Math.max(0,Math.min(s,18)),R];
-}
-function scoreMom(k,dir){
-  let s=0;const R=[],n=k.c.length-1;
-  const r=k.rsi[n],h=k.mh[n],hp=k.mh[n-1];
-  if(dir==='long'){
-    if(r>=45&&r<=68){s+=5;R.push(`RSI ${r.toFixed(0)} — vùng động lượng tăng lành mạnh, còn dư địa.`);}
-    else if(r>78){s-=2;R.push(`⚠ RSI ${r.toFixed(0)} — quá mua, rủi ro mua đỉnh nhịp.`);}
-    else if(r<35){s+=2;R.push(`RSI ${r.toFixed(0)} — vùng quá bán, hợp lệnh bắt đáy hơn là theo xu hướng.`);}
-    else s+=3;
-  }else{
-    if(r>=32&&r<=55){s+=5;R.push(`RSI ${r.toFixed(0)} — vùng động lượng giảm lành mạnh, còn dư địa.`);}
-    else if(r<22){s-=2;R.push(`⚠ RSI ${r.toFixed(0)} — quá bán, rủi ro bán đáy nhịp.`);}
-    else if(r>65){s+=2;R.push(`RSI ${r.toFixed(0)} — vùng quá mua, hợp lệnh bắt đỉnh.`);}
-    else s+=3;
-  }
-  if(dir==='long'&&h>hp&&h>0){s+=3;R.push('MACD histogram dương và đang mở rộng — động lượng tăng đang tích tụ.');}
-  else if(dir==='short'&&h<hp&&h<0){s+=3;R.push('MACD histogram âm và đang mở rộng — động lượng giảm đang tích tụ.');}
-  else if((dir==='long'&&h>hp)||(dir==='short'&&h<hp)){s+=2;R.push('MACD histogram đang chuyển pha theo hướng vào lệnh.');}
-  return[Math.max(0,Math.min(s,12)),R];
-}
-function scoreVol(k,dir){
-  let s=0;const R=[],n=k.c.length-1;
-  const ratio=k.vr[n];
-  const lab=ratio>=3?'bùng nổ':ratio>=2?'rất cao':ratio>=1.3?'cao':ratio>=.75?'trung bình':ratio>=.45?'thấp':'cạn kiệt';
-  const bull=k.c[n]>k.o[n];
-  const al=(dir==='long'&&bull)||(dir==='short'&&!bull);
-  if(ratio>=1.3&&al){s+=Math.min(8,4+(ratio-1.3)*3);R.push(`Volume ${lab} (${ratio.toFixed(1)}× TB20) xác nhận nến theo hướng vào lệnh.`);}
-  else if(ratio>=1.3&&!al){s-=3;R.push(`⚠ Volume ${lab} nhưng nến ngược hướng — phe đối lập đang mạnh.`);}
-  else if(ratio<.6)R.push(`Volume ${lab} (${ratio.toFixed(1)}× TB20) — chuyển động thiếu lực đỡ.`);
-  else{s+=2;R.push(`Volume ${lab} (${ratio.toFixed(1)}× TB20).`);}
+  const near=sig.lv.filter(L=>L.dist<4&&L.n>=3).slice(0,2);
+  if(near.length)S.push('Các mức đáng chú ý quanh giá hiện tại: '+
+    near.map(L=>`${fmt(L.lvl)} (${L.side==='sup'?'hỗ trợ':'kháng cự'}, chạm ${L.n} lần, cách ${L.dist.toFixed(1)}%)`).join('; ')+'.');
 
-  const ov=k.obv[n],oe=k.obvE[n],os=k.obv[n]-k.obv[Math.max(0,n-10)];
-  if(dir==='long'&&ov>oe&&os>0){s+=6;R.push('OBV trên đường trung bình và đang dốc lên — dòng tiền tích lũy.');}
-  else if(dir==='short'&&ov<oe&&os<0){s+=6;R.push('OBV dưới đường trung bình và đang dốc xuống — dòng tiền phân phối.');}
-  else R.push('OBV chưa đồng thuận với hướng vào lệnh.');
-
-  const rec=k.vr.slice(n-4,n).reduce((x,y)=>x+y,0)/4;
-  if(rec<.8&&ratio>=1.2){s+=4;R.push('Volume cạn dần trong nhịp chỉnh rồi bật lại — mô hình pullback chất lượng.');}
-  if(ratio>=3){
-    const x=cndl(k,n);
-    if(dir==='long'&&x.uw>x.b*1.5){s-=5;R.push('⚠ Volume bùng nổ kèm râu trên dài — dấu hiệu phân phối đỉnh.');}
-    if(dir==='short'&&x.dw>x.b*1.5){s-=5;R.push('⚠ Volume bùng nổ kèm râu dưới dài — dấu hiệu gom hàng đáy.');}
-  }
-  return[Math.max(0,Math.min(s,20)),R,{ratio,lab}];
-}
-function scorePat(k,dir){
-  const ps=patterns(k);let s=0;const R=[];
-  const al=ps.filter(p=>p.d===dir), op=ps.filter(p=>p.d!==dir&&p.d!=='neutral');
-  if(al.length){
-    s+={1:4,2:7,3:10}[al[0].s];R.push(`${al[0].n} — ${al[0].t}`);
-    if(al[1]){s+=2;R.push(`Kèm ${al[1].n} — ${al[1].t}`);}
-  }
-  if(op.length){s-=4;R.push(`⚠ Xuất hiện ${op[0].n} ngược hướng vào lệnh.`);}
-  if(!ps.length)R.push('Không có mô hình nến đặc trưng ở nến gần nhất.');
-  return[Math.max(0,Math.min(s,12)),R,ps];
-}
-function scoreDer(dir,fund,oiM){
-  let s=9;const R=[];
-  if(oiM){
-    if(oiM.fav===dir){s+=5;R.push(`${oiM.label}: ${oiM.note}`);}
-    else if(oiM.bad&&((oiM.cell==='sc'&&dir==='long')||(oiM.cell==='ll'&&dir==='short'))){
-      s-=4;R.push(`⚠ ${oiM.label}: ${oiM.note}`);
-    }else if(oiM.fav&&oiM.fav!==dir){s-=3;R.push(`⚠ ${oiM.label}: dòng tiền phái sinh nghiêng về phía ngược lại.`);}
-    else R.push(`${oiM.label}: ${oiM.note}`);
-  }
-  if(fund!=null){
-    const p=fund*100, d=p*3;
-    let st,fav,str;
-    if(p>=.10){st='cực cao';fav='short';str=2;}
-    else if(p>=.05){st='cao';fav='short';str=1;}
-    else if(p<=-.10){st='cực thấp';fav='long';str=2;}
-    else if(p<=-.05){st='thấp';fav='long';str=1;}
-    else{st='bình thường';fav=null;str=0;}
-    if(fav===dir&&str===2){s+=4;R.push(`Funding ${st} (${p>0?'+':''}${p.toFixed(4)}%/8h) — phe đối diện quá tải, thuận lợi cho hướng vào lệnh.`);}
-    else if(fav===dir){s+=2;R.push(`Funding ${st} (${p>0?'+':''}${p.toFixed(4)}%/8h) hỗ trợ hướng vào lệnh.`);}
-    else if(fav&&fav!==dir&&str===2){s-=5;R.push(`⚠ Funding ${st} (${p>0?'+':''}${p.toFixed(4)}%/8h) NGƯỢC hướng vào lệnh — phe bạn định theo đang quá đông, chính họ là nhiên liệu cho cú quét tiếp theo.`);}
-    else if(fav&&fav!==dir){s-=2;R.push(`⚠ Funding ${st} (${p>0?'+':''}${p.toFixed(4)}%/8h) hơi nghịch hướng vào lệnh.`);}
-    else R.push(`Funding ${p>0?'+':''}${p.toFixed(4)}%/8h — ${st}.`);
-    if(dir==='long'&&d>.09)R.push(`Giữ lệnh Long tốn khoảng ${d.toFixed(3)}%/ngày phí funding.`);
-    if(dir==='short'&&d<-.09)R.push(`Giữ lệnh Short tốn khoảng ${Math.abs(d).toFixed(3)}%/ngày phí funding.`);
-  }
-  return[Math.max(0,Math.min(s,18)),R];
-}
-function oiMatrix(pc,oc,th=.3){
-  const pu=pc>th,pd=pc<-th,ou=oc>th,od=oc<-th;
-  if(pu&&ou)return{cell:'nl',fav:'long',label:'Giá tăng và OI tăng',note:'Tiền mới đang mở vị thế Long. Sóng tăng có nền tảng, không phải ép Short.'};
-  if(pu&&od)return{cell:'sc',fav:null,bad:1,label:'Giá tăng nhưng OI giảm',note:'Sóng tăng do phe Short đóng lệnh, không phải tiền mới. Hết Short để ép thì hết đà — tránh đuổi giá.'};
-  if(pd&&ou)return{cell:'ns',fav:'short',label:'Giá giảm và OI tăng',note:'Tiền mới đang mở vị thế Short. Áp lực giảm có nền tảng.'};
-  if(pd&&od)return{cell:'ll',fav:null,bad:1,label:'Giá giảm và OI giảm',note:'Phe Long đang bị đẩy ra khỏi thị trường. Thường là pha cuối nhịp giảm — cảnh giác đảo chiều.'};
-  return{cell:'n',fav:null,label:'Giá và OI đi ngang',note:'Không có dòng tiền phái sinh rõ rệt.'};
-}
-
-/* ---------------------------------------------------------- kế hoạch vào lệnh */
-function plan(dir,trig,a,lvl,sl,tps){
-  const W=[.25,.35,.40], M=[0,.6,1.2];
-  let legs=M.map(m=>{
-    let p=dir==='long'?trig-a*m:trig+a*m;
-    p=dir==='long'?Math.max(p,lvl*1.001):Math.min(p,lvl*.999);
-    return p;
-  });
-  const uniq=[];legs.forEach((p,i)=>{if(!uniq.length||Math.abs(p-uniq.at(-1).p)/p>8e-4)uniq.push({p,w:W[i]});});
-  const ws=uniq.reduce((x,y)=>x+y.w,0);uniq.forEach(l=>l.w/=ws);
-  const avg=uniq.reduce((x,l)=>x+l.p*l.w,0);
-  const deep=uniq.at(-1).p;
-  if(dir==='long'&&sl>=deep)sl=deep-a*.4;
-  if(dir==='short'&&sl<=deep)sl=deep+a*.4;
-  const rpu=Math.abs(avg-sl);
-  if(rpu<=0)return null;
-  const riskUsd=C.cap*C.risk/100, qty=riskUsd/rpu;
-  uniq.forEach((l,i)=>{l.q=qty*l.w;l.i=i+1;});
-  const slPct=rpu/avg, lev=Math.max(1,Math.min(10,Math.floor(1/(1.6*slPct+.005))));
-  const liq=dir==='long'?avg*(1-1/lev+.005):avg*(1+1/lev-.005);
-  const rr=(e,t)=>{const r=Math.abs(e-sl);return r?((dir==='long'?t-e:e-t)/r):0;};
-  const sc=uniq.map((_,i)=>{
-    const sub=uniq.slice(0,i+1), w=sub.reduce((x,y)=>x+y.w,0)||1;
-    const ae=sub.reduce((x,y)=>x+y.p*y.w,0)/w, q=sub.reduce((x,y)=>x+y.q,0);
-    const rk=Math.abs(ae-sl)*q;
-    return{n:i+1,ae,rk,rp:rk/C.cap*100,r2:rr(ae,tps[1])};
-  });
-  return{dir,legs:uniq,sl,tps,avg,qty,lev,liq,riskUsd,sc};
-}
-
-/* ---------------------------------------------------------- phân tích */
-async function candles(sym,bar,limit=300){
-  const d=await api('/api/v5/market/candles',{instId:sym,bar,limit:String(limit)});
-  const rows=d.filter(r=>r[8]==='1').reverse();
-  if(!rows.length)throw new Error('Không có dữ liệu nến');
-  return{
-    t:rows.map(r=>+r[0]), o:rows.map(r=>+r[1]), h:rows.map(r=>+r[2]),
-    l:rows.map(r=>+r[3]), c:rows.map(r=>+r[4]), v:rows.map(r=>+r[5])
-  };
-}
-async function analyze(sym,hzKey,opt={}){
-  const H=HZ[hzKey];
-  const kr=await candles(sym,H.entry);
-  if(kr.c.length<210)return null;
-  const tr_=await candles(sym,H.trend);
-  if(tr_.c.length<60)return null;
-  const k=enrich(kr), t=enrich(tr_);
-  const n=k.c.length-1, price=k.c[n], a=k.atr[n], atrPct=a/price*100;
-  if(!opt.force&&(atrPct<.3||atrPct>12))return null;
-
-  let fund=null,oiM=null;
-  if(opt.deriv!==false){
-    try{const f=await api('/api/v5/public/funding-rate',{instId:sym});if(f[0])fund=+f[0].fundingRate;}catch(e){}
-  }
-  if(opt.full){
-    try{
-      const ccy=sym.split('-')[0];
-      const oi=await api('/api/v5/rubik/stat/contracts/open-interest-volume',{ccy,period:'1H'});
-      if(oi.length>7){
-        const s=oi.slice().sort((x,y)=>+x[0]-+y[0]);
-        const o1=+s.at(-1)[1], o0=+s.at(-7)[1];
-        const p1=k.c[n], p0=k.c[Math.max(0,n-6)];
-        oiM=oiMatrix((p1-p0)/p0*100,(o1-o0)/o0*100);
-      }
-    }catch(e){}
-  }
-
-  const tn=t.c.length-1, tc=t.c[tn], te50=t.ema50[tn], te200=t.ema200[tn];
-  let cands = (tc>te50&&te50>te200)?['long'] : (tc<te50&&te50<te200)?['short'] : ['long','short'];
-
-  let best=null;
-  for(const dir of cands){
-    const[sh,rh]=scoreHTF(t,dir), [ss,rs]=scoreStr(k,dir), [sm,rm]=scoreMom(k,dir);
-    const[sv,rv,vi]=scoreVol(k,dir), [sp,rp,ps]=scorePat(k,dir), [sd,rd]=scoreDer(dir,fund,oiM);
-    const total=sh+ss+sm+sv+sp+sd;
-    if(!opt.force&&total<C.minScore)continue;
-
-    const ms=structure(k);
-    let lvl,sl,tps;
-    if(dir==='long'){
-      lvl=Math.min(ms.ll,Math.min(...k.l.slice(-20)));
-      sl=lvl-a*H.slm*.4; const r=price-sl;
-      if(r<=0)continue;
-      tps=[price+r*1.5,price+r*2.5,price+r*4];
-    }else{
-      lvl=Math.max(ms.hh,Math.max(...k.h.slice(-20)));
-      sl=lvl+a*H.slm*.4; const r=sl-price;
-      if(r<=0)continue;
-      tps=[price-r*1.5,price-r*2.5,price-r*4];
+  if(sig.fund!=null){
+    const fp=sig.fund*100;
+    if(Math.abs(fp)>=0.05){
+      const side=fp>0?'Long':'Short';
+      const same=(fp>0&&sig.dir==='long')||(fp<0&&sig.dir==='short');
+      S.push(`Funding đang ở ${fp>0?'+':''}${fp.toFixed(4)}% mỗi 8 giờ, tức phe ${side} chiếm số đông và đang trả phí. ${same?'Bạn định đứng cùng phía với đám đông đã quá tải — đây chính là nhóm dễ bị quét nhất.':'Bạn đang đứng ngược đám đông quá tải, vị thế của họ là nhiên liệu cho hướng bạn chọn.'}`);
     }
-    const P=plan(dir,price,a,lvl,sl,tps);
-    if(!P)continue;
-    if(!opt.force&&P.sc[0].r2<2)continue;
-
-    const all=[...rh,...rs,...rm,...rv,...rp,...rd];
-    const sig={
-      sym,hz:hzKey,hzLabel:H.label,hold:H.hold,entryTf:H.entry,trendTf:H.trend,
-      dir,score:total,grade:total>=88?'A+':total>=80?'A':total>=72?'B':total>=64?'C':'D',
-      price,parts:{htf:sh,str:ss,mom:sm,vol:sv,pat:sp,der:sd},
-      reasons:all.filter(x=>!x.startsWith('⚠')),
-      warns:all.filter(x=>x.startsWith('⚠')),
-      pats:ps,vi,plan:P,k,candleDesc:describeCandle(k),fund,oiM
-    };
-    if(!best||sig.score>best.score)best=sig;
   }
-  return best;
+  if(sig.other)S.push(`Chiều ngược lại (${sig.other.dir==='long'?'Long':'Short'}) chấm được ${sig.other.score.toFixed(0)} điểm, thấp hơn ${(sig.score-sig.other.score).toFixed(0)} điểm. ${sig.score-sig.other.score<8?'Khoảng cách này khá hẹp — thị trường chưa nghiêng hẳn về bên nào, nên giảm khối lượng.':'Khoảng cách đủ rộng để coi là có ưu thế rõ ràng.'}`);
+
+  const rr=P.sc[0].r2;
+  S.push(`Cắt lỗ đặt tại ${fmt(P.sl)}, ngay ${sig.dir==='long'?'dưới':'trên'} mức cấu trúc gần nhất. Nếu giá đóng cửa qua đó thì luận điểm ${dirVi} đã sai và không còn lý do giữ lệnh. Ở kịch bản chỉ khớp chân entry đầu tiên, tỷ lệ lãi lỗ tới TP2 là ${rr.toFixed(2)} — ${rr>=2?'đúng một lần bù được hơn hai lần sai':'phần thưởng chưa tương xứng với rủi ro, cân nhắc bỏ qua'}.`);
+  return S;
 }
 
-/* ---------------------------------------------------------- biểu đồ */
+/* ============================================================ BIỂU ĐỒ */
 const CH=new WeakMap();
-
 function stepFor(rg){
-  const raw=rg/5, mag=Math.pow(10,Math.floor(Math.log10(raw))), n=raw/mag;
-  const m=n<1.5?1:n<3.5?2:n<7.5?5:10;
-  return m*mag;
+  const raw=rg/5,mag=Math.pow(10,Math.floor(Math.log10(raw))),n=raw/mag;
+  return (n<1.5?1:n<3.5?2:n<7.5?5:10)*mag;
 }
 function tlabel(ms,tf){
-  const d=new Date(ms);
-  const p2=n=>String(n).padStart(2,'0');
-  if(tf==='15m'||tf==='1H'||tf==='4H') return p2(d.getDate())+'/'+p2(d.getMonth()+1)+' '+p2(d.getHours())+':'+p2(d.getMinutes());
+  const d=new Date(ms),p2=n=>String(n).padStart(2,'0');
+  if(tf==='15m'||tf==='1H'||tf==='4H')return p2(d.getDate())+'/'+p2(d.getMonth()+1)+' '+p2(d.getHours())+':'+p2(d.getMinutes());
   return p2(d.getDate())+'/'+p2(d.getMonth()+1);
 }
-
 function draw(cv,sig,cross){
-  const k=sig.k, N=Math.min(90,k.c.length), s=k.c.length-N;
+  const k=sig.k,N=Math.min(90,k.c.length),s=k.c.length-N;
   const o=k.o.slice(s),h=k.h.slice(s),l=k.l.slice(s),c=k.c.slice(s),v=k.v.slice(s),tm=k.t.slice(s);
   const e20=k.ema20.slice(s),e50=k.ema50.slice(s),vs=k.vs.slice(s);
-  const P=sig.plan, lv=[P.sl,...P.legs.map(x=>x.p),...P.tps];
-
+  const P=sig.plan,lv=[P.sl,...P.legs.map(x=>x.p),...P.tps];
   const dpr=window.devicePixelRatio||1;
-  const W=cv.clientWidth||340, HH=Math.round(W*0.86);
-  cv.width=W*dpr; cv.height=HH*dpr;
-  const x=cv.getContext('2d'); x.setTransform(dpr,0,0,dpr,0,0);
-
-  const padR=66, padL=4, padT=8, padB=17, volH=Math.round(HH*.19), gap=6;
+  const W=cv.clientWidth||340,HH=Math.round(W*0.86);
+  cv.width=W*dpr;cv.height=HH*dpr;
+  const x=cv.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);
+  const padR=66,padL=4,padT=8,padB=17,volH=Math.round(HH*.19),gap=6;
   const pH=HH-volH-gap-padT-padB;
-  const lo=Math.min(...l,...lv), hi=Math.max(...h,...lv), rg=(hi-lo)||1;
-  const iw=(W-padL-padR)/N;
-  const px=i=>padL+(i+.5)*iw;
-  const py=p=>padT+(hi-p)/rg*pH;
+  const lo=Math.min(...l,...lv),hi=Math.max(...h,...lv),rg=(hi-lo)||1;
+  const iw=(W-padL-padR)/N,px=i=>padL+(i+.5)*iw,py=p=>padT+(hi-p)/rg*pH;
   const bw=Math.max(1.6,iw*.66);
-
-  x.fillStyle='#131A21'; x.fillRect(0,0,W,HH);
-
-  /* lưới ngang + nhãn giá */
+  x.fillStyle='#131A21';x.fillRect(0,0,W,HH);
   const st=stepFor(rg);
-  x.font='9.5px -apple-system,sans-serif'; x.textBaseline='middle';
+  x.font='9.5px -apple-system,sans-serif';x.textBaseline='middle';
   for(let p=Math.ceil(lo/st)*st;p<=hi;p+=st){
-    const y=py(p); if(y<padT||y>padT+pH)continue;
-    x.strokeStyle='#1E2732'; x.lineWidth=1;
-    x.beginPath();x.moveTo(padL,y);x.lineTo(W-padR,y);x.stroke();
-    x.fillStyle='#5C6773'; x.fillText(fmt(p),W-padR+5,y);
+    const y=py(p);if(y<padT||y>padT+pH)continue;
+    x.strokeStyle='#1E2732';x.lineWidth=1;x.beginPath();x.moveTo(padL,y);x.lineTo(W-padR,y);x.stroke();
+    x.fillStyle='#5C6773';x.fillText(fmt(p),W-padR+5,y);
   }
-  /* lưới dọc + nhãn thời gian */
-  const tStep=Math.max(1,Math.round(N/4));
-  x.textAlign='center';
+  const tStep=Math.max(1,Math.round(N/4));x.textAlign='center';
   for(let i=N-1;i>=0;i-=tStep){
-    const xx=px(i);
-    x.strokeStyle='#1A222C';x.lineWidth=1;
+    const xx=px(i);x.strokeStyle='#1A222C';x.lineWidth=1;
     x.beginPath();x.moveTo(xx,padT);x.lineTo(xx,padT+pH+gap+volH);x.stroke();
-    x.fillStyle='#4A5561';
-    x.fillText(tlabel(tm[i],sig.entryTf),xx,HH-7);
+    x.fillStyle='#4A5561';x.fillText(tlabel(tm[i],sig.entryTf),xx,HH-7);
   }
   x.textAlign='left';
-
-  /* vùng giữa entry sâu nhất và SL */
   const deep=P.legs.at(-1).p;
-  x.fillStyle=sig.dir==='long'?'rgba(228,90,80,.07)':'rgba(228,90,80,.07)';
-  const ya=py(deep),yb=py(P.sl);
-  x.fillRect(padL,Math.min(ya,yb),W-padL-padR,Math.abs(yb-ya));
-
-  /* các mức giá */
+  x.fillStyle='rgba(228,90,80,.07)';
+  const ya=py(deep),yb=py(P.sl);x.fillRect(padL,Math.min(ya,yb),W-padL-padR,Math.abs(yb-ya));
   const marks=[[P.sl,'#E45A50','SL'],...P.legs.map(g=>[g.p,'#B9C4CF','E'+g.i]),...P.tps.map((tp,i)=>[tp,'#2FBE8C','TP'+(i+1)])];
-  x.setLineDash([4,3]); x.lineWidth=1;
+  x.setLineDash([4,3]);x.lineWidth=1;
   marks.forEach(([p,col,lab])=>{
-    const y=py(p); if(y<padT-1||y>padT+pH+1)return;
-    x.strokeStyle=col; x.globalAlpha=.6;
-    x.beginPath();x.moveTo(padL,y);x.lineTo(W-padR,y);x.stroke();
-    x.globalAlpha=1;
-    x.fillStyle=col; x.font='bold 9.5px -apple-system,sans-serif';
-    x.fillText(lab,W-padR+5,y);
-    x.font='9.5px -apple-system,sans-serif';
-    x.fillStyle='#8B96A3'; x.fillText(fmt(p),W-padR+5+x.measureText(lab).width+8,y);
+    const y=py(p);if(y<padT-1||y>padT+pH+1)return;
+    x.strokeStyle=col;x.globalAlpha=.6;x.beginPath();x.moveTo(padL,y);x.lineTo(W-padR,y);x.stroke();
+    x.globalAlpha=1;x.fillStyle=col;x.font='bold 9.5px -apple-system,sans-serif';x.fillText(lab,W-padR+5,y);
+    x.font='9.5px -apple-system,sans-serif';x.fillStyle='#8B96A3';
+    x.fillText(fmt(p),W-padR+5+x.measureText(lab).width+8,y);
   });
   x.setLineDash([]);
-
-  /* EMA */
   [[e20,'#E5A03C'],[e50,'#5B8FD6']].forEach(([arr,col])=>{
     x.strokeStyle=col;x.lineWidth=1.2;x.globalAlpha=.9;x.beginPath();
     arr.forEach((val,i)=>{const yy=py(val);i?x.lineTo(px(i),yy):x.moveTo(px(i),yy);});
     x.stroke();x.globalAlpha=1;
   });
-
-  /* nến */
   for(let i=0;i<N;i++){
-    const up=c[i]>=o[i], col=up?'#2FBE8C':'#E45A50';
+    const up=c[i]>=o[i],col=up?'#2FBE8C':'#E45A50';
     x.strokeStyle=col;x.fillStyle=col;x.lineWidth=1;
     x.beginPath();x.moveTo(Math.round(px(i))+.5,py(h[i]));x.lineTo(Math.round(px(i))+.5,py(l[i]));x.stroke();
-    const yt=py(Math.max(o[i],c[i])), yb2=py(Math.min(o[i],c[i]));
+    const yt=py(Math.max(o[i],c[i])),yb2=py(Math.min(o[i],c[i]));
     x.fillRect(px(i)-bw/2,yt,bw,Math.max(1.2,yb2-yt));
   }
-
-  /* khoanh vùng nến tạo mô hình */
-  const np=sig.pats.filter(p=>p.d===sig.dir).length?sig.pats.filter(p=>p.d===sig.dir)[0]:null;
+  const np=sig.pats.filter(p=>p.d===sig.dir&&p.eff>1)[0];
   if(np){
-    const span=/Star|Soldiers|Crows/.test(np.n)?3:/Engulfing|Tweezer|Piercing|Dark/.test(np.n)?2:1;
-    const i0=N-span, x0=px(i0)-bw/2-3, x1=px(N-1)+bw/2+3;
-    let ph=Math.max(...h.slice(i0)), pl=Math.min(...l.slice(i0));
+    const span=/Three Methods/.test(np.n)?5:/Star|Soldiers|Crows|Inside|Outside Up|Outside Down|Sandwich|Baby|Block/.test(np.n)?3:/Engulfing|Tweezer|Piercing|Dark|Harami|Kicker|Matching|Outside Bar|Inside Bar/.test(np.n)?2:1;
+    const i0=Math.max(0,N-span),x0=px(i0)-bw/2-3,x1=px(N-1)+bw/2+3;
+    const ph=Math.max(...h.slice(i0)),pl=Math.min(...l.slice(i0));
     x.strokeStyle=sig.dir==='long'?'#2FBE8C':'#E45A50';
     x.globalAlpha=.5;x.lineWidth=1;x.setLineDash([3,2]);
     x.strokeRect(x0,py(ph)-4,x1-x0,py(pl)-py(ph)+8);
@@ -737,57 +898,43 @@ function draw(cv,sig,cross){
     x.fillStyle=sig.dir==='long'?'#2FBE8C':'#E45A50';
     x.font='bold 9.5px -apple-system,sans-serif';x.textAlign='right';
     const ly=sig.dir==='long'?py(pl)+18:py(ph)-9;
-    x.fillText(np.n,x1,Math.max(12,Math.min(padT+pH-2,ly)));
-    x.textAlign='left';
+    x.fillText(np.n,x1,Math.max(12,Math.min(padT+pH-2,ly)));x.textAlign='left';
   }
-
-  /* volume */
-  const vTop=padT+pH+gap, vMax=Math.max(...v)||1;
+  const vTop=padT+pH+gap,vMax=Math.max(...v)||1;
   for(let i=0;i<N;i++){
     x.fillStyle=c[i]>=o[i]?'rgba(47,190,140,.5)':'rgba(228,90,80,.5)';
-    const bh=v[i]/vMax*volH;
-    x.fillRect(px(i)-bw/2,vTop+volH-bh,bw,bh);
+    const bh=v[i]/vMax*volH;x.fillRect(px(i)-bw/2,vTop+volH-bh,bw,bh);
   }
   x.strokeStyle='#7E8A97';x.lineWidth=1;x.globalAlpha=.75;x.beginPath();
   vs.forEach((val,i)=>{if(isNaN(val))return;const yy=vTop+volH-val/vMax*volH;i?x.lineTo(px(i),yy):x.moveTo(px(i),yy);});
   x.stroke();x.globalAlpha=1;
-  x.fillStyle='#5C6773';x.font='9px -apple-system,sans-serif';
-  x.fillText('Volume',padL+3,vTop+8);
-
-  /* crosshair */
+  x.fillStyle='#5C6773';x.font='9px -apple-system,sans-serif';x.fillText('Volume',padL+3,vTop+8);
   if(cross!=null){
-    const i=Math.max(0,Math.min(N-1,cross));
-    const xx=px(i);
+    const i=Math.max(0,Math.min(N-1,cross)),xx=px(i);
     x.strokeStyle='#6B7885';x.setLineDash([2,3]);x.lineWidth=1;
     x.beginPath();x.moveTo(xx,padT);x.lineTo(xx,padT+pH+gap+volH);x.stroke();
-    const yy=py(c[i]);
-    x.beginPath();x.moveTo(padL,yy);x.lineTo(W-padR,yy);x.stroke();
+    const yy=py(c[i]);x.beginPath();x.moveTo(padL,yy);x.lineTo(W-padR,yy);x.stroke();
     x.setLineDash([]);
-    /* hộp đọc giá */
     const up=c[i]>=o[i];
-    const L1=`O ${fmt(o[i])}  C ${fmt(c[i])}`;
-    const L2=`H ${fmt(h[i])}  L ${fmt(l[i])}`;
+    const L1=`O ${fmt(o[i])}  C ${fmt(c[i])}`,L2=`H ${fmt(h[i])}  L ${fmt(l[i])}`;
     const L3=`Vol ${(v[i]/1000).toFixed(1)}K · ${(v[i]/(vs[i]||v[i])).toFixed(2)}× TB`;
     x.font='10px -apple-system,sans-serif';
     const bwid=Math.max(x.measureText(L1).width,x.measureText(L2).width,x.measureText(L3).width)+14;
     const bx=xx>W/2?padL+3:W-padR-bwid-3;
-    x.fillStyle='rgba(20,27,34,.94)';
-    x.fillRect(bx,padT+3,bwid,44);
+    x.fillStyle='rgba(20,27,34,.94)';x.fillRect(bx,padT+3,bwid,44);
     x.strokeStyle='#2C3742';x.lineWidth=1;x.strokeRect(bx,padT+3,bwid,44);
-    x.fillStyle=up?'#2FBE8C':'#E45A50'; x.fillText(L1,bx+7,padT+14);
-    x.fillStyle='#B9C4CF'; x.fillText(L2,bx+7,padT+27);
-    x.fillStyle='#8B96A3'; x.fillText(L3,bx+7,padT+40);
-    x.fillStyle='#5C6773';x.font='9px -apple-system,sans-serif';
-    x.textAlign='center';x.fillText(tlabel(tm[i],sig.entryTf),xx,HH-7);
-    x.textAlign='left';
+    x.fillStyle=up?'#2FBE8C':'#E45A50';x.fillText(L1,bx+7,padT+14);
+    x.fillStyle='#B9C4CF';x.fillText(L2,bx+7,padT+27);
+    x.fillStyle='#8B96A3';x.fillText(L3,bx+7,padT+40);
+    x.fillStyle='#5C6773';x.font='9px -apple-system,sans-serif';x.textAlign='center';
+    x.fillText(tlabel(tm[i],sig.entryTf),xx,HH-7);x.textAlign='left';
   }
   CH.set(cv,{N,padL,padR,iw});
 }
-
 function chart(cv,sig){
   draw(cv,sig,null);
   const pick=ev=>{
-    const m=CH.get(cv); if(!m)return;
+    const m=CH.get(cv);if(!m)return;
     const r=cv.getBoundingClientRect();
     const cx=(ev.touches?ev.touches[0].clientX:ev.clientX)-r.left;
     draw(cv,sig,Math.round((cx-m.padL)/m.iw-.5));
@@ -800,87 +947,36 @@ function chart(cv,sig){
   cv.addEventListener('mouseleave',clear);
 }
 
-/* ---------------------------------------------------------- đọc biểu đồ bằng lời */
-function narrate(sig){
-  const k=sig.k,n=k.c.length-1,P=sig.plan;
-  const dirVi=sig.dir==='long'?'mua lên':'bán xuống';
-  const c=k.c[n],e20=k.ema20[n],e50=k.ema50[n],a=k.atr[n]||1e-9;
-  const S=[];
-
-  const ms=structure(k);
-  S.push(`Trên khung ${sig.entryTf}, ${ms.label.charAt(0).toLowerCase()+ms.label.slice(1)}.`);
-
-  const d20=(c-e20)/a;
-  if(Math.abs(d20)<1) S.push(`Giá đang nằm sát EMA20, cách chưa tới một lần biên độ trung bình — đây là vùng mà nhịp điều chỉnh thường kết thúc.`);
-  else if(Math.abs(d20)<2.2) S.push(`Giá cách EMA20 khoảng ${Math.abs(d20).toFixed(1)} lần biên độ trung bình, còn trong vùng hợp lý.`);
-  else S.push(`Giá đã kéo giãn ${Math.abs(d20).toFixed(1)} lần biên độ trung bình khỏi EMA20 — vào lệnh ở đây là đuổi giá, dễ ăn ngay một nhịp hồi ngược.`);
-
-  const al=sig.pats.filter(p=>p.d===sig.dir);
-  const op=sig.pats.filter(p=>p.d!==sig.dir&&p.d!=='neutral');
-  S.push(sig.candleDesc.charAt(0).toLowerCase()==='n'?sig.candleDesc+'.':sig.candleDesc+'.');
-  if(al.length) S.push(`Đây là mô hình ${al[0].n}: ${al[0].t.charAt(0).toLowerCase()+al[0].t.slice(1)}`);
-  else if(op.length) S.push(`Cây nến này tạo thành ${op[0].n} — ngược với hướng ${dirVi} mà các yếu tố khác đang chỉ tới. Đây là mâu thuẫn cần cân nhắc.`);
-  else S.push(`Cây nến này không tạo thành mô hình đảo chiều hay tiếp diễn đặc trưng nào.`);
-
-  const vr=Math.round(sig.vi.ratio*10)/10, bull=k.c[n]>k.o[n];
-  const aligned=(sig.dir==='long'&&bull)||(sig.dir==='short'&&!bull);
-  if(vr>=2&&aligned) S.push(`Khối lượng ${sig.vi.lab} gấp ${vr.toFixed(1)} lần trung bình 20 phiên và nến đi cùng hướng vào lệnh — có dòng tiền thật đứng sau chuyển động này, không phải nến rỗng.`);
-  else if(vr>=1.3&&aligned) S.push(`Khối lượng ${vr.toFixed(1)} lần trung bình, cao hơn nền và đi cùng hướng vào lệnh — mức xác nhận chấp nhận được.`);
-  else if(vr>=1.3) S.push(`Khối lượng ${vr.toFixed(1)} lần trung bình nhưng nến lại ngược hướng vào lệnh — phe đối diện đang là bên chủ động.`);
-  else if(vr<0.6) S.push(`Khối lượng chỉ ${vr.toFixed(1)} lần trung bình. Chuyển động thiếu lực đỡ, dễ bị đảo ngược khi có lệnh lớn vào.`);
-  else S.push(`Khối lượng ${vr.toFixed(1)} lần trung bình — quanh mức nền, không nói lên điều gì đặc biệt.`);
-
-  const sw=sweep(k);
-  if(sw&&sw.d===sig.dir) S.push(sw.note);
-
-  if(sig.fund!=null){
-    const fp=sig.fund*100;
-    if(Math.abs(fp)>=0.05){
-      const side=fp>0?'Long':'Short';
-      const same=(fp>0&&sig.dir==='long')||(fp<0&&sig.dir==='short');
-      S.push(`Funding ở mức ${fp>0?'+':''}${fp.toFixed(4)}% mỗi 8 giờ, tức phe ${side} đang trả phí và chiếm số đông. ${same?'Bạn đang định đứng cùng phía với đám đông đã quá tải — đây chính là nhóm dễ bị quét nhất.':'Bạn đang đứng ngược đám đông đang quá tải, vị thế của họ là nhiên liệu cho hướng bạn chọn.'}`);
-    }
-  }
-
-  const rr=P.sc[0].r2;
-  S.push(`Cắt lỗ đặt tại ${fmt(P.sl)}, ngay dưới mức cấu trúc gần nhất. Nếu giá đóng cửa qua đó thì luận điểm ${dirVi} đã sai và không còn lý do giữ lệnh. Ở kịch bản chỉ khớp chân entry đầu tiên, tỷ lệ lãi lỗ tới TP2 là ${rr.toFixed(2)} — nghĩa là ${rr>=2?'đúng một lần bù được hơn hai lần sai':'phần thưởng chưa tương xứng với rủi ro, cân nhắc bỏ qua'}.`);
-
-  return S;
-}
-
-/* ---------------------------------------------------------- hiển thị */
+/* ============================================================ HIỂN THỊ */
 function segBar(parts){
   let h='<div class="seg">';
-  for(const k in WMAX) h+=`<i style="flex:${parts[k].toFixed(2)};background:${WCOL[k]}"></i>`;
+  for(const k in WMAX)h+=`<i style="flex:${parts[k].toFixed(2)};background:${WCOL[k]}"></i>`;
   const rest=Object.keys(WMAX).reduce((s,k)=>s+(WMAX[k]-parts[k]),0);
   h+=`<i style="flex:${rest.toFixed(2)};background:transparent"></i></div><div class="legend">`;
-  for(const k in WMAX) h+=`<span><b style="background:${WCOL[k]}"></b>${WNAME[k]} ${parts[k].toFixed(0)}/${WMAX[k]}</span>`;
+  for(const k in WMAX)h+=`<span><b style="background:${WCOL[k]}"></b>${WNAME[k]} ${parts[k].toFixed(0)}/${WMAX[k]}</span>`;
   return h+'</div>';
 }
 function render(sig,idx){
-  const P=sig.plan, nm=sig.sym.replace('-USDT-SWAP','');
+  const P=sig.plan,nm=sig.sym.replace('-USDT-SWAP',''),tpw=[40,35,25];
   const low=sig.score<C.minScore;
-  const tpw=[40,35,25];
-  let h=`<div class="card" data-i="${idx}">
+  return `<div class="card" data-i="${idx}">
     <div class="chead"><span class="dir ${sig.dir}"></span>
       <span class="sym">${nm}</span>
       <span class="side ${sig.dir}">${sig.dir==='long'?'LONG':'SHORT'}</span>
       <span class="hz">${sig.hzLabel}</span>
-      <span class="sc">${sig.score.toFixed(0)}<span class="gr">${sig.grade}</span></span>
-    </div>
+      <span class="sc">${sig.score.toFixed(0)}<span class="gr">${sig.grade}</span></span></div>
     ${segBar(sig.parts)}
     <div class="body">
-      ${low?`<div class="warn">Điểm ${sig.score.toFixed(0)} dưới ngưỡng lọc ${C.minScore}. Setup này sẽ không xuất hiện khi quét tự động — hiển thị vì bạn chủ động hỏi.</div>`:''}
+      ${low?`<div class="warn">Điểm ${sig.score.toFixed(0)} dưới ngưỡng lọc ${C.minScore}. Setup này không xuất hiện khi quét — hiển thị vì bạn chủ động hỏi.</div>`:''}
       <canvas></canvas>
-      <p class="hint">Chạm và giữ trên biểu đồ để xem giá mở, đóng, cao, thấp và khối lượng của từng nến.</p>
-
+      <p class="hint">Chạm và giữ trên biểu đồ để xem giá và khối lượng từng nến.</p>
+      ${sig.other?`<div class="opp">Chiều ngược lại (<b style="color:${sig.other.dir==='long'?'var(--long)':'var(--short)'}">${sig.other.dir==='long'?'LONG':'SHORT'}</b>) chấm được <b>${sig.other.score.toFixed(0)}</b> điểm — chênh ${(sig.score-sig.other.score).toFixed(0)} điểm.</div>`:''}
       <h3>Đọc biểu đồ</h3>
       <div class="read">${narrate(sig).map(s=>`<p>${esc(s)}</p>`).join('')}</div>
-
-      ${sig.pats.length?`<h3>Mô hình nến nhận diện được</h3><ul>${sig.pats.slice(0,3).map(p=>{
+      ${sig.pats.length?`<h3>Mô hình nến nhận diện được</h3><ul>${sig.pats.slice(0,4).map(p=>{
         const tag=p.d===sig.dir?'<span class="tg ok">cùng hướng</span>':p.d==='neutral'?'<span class="tg nt">trung tính</span>':'<span class="tg no">ngược hướng</span>';
-        return `<li><b>${esc(p.n)}</b> ${tag}<br>${esc(p.t)}</li>`;}).join('')}</ul>`:''}
-
+        const st=p.eff>=3?'<span class="tg st">mạnh</span>':'';
+        return `<li><b>${esc(p.n)}</b> ${tag} ${st}<br>${esc(p.t)}.${p.why.length?' <i style="color:var(--faint)">Bối cảnh: '+esc(p.why.join(', '))+'.</i>':''}</li>`;}).join('')}</ul>`:''}
       <h3>Kế hoạch vào lệnh</h3>
       <table><tbody>
       ${P.legs.map(l=>`<tr><td class="k">Entry ${l.i} · ${(l.w*100).toFixed(0)}%</td><td>${fmt(l.p)}</td></tr>`).join('')}
@@ -889,19 +985,13 @@ function render(sig,idx){
       ${P.tps.map((t,i)=>`<tr><td class="k">TP${i+1} · chốt ${tpw[i]}%</td><td class="pos">${fmt(t)}</td></tr>`).join('')}
       <tr><td class="k">Đòn bẩy tối đa</td><td>${P.lev}×</td></tr>
       <tr><td class="k">Giá thanh lý ước tính</td><td>${fmt(P.liq)}</td></tr>
-      <tr><td class="k">Nắm giữ dự kiến</td><td>${sig.hold}</td></tr>
-      </tbody></table>
-
+      <tr><td class="k">Nắm giữ dự kiến</td><td>${sig.hold}</td></tr></tbody></table>
       <h3>Kịch bản khớp lệnh</h3>
-      <table><tbody>
-      ${P.sc.map(s=>`<tr><td class="k">Khớp ${s.n} chân · vốn TB ${fmt(s.ae)}</td><td>${s.rk.toFixed(2)} USD (${s.rp.toFixed(2)}%) · R:R ${s.r2.toFixed(2)}</td></tr>`).join('')}
-      </tbody></table>
-
-      ${sig.reasons.length?`<h3>Luận điểm ủng hộ</h3><ul>${sig.reasons.slice(0,12).map(r=>`<li>${esc(r)}</li>`).join('')}</ul>`:''}
-      ${sig.warns.length?`<h3>Rủi ro cần lưu ý</h3><ul>${sig.warns.slice(0,8).map(r=>`<li class="w">${esc(r.replace(/^⚠\s*/,''))}</li>`).join('')}</ul>`:''}
+      <table><tbody>${P.sc.map(s=>`<tr><td class="k">Khớp ${s.n} chân · vốn TB ${fmt(s.ae)}</td><td>${s.rk.toFixed(2)} USD (${s.rp.toFixed(2)}%) · R:R ${s.r2.toFixed(2)}</td></tr>`).join('')}</tbody></table>
+      ${sig.reasons.length?`<h3>Luận điểm ủng hộ</h3><ul>${sig.reasons.slice(0,14).map(r=>`<li>${esc(r)}</li>`).join('')}</ul>`:''}
+      ${sig.warns.length?`<h3>Rủi ro cần lưu ý</h3><ul>${sig.warns.slice(0,10).map(r=>`<li class="w">${esc(r.replace(/^⚠\s*/,''))}</li>`).join('')}</ul>`:''}
       <p class="note">Nếu giá thủng cắt lỗ thì đóng lệnh. Không thêm chân entry thứ tư — chân sâu nhất đã là giới hạn của luận điểm.</p>
     </div></div>`;
-  return h;
 }
 const store=[];
 function attach(box){
@@ -916,30 +1006,26 @@ function attach(box){
   });
 }
 
-/* ---------------------------------------------------------- hành động */
+/* ============================================================ HÀNH ĐỘNG */
 async function topSymbols(n){
   const t=await api('/api/v5/market/tickers',{instType:'SWAP'});
   return t.filter(x=>x.instId.endsWith('-USDT-SWAP'))
     .map(x=>({id:x.instId,vol:(+x.volCcy24h||0)*(+x.last||0)}))
-    .filter(x=>x.vol>3e7)
-    .sort((a,b)=>b.vol-a.vol).slice(0,n).map(x=>x.id);
+    .filter(x=>x.vol>3e7).sort((a,b)=>b.vol-a.vol).slice(0,n).map(x=>x.id);
 }
 $('#go').onclick=async()=>{
   const btn=$('#go'),out=$('#out'),st=$('#stat');
   btn.disabled=true;out.innerHTML='';store.length=0;
   $('#prog').classList.add('on');$('#bar').style.width='0';
-  const hz=$('#hz').value;
+  const hz=$('#hz').value, side=$('#side').value;
   try{
     st.textContent='Đang lấy danh sách cặp...';
-    const syms=await topSymbols(C.topN);
-    const found=[];
+    const syms=await topSymbols(C.topN),found=[];
+    let nL=0,nS=0;
     for(let i=0;i<syms.length;i++){
       st.textContent=`Đang phân tích ${syms[i].replace('-USDT-SWAP','')} — ${i+1}/${syms.length}`;
       $('#bar').style.width=((i+1)/syms.length*100)+'%';
-      try{
-        const s=await analyze(syms[i],hz,{});
-        if(s)found.push(s);
-      }catch(e){}
+      try{const s=await analyze(syms[i],hz,{side});if(s){found.push(s);s.dir==='long'?nL++:nS++;}}catch(e){}
     }
     found.sort((a,b)=>b.score-a.score);
     $('#prog').classList.remove('on');
@@ -947,9 +1033,9 @@ $('#go').onclick=async()=>{
       st.textContent='';
       out.innerHTML=`<div class="empty"><div class="lg">Không có setup nào đạt ${C.minScore} điểm</div>
         Đây là chuyện bình thường. Có phiên cả trăm cặp không cặp nào đủ điều kiện.<br>
-        Bot im lặng nghĩa là bộ lọc đang làm đúng việc của nó.</div>`;
+        Bộ lọc im lặng nghĩa là nó đang làm đúng việc.</div>`;
     }else{
-      st.textContent=`Tìm thấy ${found.length} setup trong ${syms.length} cặp`;
+      st.textContent=`Tìm thấy ${found.length} setup trong ${syms.length} cặp — ${nL} Long, ${nS} Short`;
       found.forEach(s=>store.push(s));
       out.innerHTML=found.map((s,i)=>render(s,i)).join('');
       attach(out);
@@ -957,56 +1043,50 @@ $('#go').onclick=async()=>{
   }catch(e){
     $('#prog').classList.remove('on');st.textContent='';
     out.innerHTML=`<div class="err">Không lấy được dữ liệu từ OKX: ${esc(e.message)}<br><br>
-      Nếu bạn đang ở mạng chặn OKX, thử bật VPN. Trang này gọi thẳng API công khai của OKX từ trình duyệt.</div>`;
+      Nếu mạng của bạn chặn OKX, thử bật VPN.</div>`;
   }
   btn.disabled=false;
 };
 $('#go1').onclick=async()=>{
   const raw=$('#sym').value.trim().toUpperCase();
   if(!raw)return;
-  let sym=raw.endsWith('-SWAP')?raw:raw.endsWith('-USDT')?raw+'-SWAP':`${raw}-USDT-SWAP`;
+  const sym=raw.endsWith('-SWAP')?raw:raw.endsWith('-USDT')?raw+'-SWAP':`${raw}-USDT-SWAP`;
   const btn=$('#go1'),out=$('#out1'),st=$('#stat1');
   btn.disabled=true;out.innerHTML='';store.length=0;
   try{
     const res=[];
     for(const hz of Object.keys(HZ)){
       st.textContent=`Đang phân tích ${HZ[hz].label}...`;
-      try{
-        const s=await analyze(sym,hz,{force:true,full:true});
-        if(s)res.push(s);
-      }catch(e){}
+      try{const s=await analyze(sym,hz,{force:true,full:true});if(s)res.push(s);}catch(e){}
     }
-    if(!res.length){
-      st.textContent='';
+    if(!res.length){st.textContent='';
       out.innerHTML=`<div class="err">Không phân tích được ${esc(sym)}. Kiểm tra lại tên cặp — thử BTC, ETH, SOL.</div>`;
     }else{
       st.textContent='';
       res.forEach(s=>store.push(s));
       out.innerHTML=res.map((s,i)=>render(s,i)).join('');
       attach(out);
-      out.querySelector('.card')?.querySelector('.chead').click();
+      out.querySelector('.chead')?.click();
     }
-  }catch(e){
-    st.textContent='';
-    out.innerHTML=`<div class="err">Lỗi: ${esc(e.message)}</div>`;
-  }
+  }catch(e){st.textContent='';out.innerHTML=`<div class="err">Lỗi: ${esc(e.message)}</div>`;}
   btn.disabled=false;
 };
 $('#sym').addEventListener('keydown',e=>{if(e.key==='Enter')$('#go1').click();});
-
 document.querySelectorAll('nav button').forEach(b=>{
   b.onclick=()=>{
     document.querySelectorAll('nav button').forEach(x=>x.setAttribute('aria-selected',x===b));
     ['scan','one','cfg'].forEach(id=>$('#'+id).hidden=(id!==b.dataset.t));
   };
 });
-['cap','rk','ms','tn'].forEach((id,i)=>{$('#'+id).value=[C.cap,C.risk,C.minScore,C.topN][i];});
+const CF=['cap','rk','ms','mr','tn'],CK=['cap','risk','minScore','minRR','topN'];
+CF.forEach((id,i)=>{$('#'+id).value=C[CK[i]];});
 $('#save').onclick=()=>{
   C.cap=Math.max(50,+$('#cap').value||1000);
   C.risk=Math.min(5,Math.max(.1,+$('#rk').value||1));
-  C.minScore=Math.min(95,Math.max(40,+$('#ms').value||72));
-  C.topN=Math.min(80,Math.max(5,+$('#tn').value||30));
-  ['cap','rk','ms','tn'].forEach((id,i)=>{$('#'+id).value=[C.cap,C.risk,C.minScore,C.topN][i];});
+  C.minScore=Math.min(95,Math.max(40,+$('#ms').value||70));
+  C.minRR=Math.min(6,Math.max(.5,+$('#mr').value||2));
+  C.topN=Math.min(80,Math.max(5,+$('#tn').value||40));
+  CF.forEach((id,i)=>{$('#'+id).value=C[CK[i]];});
   try{localStorage.setItem('okxcfg',JSON.stringify(C));}catch(e){}
   const s=$('#saved');
   s.textContent=`Đã lưu. Rủi ro mỗi lệnh: ${(C.cap*C.risk/100).toFixed(1)} USD.`;
