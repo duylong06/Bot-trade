@@ -163,9 +163,9 @@ const HZ={
   SWING:{label:'Trung hạn',entry:'4H',trend:'1Dutc',hold:'vài ngày đến 2-3 tuần',slm:1.5},
   POSITION:{label:'Dài hạn',entry:'1Dutc',trend:'1Wutc',hold:'vài tuần đến vài tháng',slm:2.0}
 };
-const WMAX={htf:20,str:18,mom:12,vol:20,pat:12,der:18};
-const WCOL={htf:'#5B8FD6',str:'#7C6BC7',mom:'#4FA8A0',vol:'#E5A03C',pat:'#C77BA8',der:'#8A9BA8'};
-const WNAME={htf:'Khung lớn',str:'Cấu trúc',mom:'Động lượng',vol:'Khối lượng',pat:'Mô hình nến',der:'Phái sinh'};
+const WMAX={htf:18,str:16,mom:10,vol:18,pat:12,brk:12,der:14};
+const WCOL={htf:'#5B8FD6',str:'#7C6BC7',mom:'#4FA8A0',vol:'#E5A03C',pat:'#C77BA8',brk:'#D9744F',der:'#8A9BA8'};
+const WNAME={htf:'Khung lớn',str:'Cấu trúc',mom:'Động lượng',vol:'Khối lượng',pat:'Mô hình nến',brk:'Phá vỡ',der:'Phái sinh'};
 
 const $=s=>document.querySelector(s);
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -271,6 +271,190 @@ function sweep(k,lb=30){
     return{d:'short',note:`Râu nến vừa xuyên lên trên đỉnh ${lb} phiên (cao ${((h-ph)/ph*100).toFixed(2)}% trên ${fmt(ph)}) rồi đóng cửa quay lại dưới mức đó. Lệnh dừng lỗ của phe Short đã bị dọn sạch — đây là dấu chân của dòng tiền lớn.`};
   return null;
 }
+/* ---------- PHÁ VỠ, VÙNG NÉN, RETEST, ĐƯỜNG XU HƯỚNG ---------- */
+
+/* Tìm vùng tích lũy gần nhất: đi ngược từ mỗi mốc kết thúc, gom nến cho tới khi
+   biên độ vượt 3.2 lần ATR. Vùng dài nhất tìm được chính là cái hộp. */
+function findBox(k){
+  const n=k.c.length-1;let best=null;
+  for(let e=n;e>=Math.max(20,n-10);e--){
+    const a=k.atr[e]||1e-9;
+    let hi=k.h[e],lo=k.l[e],cnt=1;
+    for(let j=e-1;j>=Math.max(0,e-55);j--){
+      const nh=Math.max(hi,k.h[j]),nl=Math.min(lo,k.l[j]);
+      if(nh-nl>a*3.2)break;
+      hi=nh;lo=nl;cnt++;
+    }
+    if(cnt>=8&&(!best||cnt>best.bars))best={hi,lo,bars:cnt,end:e,atr:a,start:e-cnt+1};
+  }
+  return best;
+}
+
+/* Phân loại trạng thái phá vỡ.
+   Điểm mấu chốt: vào ngay lúc phá vỡ là cách vào tệ nhất — bạn mua đúng đỉnh nhịp
+   và phải đặt cắt lỗ rất xa. Chờ giá quay lại kiểm định mức vừa phá mới là điểm vào tốt. */
+function breakout(k){
+  const B=findBox(k);if(!B)return null;
+  const n=k.c.length-1,a=k.atr[n]||1e-9;
+  const mid=(B.hi+B.lo)/2;
+
+  /* Phá vỡ giả bị che: khi giá chui ngược về, hộp tự nới rộng để ôm luôn cây nến
+     phá vỡ, khiến nó trông như chưa hề phá. Nên phải dựng lại hộp từ dữ liệu CŨ
+     hơn rồi mới đối chiếu vài nến gần nhất. */
+  if(B.end>=n-1){
+    const cut=6;
+    let hi=-Infinity,lo=Infinity,cnt=0;
+    for(let j=n-cut;j>=Math.max(0,n-cut-34);j--){
+      const nh=Math.max(hi,k.h[j]),nl=Math.min(lo,k.l[j]);
+      if(cnt>=6&&nh-nl>a*3.2)break;
+      hi=nh;lo=nl;cnt++;
+    }
+    if(cnt>=10){
+      for(let i=n-cut+1;i<=n;i++){
+        const out=k.c[i]>hi?'long':k.c[i]<lo?'short':null;
+        if(!out)continue;
+        const backIn=out==='long'?k.c[n]<hi:k.c[n]>lo;
+        if(backIn&&i<n)
+          return{box:{hi,lo,bars:cnt,end:n-cut},state:'fakeout',dir:out,
+            lvl:out==='long'?hi:lo,since:n-i,vol:k.vr[i],
+            fav:out==='long'?'short':'long',
+            note:`Giá đã đóng cửa ${out==='long'?'vượt lên trên':'thủng xuống dưới'} ${fmt(out==='long'?hi:lo)} cách đây ${n-i} phiên rồi lại chui ngược vào trong vùng tích lũy. Đây là phá vỡ giả — những người vào lệnh theo cú phá đó giờ đang kẹt, và việc họ buộc phải thoát ra chính là lực đẩy cho hướng ngược lại.`};
+      }
+    }
+  }
+
+  if(B.end>=n){
+    const bw=k.bbw[n],hist=k.bbw.slice(-60).filter(x=>!isNaN(x));
+    const med=hist.length?hist.slice().sort((x,y)=>x-y)[Math.floor(hist.length/2)]:bw;
+    const squeeze=bw<med*.78;
+    return{box:B,state:'inside',squeeze,
+      note:squeeze
+        ?`Giá đang bị nén trong vùng ${fmt(B.lo)}–${fmt(B.hi)} suốt ${B.bars} phiên và biên độ đã co lại rõ rệt. Nén chặt thường đi trước một cú bung mạnh, nhưng chưa ai biết hướng nào. Chờ nến đóng cửa hẳn ra ngoài kèm khối lượng, đừng đoán trước.`
+        :`Giá đang đi ngang trong vùng ${fmt(B.lo)}–${fmt(B.hi)} suốt ${B.bars} phiên. Chưa có phá vỡ.`};
+  }
+
+  let dir=null,bi=null;
+  for(let i=B.end+1;i<=n;i++){
+    if(k.c[i]>B.hi){dir='long';bi=i;break;}
+    if(k.c[i]<B.lo){dir='short';bi=i;break;}
+  }
+  if(!dir)return{box:B,state:'inside',squeeze:false,
+    note:`Giá vẫn nằm trong vùng ${fmt(B.lo)}–${fmt(B.hi)}.`};
+
+  const lvl=dir==='long'?B.hi:B.lo;
+  const since=n-bi;
+  const bv=k.vr[bi];
+  const bc=cndl(k,bi);
+  const strongClose=dir==='long'?(bc.c-bc.l)/bc.rg>.65:(bc.h-bc.c)/bc.rg>.65;
+  const ext=Math.abs(k.c[n]-lvl)/a;
+
+  /* Phá vỡ giả: đã đóng cửa ra ngoài rồi lại chui về trong hộp */
+  const backIn=dir==='long'?k.c[n]<B.hi:k.c[n]>B.lo;
+  if(backIn&&since<=5)
+    return{box:B,state:'fakeout',dir,lvl,since,vol:bv,
+      fav:dir==='long'?'short':'long',
+      note:`Giá đã đóng cửa ${dir==='long'?'vượt lên trên':'thủng xuống dưới'} ${fmt(lvl)} rồi lại chui ngược vào trong vùng tích lũy. Đây là phá vỡ giả — những người vào lệnh theo cú phá đó giờ đang kẹt, và việc họ buộc phải thoát ra chính là lực đẩy cho hướng ngược lại.`};
+
+  /* Retest: sau khi phá, giá quay lại chạm mức cũ rồi giữ được */
+  let retested=false,rBar=null;
+  for(let i=bi+1;i<=n;i++){
+    const touch=dir==='long'?k.l[i]<=lvl+a*.35:k.h[i]>=lvl-a*.35;
+    const held=dir==='long'?k.c[i]>lvl:k.c[i]<lvl;
+    if(touch&&held){retested=true;rBar=i;}
+  }
+
+  if(retested&&n-rBar<=3)
+    return{box:B,state:'retest',dir,lvl,since,vol:bv,fav:dir,ext,
+      note:`Giá đã phá ${dir==='long'?'lên trên':'xuống dưới'} ${fmt(lvl)} cách đây ${since} phiên, sau đó quay lại kiểm định đúng mức đó và giữ được. Mức kháng cự cũ đã đổi vai thành hỗ trợ. Đây là điểm vào tốt nhất của một cú phá vỡ: cắt lỗ đặt sát ngay dưới mức vừa kiểm định thay vì phải đặt tận đáy hộp.`};
+
+  if(ext>2.2&&!retested)
+    return{box:B,state:'extended',dir,lvl,since,vol:bv,fav:null,ext,
+      note:`Giá đã phá ${dir==='long'?'lên trên':'xuống dưới'} ${fmt(lvl)} và chạy tiếp ${ext.toFixed(1)} lần biên độ trung bình mà chưa hề quay lại kiểm định. Vào lúc này là đuổi giá ở chỗ xa nhất, cắt lỗ buộc phải đặt rất rộng. Kiên nhẫn chờ nhịp về lại vùng ${fmt(lvl)}.`};
+
+  if(since<=3)
+    return{box:B,state:'fresh',dir,lvl,since,vol:bv,fav:dir,ext,strongClose,
+      note:`Giá vừa phá ${dir==='long'?'lên trên':'xuống dưới'} ${fmt(lvl)} sau ${B.bars} phiên tích lũy, khối lượng nến phá ${bv.toFixed(1)} lần trung bình${strongClose?' và đóng cửa dứt khoát ở sát cực trị nến':' nhưng đóng cửa không dứt khoát, để lại râu dài phía ngược'}. ${bv>=1.6&&strongClose?'Cú phá này có chất lượng.':'Chất lượng cú phá chưa thuyết phục, cân nhắc chờ retest.'}`};
+
+  return{box:B,state:'running',dir,lvl,since,vol:bv,fav:dir,ext,
+    note:`Đã phá ${dir==='long'?'lên trên':'xuống dưới'} ${fmt(lvl)} cách đây ${since} phiên và đang chạy tiếp, hiện cách mức phá ${ext.toFixed(1)} lần biên độ trung bình.`};
+}
+
+/* Đường xu hướng chéo dựng qua các đỉnh (kháng cự) hoặc đáy (hỗ trợ) dao động */
+function trendline(k,type){
+  const sw=swings(k,2,2);
+  const idx=(type==='res'?sw.hi:sw.lo).slice(-4);
+  if(idx.length<2)return null;
+  const val=i=>type==='res'?k.h[i]:k.l[i];
+  const i1=idx[0],i2=idx.at(-1);
+  if(i2-i1<6)return null;
+  const slope=(val(i2)-val(i1))/(i2-i1);
+  const n=k.c.length-1,a=k.atr[n]||1e-9;
+  const at=i=>val(i1)+slope*(i-i1);
+  let touch=0;
+  idx.forEach(i=>{if(Math.abs(val(i)-at(i))<a*.5)touch++;});
+  if(touch<2)return null;
+  const now=at(n),dist=(k.c[n]-now)/a;
+  const broke=type==='res'?k.c[n]>now+a*.15:k.c[n]<now-a*.15;
+  return{type,slope,now,touch,dist,broke,
+    dir:slope>a*.02?'up':slope<-a*.02?'down':'flat'};
+}
+
+/* Mô hình giá dựng từ hai đường xu hướng */
+function chartPattern(k){
+  const R=trendline(k,'res'),S=trendline(k,'sup');
+  if(!R||!S)return null;
+  const conv=R.dir==='down'&&S.dir==='up';
+  if(conv)return{n:'Tam giác cân',d:'neutral',
+    t:'đỉnh thấp dần và đáy cao dần cùng lúc, biên độ siết lại — sức ép đang tích tụ, cú thoát ra thường mạnh nhưng hướng chưa xác định'};
+  if(R.dir==='flat'&&S.dir==='up')return{n:'Tam giác tăng',d:'long',
+    t:'đỉnh nằm ngang trong khi đáy cứ cao dần — bên mua liên tục trả giá cao hơn còn bên bán giữ nguyên một mức, thường kết thúc bằng cú phá lên'};
+  if(R.dir==='down'&&S.dir==='flat')return{n:'Tam giác giảm',d:'short',
+    t:'đáy nằm ngang trong khi đỉnh cứ thấp dần — bên bán ép xuống ngày càng sớm, thường kết thúc bằng cú thủng xuống'};
+  if(R.dir==='up'&&S.dir==='up'&&R.slope<S.slope)return{n:'Nêm tăng',d:'short',
+    t:'cả hai biên đều dốc lên nhưng đang siết vào nhau — đà tăng đang hụt hơi dù giá vẫn nhích, thường gãy xuống'};
+  if(R.dir==='down'&&S.dir==='down'&&R.slope>S.slope)return{n:'Nêm giảm',d:'long',
+    t:'cả hai biên đều dốc xuống nhưng đang siết vào nhau — lực bán đang cạn dù giá vẫn xuống, thường bật lên'};
+  return null;
+}
+
+function scoreBrk(k,dir,bo,cp){
+  let s=4;const R=[];
+  if(bo){
+    if(bo.state==='retest'&&bo.fav===dir){s+=8;R.push('◆ '+bo.note);}
+    else if(bo.state==='retest'){s-=3;R.push('⚠ Vừa có cú phá vỡ kèm kiểm định thành công theo hướng ngược lại.');}
+    else if(bo.state==='fresh'&&bo.fav===dir){
+      const q=bo.vol>=1.6&&bo.strongClose;
+      s+=q?6:3.5;R.push((q?'◆ ':'')+bo.note);
+      if(!q)R.push('Cú phá chưa đủ chất lượng để vào ngay — chờ giá quay lại kiểm định sẽ có điểm vào tốt hơn và cắt lỗ sát hơn.');
+    }
+    else if(bo.state==='fresh'){s-=3;R.push('⚠ Vừa có phá vỡ theo hướng ngược lại — '+bo.note);}
+    else if(bo.state==='fakeout'){
+      if(bo.fav===dir){s+=7;R.push('◆ '+bo.note);}
+      else{s-=4;R.push('⚠ '+bo.note);}
+    }
+    else if(bo.state==='extended'){
+      if(bo.dir===dir){s-=2;R.push('⚠ '+bo.note);}
+      else R.push(bo.note);
+    }
+    else if(bo.state==='running'&&bo.fav===dir){s+=2;R.push(bo.note);}
+    else if(bo.state==='inside'){
+      if(bo.squeeze){s+=1;R.push('⚠ '+bo.note);}
+      else R.push(bo.note);
+    }
+  }
+  const Rl=trendline(k,'res'),Sl=trendline(k,'sup');
+  if(dir==='long'&&Rl&&Rl.broke){s+=3;R.push(`Giá vừa vượt lên trên đường kháng cự chéo đã chạm ${Rl.touch} lần.`);}
+  if(dir==='short'&&Sl&&Sl.broke){s+=3;R.push(`Giá vừa thủng xuống dưới đường hỗ trợ chéo đã chạm ${Sl.touch} lần.`);}
+  if(dir==='long'&&Rl&&!Rl.broke&&Rl.dist>-1&&Rl.dist<0){s-=1.5;R.push(`⚠ Ngay phía trên là đường kháng cự chéo tại ${fmt(Rl.now)} đã chạm ${Rl.touch} lần.`);}
+  if(dir==='short'&&Sl&&!Sl.broke&&Sl.dist<1&&Sl.dist>0){s-=1.5;R.push(`⚠ Ngay phía dưới là đường hỗ trợ chéo tại ${fmt(Sl.now)} đã chạm ${Sl.touch} lần.`);}
+  if(cp){
+    if(cp.d===dir){s+=3;R.push(`Mô hình ${cp.n}: ${cp.t}.`);}
+    else if(cp.d==='neutral')R.push(`Mô hình ${cp.n}: ${cp.t}.`);
+    else{s-=2;R.push(`⚠ Mô hình ${cp.n} nghiêng về hướng ngược lại: ${cp.t}.`);}
+  }
+  return[Math.max(0,Math.min(s,12)),R];
+}
+
 function keyLevels(k,lb=140,tol=.7){
   const s=k.c.length-Math.min(lb,k.c.length);
   const sub={...k};['o','h','l','c','v','t'].forEach(f=>sub[f]=k[f].slice(s));
@@ -527,7 +711,7 @@ function scoreHTF(t,dir){
     if(fav===dir){s+=2;R.push('Khung lớn vừa có tín hiệu chuyển pha (CHoCH) nghiêng về hướng này.');}
     else R.push('⚠ Khung lớn: '+ms.label+'.');
   }
-  return[Math.max(0,Math.min(s,20)),R];
+  return[Math.max(0,Math.min(s*0.9,18)),R];
 }
 function scoreStr(k,dir,rg,lv){
   let s=0;const R=[];
@@ -567,7 +751,7 @@ function scoreStr(k,dir,rg,lv){
 
   const ahead=lv.find(L=>L.dist>.3&&L.dist<3.5&&((dir==='long'&&L.side==='res')||(dir==='short'&&L.side==='sup'))&&L.n>=3);
   if(ahead){s-=2;R.push(`⚠ Có ${ahead.side==='res'?'kháng cự':'hỗ trợ'} mạnh tại ${fmt(ahead.lvl)} (chạm ${ahead.n} lần) chỉ cách ${ahead.dist.toFixed(1)}% — cản đường tới mục tiêu.`);}
-  return[Math.max(0,Math.min(s,18)),R];
+  return[Math.max(0,Math.min(s*0.89,16)),R];
 }
 function scoreMom(k,dir,rg){
   let s=0;const R=[],n=k.c.length-1;
@@ -590,7 +774,7 @@ function scoreMom(k,dir,rg){
   if(dv==='bull'&&dir==='long'){s+=4;R.push('◆ Phân kỳ tăng: giá tạo đáy thấp hơn nhưng RSI lại tạo đáy cao hơn — lực bán đang yếu dần dù giá vẫn xuống.');}
   else if(dv==='bear'&&dir==='short'){s+=4;R.push('◆ Phân kỳ giảm: giá tạo đỉnh cao hơn nhưng RSI lại tạo đỉnh thấp hơn — lực mua đang yếu dần dù giá vẫn lên.');}
   else if(dv){s-=3;R.push(`⚠ Đang có phân kỳ ${dv==='bull'?'tăng':'giảm'} ngược hướng vào lệnh.`);}
-  return[Math.max(0,Math.min(s,12)),R];
+  return[Math.max(0,Math.min(s*0.83,10)),R];
 }
 function scoreVol(k,dir){
   let s=0;const R=[],n=k.c.length-1;
@@ -616,7 +800,7 @@ function scoreVol(k,dir){
     const avgRg=k.h.slice(-20).map((h,i)=>h-k.l.slice(-20)[i]).reduce((a,b)=>a+b,0)/20||1e-9;
     if(x.rg<avgRg*.7){s-=3;R.push('⚠ Khối lượng lớn nhưng giá gần như không đi đâu — có lực cản ẩn đang hấp thụ toàn bộ lệnh.');}
   }
-  return[Math.max(0,Math.min(s,20)),R,{ratio,lab}];
+  return[Math.max(0,Math.min(s*0.9,18)),R,{ratio,lab}];
 }
 function oiMatrix(pc,oc,th=.3){
   const pu=pc>th,pd=pc<-th,ou=oc>th,od=oc<-th;
@@ -651,7 +835,7 @@ function scoreDer(dir,fund,oiM){
     if(dir==='long'&&d>.09)R.push(`Giữ lệnh Long tốn khoảng ${d.toFixed(3)}%/ngày tiền funding.`);
     if(dir==='short'&&d<-.09)R.push(`Giữ lệnh Short tốn khoảng ${Math.abs(d).toFixed(3)}%/ngày tiền funding.`);
   }
-  return[Math.max(0,Math.min(s,18)),R];
+  return[Math.max(0,Math.min(s*0.78,14)),R];
 }
 
 /* ============================================================ KẾ HOẠCH */
@@ -712,7 +896,7 @@ async function analyze(sym,hzKey,opt={}){
     }catch(e){}
   }
 
-  const rg=regime(k), lv=keyLevels(k);
+  const rg=regime(k), lv=keyLevels(k), bo=breakout(k), cp=chartPattern(k);
   const results=[];
   /* Luôn chấm cả hai hướng. Điểm số tự quyết định, không dùng cổng lọc cứng. */
   for(const dir of ['long','short']){
@@ -721,8 +905,9 @@ async function analyze(sym,hzKey,opt={}){
     const[sm,rm]=scoreMom(k,dir,rg);
     const[sv,rv,vi]=scoreVol(k,dir);
     const[sp,rp,ps]=ratePatterns(k,dir,rg,lv);
+    const[sb,rb]=scoreBrk(k,dir,bo,cp);
     const[sd,rd]=scoreDer(dir,fund,oiM);
-    const total=sh+ss+sm+sv+sp+sd;
+    const total=sh+ss+sm+sv+sp+sb+sd;
     const ms=structure(k);
     let lvl,sl,tps;
     if(dir==='long'){
@@ -738,12 +923,12 @@ async function analyze(sym,hzKey,opt={}){
     }
     const P=plan(dir,price,a,lvl,sl,tps);
     if(!P)continue;
-    const all=[...rh,...rs,...rm,...rv,...rp,...rd];
+    const all=[...rh,...rs,...rm,...rv,...rp,...rb,...rd];
     results.push({sym,hz:hzKey,hzLabel:H.label,hold:H.hold,entryTf:H.entry,trendTf:H.trend,
       dir,score:total,grade:total>=88?'A+':total>=80?'A':total>=72?'B':total>=64?'C':'D',
       price,parts:{htf:sh,str:ss,mom:sm,vol:sv,pat:sp,der:sd},
       reasons:all.filter(x=>!x.startsWith('⚠')),warns:all.filter(x=>x.startsWith('⚠')),
-      pats:ps,vi,plan:P,k,candleDesc:describeCandle(k),fund,oiM,rg,lv});
+      pats:ps,vi,plan:P,k,candleDesc:describeCandle(k),fund,oiM,rg,lv,bo,cp});
   }
   if(!results.length)return null;
   results.sort((x,y)=>y.score-x.score);
@@ -801,6 +986,8 @@ function narrate(sig){
 
   const sw=sweep(k);
   if(sw&&sw.d===sig.dir)S.push(sw.note);
+  if(sig.bo)S.push(sig.bo.note);
+  if(sig.cp)S.push(`Nhìn rộng ra, giá đang tạo thành mô hình ${sig.cp.n}: ${sig.cp.t}.`);
 
   const near=sig.lv.filter(L=>L.dist<4&&L.n>=3).slice(0,2);
   if(near.length)S.push('Các mức đáng chú ý quanh giá hiện tại: '+
