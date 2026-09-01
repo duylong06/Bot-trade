@@ -105,6 +105,12 @@ tr:last-child td{border-bottom:0}
 .k{color:var(--dim)}
 .pos{color:var(--long)} .neg{color:var(--short)} .mk{color:var(--mark)}
 
+.hint{font-size:11.5px;color:var(--faint);margin:7px 0 0;text-align:center}
+.read p{font-size:14px;line-height:1.65;color:#C9D2DA;margin:0 0 9px}
+.read p:last-child{margin-bottom:0;color:#A8B3BE;border-top:1px solid var(--line);padding-top:10px}
+.tg{font-size:10.5px;padding:1px 6px;border-radius:3px;vertical-align:1px;white-space:nowrap}
+.tg.ok{background:#12362A;color:#63D6AC} .tg.no{background:#38201E;color:#F0938C}
+.tg.nt{background:#242C35;color:#96A2AE}
 ul{margin:0;padding-left:17px}
 li{margin-bottom:6px;font-size:13.5px;line-height:1.55;color:#CBD3DB}
 li.w{color:#E8C9A4}
@@ -625,71 +631,221 @@ async function analyze(sym,hzKey,opt={}){
 }
 
 /* ---------------------------------------------------------- biểu đồ */
-function chart(cv,sig){
-  const k=sig.k, N=Math.min(90,k.c.length);
-  const s=k.c.length-N;
-  const o=k.o.slice(s),h=k.h.slice(s),l=k.l.slice(s),c=k.c.slice(s),v=k.v.slice(s);
-  const e20=k.ema20.slice(s),e50=k.ema50.slice(s);
-  const P=sig.plan;
-  const lv=[P.sl,...P.legs.map(x=>x.p),...P.tps];
+const CH=new WeakMap();
+
+function stepFor(rg){
+  const raw=rg/5, mag=Math.pow(10,Math.floor(Math.log10(raw))), n=raw/mag;
+  const m=n<1.5?1:n<3.5?2:n<7.5?5:10;
+  return m*mag;
+}
+function tlabel(ms,tf){
+  const d=new Date(ms);
+  const p2=n=>String(n).padStart(2,'0');
+  if(tf==='15m'||tf==='1H'||tf==='4H') return p2(d.getDate())+'/'+p2(d.getMonth()+1)+' '+p2(d.getHours())+':'+p2(d.getMinutes());
+  return p2(d.getDate())+'/'+p2(d.getMonth()+1);
+}
+
+function draw(cv,sig,cross){
+  const k=sig.k, N=Math.min(90,k.c.length), s=k.c.length-N;
+  const o=k.o.slice(s),h=k.h.slice(s),l=k.l.slice(s),c=k.c.slice(s),v=k.v.slice(s),tm=k.t.slice(s);
+  const e20=k.ema20.slice(s),e50=k.ema50.slice(s),vs=k.vs.slice(s);
+  const P=sig.plan, lv=[P.sl,...P.legs.map(x=>x.p),...P.tps];
 
   const dpr=window.devicePixelRatio||1;
-  const W=cv.clientWidth||340, HH=Math.round(W*0.72);
+  const W=cv.clientWidth||340, HH=Math.round(W*0.86);
   cv.width=W*dpr; cv.height=HH*dpr;
-  const x=cv.getContext('2d'); x.scale(dpr,dpr);
+  const x=cv.getContext('2d'); x.setTransform(dpr,0,0,dpr,0,0);
 
-  const padR=64, padL=6, padT=8, volH=Math.round(HH*.17), gap=8;
-  const pH=HH-volH-gap-padT-4;
+  const padR=66, padL=4, padT=8, padB=17, volH=Math.round(HH*.19), gap=6;
+  const pH=HH-volH-gap-padT-padB;
   const lo=Math.min(...l,...lv), hi=Math.max(...h,...lv), rg=(hi-lo)||1;
-  const px=i=>padL+(i+.5)*((W-padL-padR)/N);
+  const iw=(W-padL-padR)/N;
+  const px=i=>padL+(i+.5)*iw;
   const py=p=>padT+(hi-p)/rg*pH;
-  const bw=Math.max(1.4,(W-padL-padR)/N*.62);
+  const bw=Math.max(1.6,iw*.66);
 
-  x.fillStyle='#161D25'; x.fillRect(0,0,W,HH);
+  x.fillStyle='#131A21'; x.fillRect(0,0,W,HH);
 
-  // các mức giá
-  const marks=[[P.sl,'#E45A50','SL'],...P.legs.map(g=>[g.p,'#C3CCD6','E'+g.i]),...P.tps.map((t,i)=>[t,'#2FBE8C','TP'+(i+1)])];
-  x.setLineDash([3,3]); x.lineWidth=1; x.font='9.5px -apple-system,sans-serif';
-  marks.forEach(([p,col,lab])=>{
-    const y=py(p); if(y<0||y>padT+pH)return;
-    x.strokeStyle=col; x.globalAlpha=.55;
+  /* lưới ngang + nhãn giá */
+  const st=stepFor(rg);
+  x.font='9.5px -apple-system,sans-serif'; x.textBaseline='middle';
+  for(let p=Math.ceil(lo/st)*st;p<=hi;p+=st){
+    const y=py(p); if(y<padT||y>padT+pH)continue;
+    x.strokeStyle='#1E2732'; x.lineWidth=1;
     x.beginPath();x.moveTo(padL,y);x.lineTo(W-padR,y);x.stroke();
-    x.globalAlpha=1; x.fillStyle=col;
-    x.fillText(`${lab} ${fmt(p)}`,W-padR+4,y+3.2);
+    x.fillStyle='#5C6773'; x.fillText(fmt(p),W-padR+5,y);
+  }
+  /* lưới dọc + nhãn thời gian */
+  const tStep=Math.max(1,Math.round(N/4));
+  x.textAlign='center';
+  for(let i=N-1;i>=0;i-=tStep){
+    const xx=px(i);
+    x.strokeStyle='#1A222C';x.lineWidth=1;
+    x.beginPath();x.moveTo(xx,padT);x.lineTo(xx,padT+pH+gap+volH);x.stroke();
+    x.fillStyle='#4A5561';
+    x.fillText(tlabel(tm[i],sig.entryTf),xx,HH-7);
+  }
+  x.textAlign='left';
+
+  /* vùng giữa entry sâu nhất và SL */
+  const deep=P.legs.at(-1).p;
+  x.fillStyle=sig.dir==='long'?'rgba(228,90,80,.07)':'rgba(228,90,80,.07)';
+  const ya=py(deep),yb=py(P.sl);
+  x.fillRect(padL,Math.min(ya,yb),W-padL-padR,Math.abs(yb-ya));
+
+  /* các mức giá */
+  const marks=[[P.sl,'#E45A50','SL'],...P.legs.map(g=>[g.p,'#B9C4CF','E'+g.i]),...P.tps.map((tp,i)=>[tp,'#2FBE8C','TP'+(i+1)])];
+  x.setLineDash([4,3]); x.lineWidth=1;
+  marks.forEach(([p,col,lab])=>{
+    const y=py(p); if(y<padT-1||y>padT+pH+1)return;
+    x.strokeStyle=col; x.globalAlpha=.6;
+    x.beginPath();x.moveTo(padL,y);x.lineTo(W-padR,y);x.stroke();
+    x.globalAlpha=1;
+    x.fillStyle=col; x.font='bold 9.5px -apple-system,sans-serif';
+    x.fillText(lab,W-padR+5,y);
+    x.font='9.5px -apple-system,sans-serif';
+    x.fillStyle='#8B96A3'; x.fillText(fmt(p),W-padR+5+x.measureText(lab).width+8,y);
   });
   x.setLineDash([]);
 
-  // EMA
+  /* EMA */
   [[e20,'#E5A03C'],[e50,'#5B8FD6']].forEach(([arr,col])=>{
-    x.strokeStyle=col;x.lineWidth=1.1;x.globalAlpha=.85;x.beginPath();
+    x.strokeStyle=col;x.lineWidth=1.2;x.globalAlpha=.9;x.beginPath();
     arr.forEach((val,i)=>{const yy=py(val);i?x.lineTo(px(i),yy):x.moveTo(px(i),yy);});
     x.stroke();x.globalAlpha=1;
   });
 
-  // nến
+  /* nến */
   for(let i=0;i<N;i++){
     const up=c[i]>=o[i], col=up?'#2FBE8C':'#E45A50';
     x.strokeStyle=col;x.fillStyle=col;x.lineWidth=1;
-    x.beginPath();x.moveTo(px(i),py(h[i]));x.lineTo(px(i),py(l[i]));x.stroke();
-    const yt=py(Math.max(o[i],c[i])), yb=py(Math.min(o[i],c[i]));
-    x.fillRect(px(i)-bw/2,yt,bw,Math.max(1,yb-yt));
+    x.beginPath();x.moveTo(Math.round(px(i))+.5,py(h[i]));x.lineTo(Math.round(px(i))+.5,py(l[i]));x.stroke();
+    const yt=py(Math.max(o[i],c[i])), yb2=py(Math.min(o[i],c[i]));
+    x.fillRect(px(i)-bw/2,yt,bw,Math.max(1.2,yb2-yt));
   }
 
-  // volume
+  /* khoanh vùng nến tạo mô hình */
+  const np=sig.pats.filter(p=>p.d===sig.dir).length?sig.pats.filter(p=>p.d===sig.dir)[0]:null;
+  if(np){
+    const span=/Star|Soldiers|Crows/.test(np.n)?3:/Engulfing|Tweezer|Piercing|Dark/.test(np.n)?2:1;
+    const i0=N-span, x0=px(i0)-bw/2-3, x1=px(N-1)+bw/2+3;
+    let ph=Math.max(...h.slice(i0)), pl=Math.min(...l.slice(i0));
+    x.strokeStyle=sig.dir==='long'?'#2FBE8C':'#E45A50';
+    x.globalAlpha=.5;x.lineWidth=1;x.setLineDash([3,2]);
+    x.strokeRect(x0,py(ph)-4,x1-x0,py(pl)-py(ph)+8);
+    x.setLineDash([]);x.globalAlpha=1;
+    x.fillStyle=sig.dir==='long'?'#2FBE8C':'#E45A50';
+    x.font='bold 9.5px -apple-system,sans-serif';x.textAlign='right';
+    const ly=sig.dir==='long'?py(pl)+18:py(ph)-9;
+    x.fillText(np.n,x1,Math.max(12,Math.min(padT+pH-2,ly)));
+    x.textAlign='left';
+  }
+
+  /* volume */
   const vTop=padT+pH+gap, vMax=Math.max(...v)||1;
   for(let i=0;i<N;i++){
-    x.fillStyle=c[i]>=o[i]?'rgba(47,190,140,.55)':'rgba(228,90,80,.55)';
+    x.fillStyle=c[i]>=o[i]?'rgba(47,190,140,.5)':'rgba(228,90,80,.5)';
     const bh=v[i]/vMax*volH;
     x.fillRect(px(i)-bw/2,vTop+volH-bh,bw,bh);
   }
+  x.strokeStyle='#7E8A97';x.lineWidth=1;x.globalAlpha=.75;x.beginPath();
+  vs.forEach((val,i)=>{if(isNaN(val))return;const yy=vTop+volH-val/vMax*volH;i?x.lineTo(px(i),yy):x.moveTo(px(i),yy);});
+  x.stroke();x.globalAlpha=1;
+  x.fillStyle='#5C6773';x.font='9px -apple-system,sans-serif';
+  x.fillText('Volume',padL+3,vTop+8);
 
-  // đánh dấu nến tín hiệu
-  const li=N-1;
-  x.fillStyle=sig.dir==='long'?'#2FBE8C':'#E45A50';
-  x.font='bold 11px -apple-system,sans-serif';x.textAlign='center';
-  if(sig.dir==='long')x.fillText('▲',px(li),py(l[li])+14);
-  else x.fillText('▼',px(li),py(h[li])-6);
-  x.textAlign='left';
+  /* crosshair */
+  if(cross!=null){
+    const i=Math.max(0,Math.min(N-1,cross));
+    const xx=px(i);
+    x.strokeStyle='#6B7885';x.setLineDash([2,3]);x.lineWidth=1;
+    x.beginPath();x.moveTo(xx,padT);x.lineTo(xx,padT+pH+gap+volH);x.stroke();
+    const yy=py(c[i]);
+    x.beginPath();x.moveTo(padL,yy);x.lineTo(W-padR,yy);x.stroke();
+    x.setLineDash([]);
+    /* hộp đọc giá */
+    const up=c[i]>=o[i];
+    const L1=`O ${fmt(o[i])}  C ${fmt(c[i])}`;
+    const L2=`H ${fmt(h[i])}  L ${fmt(l[i])}`;
+    const L3=`Vol ${(v[i]/1000).toFixed(1)}K · ${(v[i]/(vs[i]||v[i])).toFixed(2)}× TB`;
+    x.font='10px -apple-system,sans-serif';
+    const bwid=Math.max(x.measureText(L1).width,x.measureText(L2).width,x.measureText(L3).width)+14;
+    const bx=xx>W/2?padL+3:W-padR-bwid-3;
+    x.fillStyle='rgba(20,27,34,.94)';
+    x.fillRect(bx,padT+3,bwid,44);
+    x.strokeStyle='#2C3742';x.lineWidth=1;x.strokeRect(bx,padT+3,bwid,44);
+    x.fillStyle=up?'#2FBE8C':'#E45A50'; x.fillText(L1,bx+7,padT+14);
+    x.fillStyle='#B9C4CF'; x.fillText(L2,bx+7,padT+27);
+    x.fillStyle='#8B96A3'; x.fillText(L3,bx+7,padT+40);
+    x.fillStyle='#5C6773';x.font='9px -apple-system,sans-serif';
+    x.textAlign='center';x.fillText(tlabel(tm[i],sig.entryTf),xx,HH-7);
+    x.textAlign='left';
+  }
+  CH.set(cv,{N,padL,padR,iw});
+}
+
+function chart(cv,sig){
+  draw(cv,sig,null);
+  const pick=ev=>{
+    const m=CH.get(cv); if(!m)return;
+    const r=cv.getBoundingClientRect();
+    const cx=(ev.touches?ev.touches[0].clientX:ev.clientX)-r.left;
+    draw(cv,sig,Math.round((cx-m.padL)/m.iw-.5));
+  };
+  const clear=()=>draw(cv,sig,null);
+  cv.addEventListener('touchstart',e=>{e.preventDefault();pick(e);},{passive:false});
+  cv.addEventListener('touchmove',e=>{e.preventDefault();pick(e);},{passive:false});
+  cv.addEventListener('touchend',clear);
+  cv.addEventListener('mousemove',pick);
+  cv.addEventListener('mouseleave',clear);
+}
+
+/* ---------------------------------------------------------- đọc biểu đồ bằng lời */
+function narrate(sig){
+  const k=sig.k,n=k.c.length-1,P=sig.plan;
+  const dirVi=sig.dir==='long'?'mua lên':'bán xuống';
+  const c=k.c[n],e20=k.ema20[n],e50=k.ema50[n],a=k.atr[n]||1e-9;
+  const S=[];
+
+  const ms=structure(k);
+  S.push(`Trên khung ${sig.entryTf}, ${ms.label.charAt(0).toLowerCase()+ms.label.slice(1)}.`);
+
+  const d20=(c-e20)/a;
+  if(Math.abs(d20)<1) S.push(`Giá đang nằm sát EMA20, cách chưa tới một lần biên độ trung bình — đây là vùng mà nhịp điều chỉnh thường kết thúc.`);
+  else if(Math.abs(d20)<2.2) S.push(`Giá cách EMA20 khoảng ${Math.abs(d20).toFixed(1)} lần biên độ trung bình, còn trong vùng hợp lý.`);
+  else S.push(`Giá đã kéo giãn ${Math.abs(d20).toFixed(1)} lần biên độ trung bình khỏi EMA20 — vào lệnh ở đây là đuổi giá, dễ ăn ngay một nhịp hồi ngược.`);
+
+  const al=sig.pats.filter(p=>p.d===sig.dir);
+  const op=sig.pats.filter(p=>p.d!==sig.dir&&p.d!=='neutral');
+  S.push(sig.candleDesc.charAt(0).toLowerCase()==='n'?sig.candleDesc+'.':sig.candleDesc+'.');
+  if(al.length) S.push(`Đây là mô hình ${al[0].n}: ${al[0].t.charAt(0).toLowerCase()+al[0].t.slice(1)}`);
+  else if(op.length) S.push(`Cây nến này tạo thành ${op[0].n} — ngược với hướng ${dirVi} mà các yếu tố khác đang chỉ tới. Đây là mâu thuẫn cần cân nhắc.`);
+  else S.push(`Cây nến này không tạo thành mô hình đảo chiều hay tiếp diễn đặc trưng nào.`);
+
+  const vr=Math.round(sig.vi.ratio*10)/10, bull=k.c[n]>k.o[n];
+  const aligned=(sig.dir==='long'&&bull)||(sig.dir==='short'&&!bull);
+  if(vr>=2&&aligned) S.push(`Khối lượng ${sig.vi.lab} gấp ${vr.toFixed(1)} lần trung bình 20 phiên và nến đi cùng hướng vào lệnh — có dòng tiền thật đứng sau chuyển động này, không phải nến rỗng.`);
+  else if(vr>=1.3&&aligned) S.push(`Khối lượng ${vr.toFixed(1)} lần trung bình, cao hơn nền và đi cùng hướng vào lệnh — mức xác nhận chấp nhận được.`);
+  else if(vr>=1.3) S.push(`Khối lượng ${vr.toFixed(1)} lần trung bình nhưng nến lại ngược hướng vào lệnh — phe đối diện đang là bên chủ động.`);
+  else if(vr<0.6) S.push(`Khối lượng chỉ ${vr.toFixed(1)} lần trung bình. Chuyển động thiếu lực đỡ, dễ bị đảo ngược khi có lệnh lớn vào.`);
+  else S.push(`Khối lượng ${vr.toFixed(1)} lần trung bình — quanh mức nền, không nói lên điều gì đặc biệt.`);
+
+  const sw=sweep(k);
+  if(sw&&sw.d===sig.dir) S.push(sw.note);
+
+  if(sig.fund!=null){
+    const fp=sig.fund*100;
+    if(Math.abs(fp)>=0.05){
+      const side=fp>0?'Long':'Short';
+      const same=(fp>0&&sig.dir==='long')||(fp<0&&sig.dir==='short');
+      S.push(`Funding ở mức ${fp>0?'+':''}${fp.toFixed(4)}% mỗi 8 giờ, tức phe ${side} đang trả phí và chiếm số đông. ${same?'Bạn đang định đứng cùng phía với đám đông đã quá tải — đây chính là nhóm dễ bị quét nhất.':'Bạn đang đứng ngược đám đông đang quá tải, vị thế của họ là nhiên liệu cho hướng bạn chọn.'}`);
+    }
+  }
+
+  const rr=P.sc[0].r2;
+  S.push(`Cắt lỗ đặt tại ${fmt(P.sl)}, ngay dưới mức cấu trúc gần nhất. Nếu giá đóng cửa qua đó thì luận điểm ${dirVi} đã sai và không còn lý do giữ lệnh. Ở kịch bản chỉ khớp chân entry đầu tiên, tỷ lệ lãi lỗ tới TP2 là ${rr.toFixed(2)} — nghĩa là ${rr>=2?'đúng một lần bù được hơn hai lần sai':'phần thưởng chưa tương xứng với rủi ro, cân nhắc bỏ qua'}.`);
+
+  return S;
 }
 
 /* ---------------------------------------------------------- hiển thị */
@@ -716,9 +872,14 @@ function render(sig,idx){
     <div class="body">
       ${low?`<div class="warn">Điểm ${sig.score.toFixed(0)} dưới ngưỡng lọc ${C.minScore}. Setup này sẽ không xuất hiện khi quét tự động — hiển thị vì bạn chủ động hỏi.</div>`:''}
       <canvas></canvas>
-      <h3>Nến và khối lượng</h3>
-      <p style="font-size:13.5px;color:#CBD3DB;margin:0 0 8px">${esc(sig.candleDesc)}. Volume ${sig.vi.lab} — ${sig.vi.ratio.toFixed(2)}× trung bình 20 phiên.</p>
-      ${sig.pats.length?'<ul>'+sig.pats.slice(0,3).map(p=>`<li><b>${esc(p.n)}</b> — ${esc(p.t)}</li>`).join('')+'</ul>':''}
+      <p class="hint">Chạm và giữ trên biểu đồ để xem giá mở, đóng, cao, thấp và khối lượng của từng nến.</p>
+
+      <h3>Đọc biểu đồ</h3>
+      <div class="read">${narrate(sig).map(s=>`<p>${esc(s)}</p>`).join('')}</div>
+
+      ${sig.pats.length?`<h3>Mô hình nến nhận diện được</h3><ul>${sig.pats.slice(0,3).map(p=>{
+        const tag=p.d===sig.dir?'<span class="tg ok">cùng hướng</span>':p.d==='neutral'?'<span class="tg nt">trung tính</span>':'<span class="tg no">ngược hướng</span>';
+        return `<li><b>${esc(p.n)}</b> ${tag}<br>${esc(p.t)}</li>`;}).join('')}</ul>`:''}
 
       <h3>Kế hoạch vào lệnh</h3>
       <table><tbody>
