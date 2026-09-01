@@ -926,7 +926,7 @@ async function analyze(sym,hzKey,opt={}){
     const all=[...rh,...rs,...rm,...rv,...rp,...rb,...rd];
     results.push({sym,hz:hzKey,hzLabel:H.label,hold:H.hold,entryTf:H.entry,trendTf:H.trend,
       dir,score:total,grade:total>=88?'A+':total>=80?'A':total>=72?'B':total>=64?'C':'D',
-      price,parts:{htf:sh,str:ss,mom:sm,vol:sv,pat:sp,der:sd},
+      price,parts:{htf:sh,str:ss,mom:sm,vol:sv,pat:sp,brk:sb,der:sd},
       reasons:all.filter(x=>!x.startsWith('⚠')),warns:all.filter(x=>x.startsWith('⚠')),
       pats:ps,vi,plan:P,k,candleDesc:describeCandle(k),fund,oiM,rg,lv,bo,cp});
   }
@@ -1136,11 +1136,12 @@ function chart(cv,sig){
 
 /* ============================================================ HIỂN THỊ */
 function segBar(parts){
+  const g=k=>Number.isFinite(parts&&parts[k])?parts[k]:0;
   let h='<div class="seg">';
-  for(const k in WMAX)h+=`<i style="flex:${parts[k].toFixed(2)};background:${WCOL[k]}"></i>`;
-  const rest=Object.keys(WMAX).reduce((s,k)=>s+(WMAX[k]-parts[k]),0);
+  for(const k in WMAX)h+=`<i style="flex:${g(k).toFixed(2)};background:${WCOL[k]}"></i>`;
+  const rest=Object.keys(WMAX).reduce((s,k)=>s+(WMAX[k]-g(k)),0);
   h+=`<i style="flex:${rest.toFixed(2)};background:transparent"></i></div><div class="legend">`;
-  for(const k in WMAX)h+=`<span><b style="background:${WCOL[k]}"></b>${WNAME[k]} ${parts[k].toFixed(0)}/${WMAX[k]}</span>`;
+  for(const k in WMAX)h+=`<span><b style="background:${WCOL[k]}"></b>${WNAME[k]} ${g(k).toFixed(0)}/${WMAX[k]}</span>`;
   return h+'</div>';
 }
 function render(sig,idx){
@@ -1224,7 +1225,10 @@ $('#go').onclick=async()=>{
     }else{
       st.textContent=`Tìm thấy ${found.length} setup trong ${syms.length} cặp — ${nL} Long, ${nS} Short`;
       found.forEach(s=>store.push(s));
-      out.innerHTML=found.map((s,i)=>render(s,i)).join('');
+      out.innerHTML=found.map((s,i)=>{
+        try{return render(s,i);}
+        catch(err){return `<div class="err">Không dựng được thẻ ${esc(s.sym)}: ${esc(err.message)}</div>`;}
+      }).join('');
       attach(out);
     }
   }catch(e){
@@ -1251,7 +1255,10 @@ $('#go1').onclick=async()=>{
     }else{
       st.textContent='';
       res.forEach(s=>store.push(s));
-      out.innerHTML=res.map((s,i)=>render(s,i)).join('');
+      out.innerHTML=res.map((s,i)=>{
+        try{return render(s,i);}
+        catch(err){return `<div class="err">Không dựng được thẻ ${esc(s.hzLabel)}: ${esc(err.message)}</div>`;}
+      }).join('');
       attach(out);
       out.querySelector('.chead')?.click();
     }
