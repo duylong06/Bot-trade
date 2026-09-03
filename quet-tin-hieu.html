@@ -42,10 +42,19 @@ button.ghost{background:var(--panel);border:1px solid var(--line);color:var(--te
   color:#E8CBA0;margin:12px 0;line-height:1.55}
 .err{background:#2A1614;border-left:2px solid var(--short);padding:11px 13px;font-size:13.5px;
   color:#F0B5B0;margin:12px 0;line-height:1.55}
-#prog{height:2px;background:var(--panel2);border-radius:2px;overflow:hidden;margin:14px 0 6px;display:none}
-#prog.on{display:block}
-#bar{height:100%;width:0;background:var(--mark);transition:width .25s}
-#stat,#stat1{font-size:13px;color:var(--dim);min-height:19px}
+#prog,#progB{height:2px;background:var(--panel2);border-radius:2px;overflow:hidden;margin:14px 0 6px;display:none}
+#prog.on,#progB.on{display:block}
+#bar,#barB{height:100%;width:0;background:var(--mark);transition:width .25s}
+#stat,#stat1,#statB{font-size:13px;color:var(--dim);min-height:19px}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 8px;
+  border-radius:20px;margin:0 5px 5px 0;letter-spacing:.1px}
+.chip.up{background:#12362A;color:#63D6AC} .chip.dn{background:#38201E;color:#F0938C}
+.chip.nt{background:#242C35;color:#96A2AE}
+.bkhead{display:flex;align-items:baseline;gap:9px;cursor:pointer;flex-wrap:wrap}
+.bkpx{margin-left:auto;font-size:14px;color:var(--dim)}
+.evt{background:var(--panel2);border-radius:8px;padding:9px 11px;margin-bottom:8px;font-size:13px;
+  line-height:1.55;color:#CBD3DB}
+.evt b{color:var(--text)}
 .regime{display:flex;align-items:center;gap:8px;background:var(--panel);border-radius:var(--r);
   padding:10px 12px;font-size:12.5px;color:var(--dim);margin-bottom:12px;line-height:1.45}
 .regime b{color:var(--text);font-weight:600}
@@ -113,6 +122,7 @@ li.w{color:#E8C9A4}
   <nav role="tablist">
     <button role="tab" aria-selected="true" data-t="scan">Quét</button>
     <button role="tab" aria-selected="false" data-t="one">Một cặp</button>
+    <button role="tab" aria-selected="false" data-t="brk">Phá vỡ</button>
     <button role="tab" aria-selected="false" data-t="chat">Hỏi</button>
     <button role="tab" aria-selected="false" data-t="cfg">Cài đặt</button>
   </nav>
@@ -121,6 +131,7 @@ li.w{color:#E8C9A4}
   <section id="scan">
     <div class="row">
       <select id="hz">
+        <option value="H1">Rất ngắn hạn · 1H/4H</option>
         <option value="INTRADAY">Ngắn hạn · 15m/4H</option>
         <option value="SWING" selected>Trung hạn · 4H/1D</option>
         <option value="POSITION">Dài hạn · 1D/1W</option>
@@ -144,6 +155,34 @@ li.w{color:#E8C9A4}
     <p class="note">Tab này bỏ qua ngưỡng lọc và luôn hiện điểm của <b>cả hai chiều</b>, để bạn thấy vì sao bot chọn hướng đó.</p>
     <div id="stat1" style="margin-top:12px"></div>
     <div id="out1"></div>
+  </section>
+  <section id="brk" hidden>
+    <p class="note" style="margin-top:0">Quét toàn bộ cặp trên OKX để tìm coin đang <b>phá đường xu hướng chéo</b>, <b>breakout khỏi vùng tích lũy</b>, hoặc vừa hoàn tất <b>mô hình giá đảo chiều/tiếp diễn</b> (vai đầu vai, hai đỉnh/hai đáy, tam giác, nêm, cờ). Đây là bộ lọc sự kiện cấu trúc — không chấm điểm setup như tab Quét.</p>
+    <div class="row">
+      <select id="bkTf">
+        <option value="15m">15 phút</option>
+        <option value="1H" selected>1 giờ (H1)</option>
+        <option value="4H">4 giờ</option>
+        <option value="1D">1 ngày</option>
+      </select>
+      <select id="bkType">
+        <option value="all">Tất cả tín hiệu</option>
+        <option value="tl">Phá trendline</option>
+        <option value="box">Breakout vùng nén</option>
+        <option value="pat">Mô hình giá</option>
+      </select>
+    </div>
+    <div class="row">
+      <select id="bkDir" style="max-width:150px">
+        <option value="both">Cả hai chiều</option>
+        <option value="long">Chỉ Tăng</option>
+        <option value="short">Chỉ Giảm</option>
+      </select>
+      <button class="act" id="goBk">Quét</button>
+    </div>
+    <div id="progB"><div id="barB"></div></div>
+    <div id="statB"></div>
+    <div id="outB"></div>
   </section>
   <section id="chat" hidden>
     <div id="clog"></div>
@@ -179,6 +218,7 @@ const C={cap:1000,risk:1,minScore:70,minRR:2,topN:40};
 try{Object.assign(C,JSON.parse(localStorage.getItem('okxcfg')||'{}'));}catch(e){}
 
 const HZ={
+  H1:{label:'Rất ngắn hạn',entry:'1H',confirm:'4H',trend:'1D',hold:'vài giờ đến 1 ngày',slm:1.1},
   INTRADAY:{label:'Ngắn hạn',entry:'15m',confirm:'1H',trend:'4H',hold:'vài giờ đến 1-2 ngày',slm:1.2},
   SWING:{label:'Trung hạn',entry:'4H',confirm:'12H',trend:'1Dutc',hold:'vài ngày đến 2-3 tuần',slm:1.5},
   POSITION:{label:'Dài hạn',entry:'1Dutc',confirm:'3Dutc',trend:'1Wutc',hold:'vài tuần đến vài tháng',slm:2.0}
@@ -435,6 +475,116 @@ function chartPattern(k){
   if(R.dir==='down'&&S.dir==='down'&&R.slope>S.slope)return{n:'Nêm giảm',d:'long',
     t:'cả hai biên đều dốc xuống nhưng đang siết vào nhau — lực bán đang cạn dù giá vẫn xuống, thường bật lên'};
   return null;
+}
+
+/* ---------- VAI ĐẦU VAI / HAI ĐỈNH-ĐÁY / CỜ ---------- */
+const near=(a,b,tol)=>Math.abs(a-b)<=tol;
+
+/* Vai đầu vai (đỉnh) và vai đầu vai ngược (đáy).
+   Lấy 3 đỉnh dao động gần nhất làm vai trái - đầu - vai phải, đầu phải cao hơn
+   hẳn hai vai, hai vai xấp xỉ nhau. Đường viền cổ nối hai đáy xen giữa. */
+function headShoulders(k){
+  const n=k.c.length-1,a=k.atr[n]||1e-9,sw=swings(k,3,3),out=[];
+  if(sw.hi.length>=3){
+    const[i1,i2,i3]=sw.hi.slice(-3),h1=k.h[i1],h2=k.h[i2],h3=k.h[i3];
+    if(h2>h1+a*.6&&h2>h3+a*.6&&near(h1,h3,a*1.4)&&i3-i1>=8&&i3-i1<=90){
+      const lo1=Math.min(...k.l.slice(i1,i2+1)),lo2=Math.min(...k.l.slice(i2,i3+1));
+      const neckAt=x=>lo1+(lo2-lo1)*(x-i1)/(i2-i1||1);
+      const neckNow=neckAt(n),c=k.c[n];
+      const broke=c<neckNow-a*.15;
+      out.push({n:'Vai đầu vai',d:'short',ty:'hs',status:broke?'confirmed':'forming',
+        lvl:neckNow,
+        t:broke
+          ?`Ba đỉnh dao động tạo hình vai trái (${fmt(h1)}) — đầu (${fmt(h2)}) — vai phải (${fmt(h3)}), giá vừa thủng đường viền cổ quanh ${fmt(neckNow)}. Mô hình đảo chiều đỉnh đã được xác nhận, mục tiêu lý thuyết bằng chiều cao từ đỉnh đầu tới viền cổ chiếu xuống dưới viền cổ.`
+          :`Ba đỉnh dao động đang tạo hình vai trái — đầu — vai phải (đầu ${fmt(h2)} cao hơn hẳn hai vai). Mô hình chưa xác nhận — cần giá đóng cửa thủng đường viền cổ quanh ${fmt(neckNow)} mới coi là hoàn tất.`});
+    }
+  }
+  if(sw.lo.length>=3){
+    const[i1,i2,i3]=sw.lo.slice(-3),l1=k.l[i1],l2=k.l[i2],l3=k.l[i3];
+    if(l2<l1-a*.6&&l2<l3-a*.6&&near(l1,l3,a*1.4)&&i3-i1>=8&&i3-i1<=90){
+      const hi1=Math.max(...k.h.slice(i1,i2+1)),hi2=Math.max(...k.h.slice(i2,i3+1));
+      const neckAt=x=>hi1+(hi2-hi1)*(x-i1)/(i2-i1||1);
+      const neckNow=neckAt(n),c=k.c[n];
+      const broke=c>neckNow+a*.15;
+      out.push({n:'Vai đầu vai ngược',d:'long',ty:'hs',status:broke?'confirmed':'forming',
+        lvl:neckNow,
+        t:broke
+          ?`Ba đáy dao động tạo hình vai trái (${fmt(l1)}) — đầu (${fmt(l2)}) — vai phải (${fmt(l3)}), giá vừa vượt đường viền cổ quanh ${fmt(neckNow)}. Mô hình đảo chiều đáy đã được xác nhận, mục tiêu lý thuyết bằng chiều sâu từ đáy đầu tới viền cổ chiếu lên trên viền cổ.`
+          :`Ba đáy dao động đang tạo hình vai trái — đầu — vai phải (đầu ${fmt(l2)} sâu hơn hẳn hai vai). Mô hình chưa xác nhận — cần giá đóng cửa vượt đường viền cổ quanh ${fmt(neckNow)} mới coi là hoàn tất.`});
+    }
+  }
+  return out;
+}
+
+/* Hai đỉnh / hai đáy: hai đỉnh (hoặc đáy) dao động xấp xỉ ngang nhau, ngăn cách
+   bởi một đáy (đỉnh) đối lập đủ sâu để không bị coi là nhiễu. */
+function doubleTopBottom(k){
+  const n=k.c.length-1,a=k.atr[n]||1e-9,sw=swings(k,2,2),out=[];
+  if(sw.hi.length>=2){
+    const i1=sw.hi.at(-2),i2=sw.hi.at(-1),h1=k.h[i1],h2=k.h[i2];
+    if(i2-i1>=5&&i2-i1<=80&&near(h1,h2,a*1.1)){
+      const neck=Math.min(...k.l.slice(i1,i2+1));
+      if(Math.min(h1,h2)-neck>a*1.2){
+        const c=k.c[n],broke=c<neck-a*.1;
+        out.push({n:'Hai đỉnh (Double Top)',d:'short',ty:'dt',status:broke?'confirmed':'forming',lvl:neck,
+          t:broke
+            ?`Hai đỉnh ${fmt(h1)} và ${fmt(h2)} xấp xỉ ngang nhau, giá vừa thủng đáy giữa (viền cổ) tại ${fmt(neck)}. Mô hình hai đỉnh đã xác nhận, mục tiêu bằng khoảng cách từ đỉnh xuống viền cổ chiếu tiếp xuống dưới.`
+            :`Hai đỉnh ${fmt(h1)} và ${fmt(h2)} xấp xỉ ngang nhau — chờ giá đóng cửa thủng đáy giữa tại ${fmt(neck)} mới coi là hoàn tất.`});
+      }
+    }
+  }
+  if(sw.lo.length>=2){
+    const i1=sw.lo.at(-2),i2=sw.lo.at(-1),l1=k.l[i1],l2=k.l[i2];
+    if(i2-i1>=5&&i2-i1<=80&&near(l1,l2,a*1.1)){
+      const neck=Math.max(...k.h.slice(i1,i2+1));
+      if(neck-Math.max(l1,l2)>a*1.2){
+        const c=k.c[n],broke=c>neck+a*.1;
+        out.push({n:'Hai đáy (Double Bottom)',d:'long',ty:'db',status:broke?'confirmed':'forming',lvl:neck,
+          t:broke
+            ?`Hai đáy ${fmt(l1)} và ${fmt(l2)} xấp xỉ ngang nhau, giá vừa vượt đỉnh giữa (viền cổ) tại ${fmt(neck)}. Mô hình hai đáy đã xác nhận, mục tiêu bằng khoảng cách từ đáy lên viền cổ chiếu tiếp lên trên.`
+            :`Hai đáy ${fmt(l1)} và ${fmt(l2)} xấp xỉ ngang nhau — chờ giá đóng cửa vượt đỉnh giữa tại ${fmt(neck)} mới coi là hoàn tất.`});
+      }
+    }
+  }
+  return out;
+}
+
+/* Cờ / phướn: một nhịp tăng/giảm mạnh (cán cờ) rồi giá nén lại thành kênh hẹp
+   đi ngược hoặc đi ngang với cán cờ. Phá kênh theo đúng hướng cán cờ = tiếp diễn. */
+function flagPennant(k){
+  const n=k.c.length-1,a=k.atr[n]||1e-9,B=findBox(k);
+  if(!B||B.bars>22||B.hi-B.lo>a*4.2)return[];
+  const preEnd=B.start,preStart=Math.max(0,preEnd-16);
+  if(preEnd-preStart<6)return[];
+  const chg=(k.c[preEnd]-k.c[preStart]),pole=Math.abs(chg);
+  if(pole<a*3.2)return[];
+  const dir=chg>0?'long':'short';
+  const c=k.c[n],broke=dir==='long'?c>B.hi+a*.1:c<B.lo-a*.1;
+  const nm=dir==='long'?'Cờ tăng (Bull Flag)':'Cờ giảm (Bear Flag)';
+  return[{n:nm,d:dir,ty:'flag',status:broke?'confirmed':'forming',lvl:dir==='long'?B.hi:B.lo,
+    t:broke
+      ?`Sau cán cờ tăng ${((pole/k.c[preStart])*100).toFixed(1)}% trong ${preEnd-preStart} phiên, giá nén lại ${B.bars} phiên rồi vừa phá ra đúng hướng cán cờ tại ${fmt(dir==='long'?B.hi:B.lo)}. Mục tiêu lý thuyết bằng chiều dài cán cờ chiếu tiếp từ điểm phá.`.replace('tăng',dir==='long'?'tăng':'giảm')
+      :`Có cán cờ ${dir==='long'?'tăng':'giảm'} mạnh rồi giá đang nén lại trong kênh hẹp ${B.bars} phiên (${fmt(B.lo)}–${fmt(B.hi)}) — dấu hiệu nghỉ giữa xu hướng. Chờ phá ra đúng hướng cán cờ kèm khối lượng.`}];
+}
+
+/* Gộp toàn bộ mô hình giá (không loại trừ lẫn nhau) dùng riêng cho module quét Phá vỡ */
+function patternScan(k){
+  const out=[],R=trendline(k,'res'),S=trendline(k,'sup');
+  const conv=R&&S&&R.dir==='down'&&S.dir==='up';
+  if(conv)out.push({n:'Tam giác cân',d:'neutral',ty:'tri',status:'forming',
+    t:'đỉnh thấp dần và đáy cao dần cùng lúc, biên độ siết lại — sức ép đang tích tụ, cú thoát ra thường mạnh nhưng hướng chưa xác định'});
+  else if(R&&S&&R.dir==='flat'&&S.dir==='up')out.push({n:'Tam giác tăng',d:'long',ty:'tri',status:'forming',
+    t:'đỉnh nằm ngang trong khi đáy cứ cao dần — bên mua liên tục trả giá cao hơn, thường kết thúc bằng cú phá lên'});
+  else if(R&&S&&R.dir==='down'&&S.dir==='flat')out.push({n:'Tam giác giảm',d:'short',ty:'tri',status:'forming',
+    t:'đáy nằm ngang trong khi đỉnh cứ thấp dần — bên bán ép xuống ngày càng sớm, thường kết thúc bằng cú thủng xuống'});
+  else if(R&&S&&R.dir==='up'&&S.dir==='up'&&R.slope<S.slope)out.push({n:'Nêm tăng',d:'short',ty:'wed',status:'forming',
+    t:'cả hai biên đều dốc lên nhưng đang siết vào nhau — đà tăng hụt hơi dù giá vẫn nhích, thường gãy xuống'});
+  else if(R&&S&&R.dir==='down'&&S.dir==='down'&&R.slope>S.slope)out.push({n:'Nêm giảm',d:'long',ty:'wed',status:'forming',
+    t:'cả hai biên đều dốc xuống nhưng đang siết vào nhau — lực bán cạn dù giá vẫn xuống, thường bật lên'});
+  headShoulders(k).forEach(p=>out.push(p));
+  doubleTopBottom(k).forEach(p=>out.push(p));
+  flagPennant(k).forEach(p=>out.push(p));
+  return out;
 }
 
 function scoreBrk(k,dir,bo,cp){
@@ -1609,10 +1759,142 @@ $('#go1').onclick=async()=>{
   btn.disabled=false;
 };
 $('#sym').addEventListener('keydown',e=>{if(e.key==='Enter')$('#go1').click();});
+/* ============================================================ TAB PHÁ VỠ / TRENDLINE */
+const storeBk=[];
+function drawBk(cv,item){
+  const k=item.k,N=Math.min(90,k.c.length),s=k.c.length-N;
+  const o=k.o.slice(s),h=k.h.slice(s),l=k.l.slice(s),c=k.c.slice(s);
+  const e20=k.ema20.slice(s),e50=k.ema50.slice(s);
+  const lvls=item.events.filter(e=>e.lvl).map(e=>e.lvl);
+  const dpr=window.devicePixelRatio||1;
+  const W=cv.clientWidth||340,HH=Math.round(W*0.6);
+  cv.width=W*dpr;cv.height=HH*dpr;
+  const x=cv.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);
+  const padR=62,padL=4,padT=8,padB=6,pH=HH-padT-padB;
+  const allP=[...l,...h,...(lvls.length?lvls:[])];
+  const lo=Math.min(...allP),hi=Math.max(...allP),rg=(hi-lo)||1;
+  const iw=(W-padL-padR)/N,px=i=>padL+(i+.5)*iw,py=p=>padT+(hi-p)/rg*pH;
+  const bw=Math.max(1.6,iw*.66);
+  x.fillStyle='#131A21';x.fillRect(0,0,W,HH);
+  const st=stepFor(rg);
+  x.font='9.5px -apple-system,sans-serif';x.textBaseline='middle';
+  for(let p=Math.ceil(lo/st)*st;p<=hi;p+=st){
+    const y=py(p);if(y<padT||y>padT+pH)continue;
+    x.strokeStyle='#1E2732';x.lineWidth=1;x.beginPath();x.moveTo(padL,y);x.lineTo(W-padR,y);x.stroke();
+    x.fillStyle='#5C6773';x.fillText(fmt(p),W-padR+5,y);
+  }
+  x.setLineDash([4,3]);x.lineWidth=1;
+  lvls.forEach(lv=>{
+    const y=py(lv);if(y<padT-1||y>padT+pH+1)return;
+    x.strokeStyle='#E5A03C';x.globalAlpha=.75;x.beginPath();x.moveTo(padL,y);x.lineTo(W-padR,y);x.stroke();x.globalAlpha=1;
+  });
+  x.setLineDash([]);
+  [[e20,'#5B8FD6'],[e50,'#8A6FD6']].forEach(([arr,col])=>{
+    x.strokeStyle=col;x.lineWidth=1.2;x.globalAlpha=.9;x.beginPath();
+    arr.forEach((val,i)=>{const yy=py(val);i?x.lineTo(px(i),yy):x.moveTo(px(i),yy);});
+    x.stroke();x.globalAlpha=1;
+  });
+  for(let i=0;i<N;i++){
+    const up=c[i]>=o[i],col=up?'#2FBE8C':'#E45A50';
+    x.strokeStyle=col;x.fillStyle=col;x.lineWidth=1;
+    x.beginPath();x.moveTo(Math.round(px(i))+.5,py(h[i]));x.lineTo(Math.round(px(i))+.5,py(l[i]));x.stroke();
+    const yt=py(Math.max(o[i],c[i])),yb2=py(Math.min(o[i],c[i]));
+    x.fillRect(px(i)-bw/2,yt,bw,Math.max(1.2,yb2-yt));
+  }
+}
+function renderBk(item,idx){
+  const nm=item.sym.replace('-USDT-SWAP','');
+  const chips=item.events.map(e=>`<span class="chip ${e.dir==='long'?'up':e.dir==='short'?'dn':'nt'}">`+
+    `${e.dir==='long'?'▲':e.dir==='short'?'▼':'•'} ${esc(e.title)}</span>`).join('');
+  return `<div class="card" data-bi="${idx}">
+    <div class="bkhead chead"><span class="sym">${nm}</span><span class="hz">${item.tf}</span><span class="bkpx">${fmt(item.price)}</span></div>
+    <div style="margin-top:8px">${chips}</div>
+    <div class="body">
+      <canvas></canvas>
+      <p class="hint">Chạm và giữ trên biểu đồ để xem giá từng nến.</p>
+      ${item.events.map(e=>`<div class="evt"><b>${esc(e.title)}</b><br>${esc(e.note)}</div>`).join('')}
+    </div></div>`;
+}
+function attachBk(box){
+  box.querySelectorAll('.card').forEach(card=>{
+    card.querySelector('.chead').onclick=()=>{
+      const open=card.classList.toggle('open');
+      if(open&&!card.dataset.drawn){
+        card.dataset.drawn='1';
+        requestAnimationFrame(()=>drawBk(card.querySelector('canvas'),storeBk[+card.dataset.bi]));
+      }
+    };
+  });
+}
+async function scanBreak(){
+  const tf=$('#bkTf').value,type=$('#bkType').value,dirF=$('#bkDir').value;
+  const btn=$('#goBk'),out=$('#outB'),st=$('#statB');
+  btn.disabled=true;out.innerHTML='';storeBk.length=0;
+  $('#progB').classList.add('on');$('#barB').style.width='0';
+  try{
+    st.textContent='Đang lấy danh sách cặp...';
+    const syms=await topSymbols(Math.max(C.topN,60));
+    const found=[];
+    for(let i=0;i<syms.length;i++){
+      st.textContent=`Đang quét ${syms[i].replace('-USDT-SWAP','')} — ${i+1}/${syms.length}`;
+      $('#barB').style.width=((i+1)/syms.length*100)+'%';
+      try{
+        const kr=await candles(syms[i],tf,220);
+        if(kr.c.length<80)continue;
+        const k=enrich(kr),n=k.c.length-1;
+        const bo=breakout(k),Rl=trendline(k,'res'),Sl=trendline(k,'sup'),pats=patternScan(k);
+        const events=[];
+        if(bo){
+          if((bo.state==='fresh'||bo.state==='running'||bo.state==='retest')&&bo.dir){
+            events.push({cat:'box',dir:bo.dir,lvl:bo.lvl,
+              title:(bo.state==='retest'?'Breakout đã retest · ':bo.state==='fresh'?'Breakout mới · ':'Breakout đang chạy · ')+(bo.dir==='long'?'Tăng':'Giảm'),
+              note:bo.note});
+          }else if(bo.state==='fakeout'){
+            events.push({cat:'box',dir:bo.fav,lvl:bo.lvl,
+              title:'Phá vỡ giả (Fakeout) · nghiêng '+(bo.fav==='long'?'Tăng':'Giảm'),note:bo.note});
+          }else if(bo.state==='inside'&&bo.squeeze){
+            events.push({cat:'box',dir:'neutral',lvl:bo.box.hi,
+              title:'Đang nén chặt, chờ bung',note:bo.note});
+          }
+        }
+        if(Rl&&Rl.broke)events.push({cat:'tl',dir:'long',lvl:Rl.now,
+          title:`Phá đường kháng cự chéo (đã chạm ${Rl.touch} lần)`,
+          note:`Giá vừa vượt lên trên đường kháng cự chéo tại ${fmt(Rl.now)} — đường này đã bị test ${Rl.touch} lần trước khi bị phá. Kháng cự cũ nếu giữ được có thể đổi vai thành hỗ trợ.`});
+        if(Sl&&Sl.broke)events.push({cat:'tl',dir:'short',lvl:Sl.now,
+          title:`Phá đường hỗ trợ chéo (đã chạm ${Sl.touch} lần)`,
+          note:`Giá vừa thủng xuống dưới đường hỗ trợ chéo tại ${fmt(Sl.now)} — đường này đã bị test ${Sl.touch} lần trước khi bị phá. Hỗ trợ cũ nếu mất có thể đổi vai thành kháng cự.`});
+        pats.forEach(p=>events.push({cat:'pat',dir:p.d,lvl:p.lvl,
+          title:p.n+(p.d==='neutral'?'':p.status==='confirmed'?' · đã xác nhận':' · đang hình thành'),note:p.t}));
+        let use=events;
+        if(type!=='all')use=use.filter(e=>e.cat===type);
+        if(dirF!=='both')use=use.filter(e=>e.dir===dirF);
+        if(!use.length)continue;
+        found.push({sym:syms[i],price:k.c[n],tf,k,events:use});
+      }catch(e){}
+    }
+    $('#progB').classList.remove('on');
+    if(!found.length){
+      st.textContent='';
+      out.innerHTML=`<div class="empty"><div class="lg">Không tìm thấy tín hiệu nào</div>Thử đổi khung thời gian, loại tín hiệu, hoặc mở lại "Cả hai chiều".</div>`;
+    }else{
+      found.sort((a,b)=>b.events.length-a.events.length);
+      st.textContent=`Tìm thấy ${found.length} cặp có tín hiệu trong ${syms.length} cặp quét`;
+      found.forEach(f=>storeBk.push(f));
+      out.innerHTML=found.map((f,i)=>renderBk(f,i)).join('');
+      attachBk(out);
+    }
+  }catch(e){
+    $('#progB').classList.remove('on');st.textContent='';
+    out.innerHTML=`<div class="err">Không lấy được dữ liệu từ OKX: ${esc(e.message)}<br><br>Nếu mạng của bạn chặn OKX, thử bật VPN.</div>`;
+  }
+  btn.disabled=false;
+}
+$('#goBk').onclick=scanBreak;
+
 document.querySelectorAll('nav button').forEach(b=>{
   b.onclick=()=>{
     document.querySelectorAll('nav button').forEach(x=>x.setAttribute('aria-selected',x===b));
-    ['scan','one','chat','cfg'].forEach(id=>$('#'+id).hidden=(id!==b.dataset.t));
+    ['scan','one','brk','chat','cfg'].forEach(id=>$('#'+id).hidden=(id!==b.dataset.t));
   };
 });
 initChat();
