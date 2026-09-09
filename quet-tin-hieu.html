@@ -143,6 +143,14 @@ li.w{color:#E8C9A4}
       </select>
       <button class="act" id="go">Quét</button>
     </div>
+    <div class="row">
+      <select id="scope">
+        <option value="top" selected>Top thanh khoản (theo cài đặt)</option>
+        <option value="liquid">Mọi cặp trên 5 triệu USD/24h</option>
+        <option value="all">Toàn bộ cặp USDT-SWAP</option>
+      </select>
+      <button class="ghost" id="stop" hidden>Dừng</button>
+    </div>
     <div id="prog"><div id="bar"></div></div>
     <div id="stat"></div>
     <div id="out"></div>
@@ -223,21 +231,142 @@ const HZ={
   SWING:{label:'Trung hạn',entry:'4H',confirm:'12H',trend:'1Dutc',hold:'vài ngày đến 2-3 tuần',slm:1.5},
   POSITION:{label:'Dài hạn',entry:'1Dutc',confirm:'3Dutc',trend:'1Wutc',hold:'vài tuần đến vài tháng',slm:2.0}
 };
-const WMAX={htf:16,str:14,mom:9,vol:15,pat:11,brk:11,der:12,liq:12};
-const WCOL={htf:'#5B8FD6',str:'#7C6BC7',mom:'#4FA8A0',vol:'#E5A03C',pat:'#C77BA8',brk:'#D9744F',der:'#8A9BA8',liq:'#4F9E6A'};
-const WNAME={htf:'Khung lớn',str:'Cấu trúc',mom:'Động lượng',vol:'Khối lượng',pat:'Mô hình nến',brk:'Phá vỡ',der:'Phái sinh',liq:'Thanh khoản'};
+const WMAX={htf:15,str:12,mom:8,vol:12,pat:10,brk:10,trap:12,der:11,liq:10};
+const WCOL={htf:'#5B8FD6',str:'#7C6BC7',mom:'#4FA8A0',vol:'#E5A03C',pat:'#C77BA8',brk:'#D9744F',trap:'#D4576B',der:'#8A9BA8',liq:'#4F9E6A'};
+const WNAME={htf:'Khung lớn',str:'Cấu trúc',mom:'Động lượng',vol:'Khối lượng',pat:'Mô hình nến',brk:'Phá vỡ',trap:'Bẫy giá',der:'Phái sinh',liq:'Thanh khoản'};
 
 const $=s=>document.querySelector(s);
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-let lastCall=0;
+/* ============================================================ BỘ QUÉT TOÀN SÀN
+   Quét hết ~250-300 cặp USDT-SWAP bằng cách gọi tuần tự sẽ mất 10-15 phút.
+   Ba thay đổi để đưa xuống dưới một phút:
+
+   1. Token bucket thay cho khoảng nghỉ cố định 110ms. OKX cho khoảng 40 request
+      mỗi 2 giây trên một IP với các endpoint dữ liệu thị trường; ta chạy ở 14/giây
+      để còn biên an toàn, nhưng cho phép nhiều request chạy song song.
+   2. Chạy song song nhiều luồng thay vì xếp hàng một.
+   3. Quét hai vòng. Vòng một chỉ tải nến khung vào lệnh (1 request/cặp) và chấm
+      bằng các khối tính được tại chỗ. Chỉ những cặp sống sót mới được tải thêm
+      khung lớn, khung xác nhận, funding và sổ lệnh ở vòng hai. Phần lớn cặp bị
+      loại ngay sau request đầu tiên. */
+
+const RL={cap:14,tok:14,rate:14/1000,last:Date.now()};
+async function rlTake(){
+  for(;;){
+    const now=Date.now();
+    RL.tok=Math.min(RL.cap,RL.tok+(now-RL.last)*RL.rate);
+    RL.last=now;
+    if(RL.tok>=1){RL.tok-=1;return;}
+    await sleep(Math.max(8,Math.ceil((1-RL.tok)/RL.rate)));
+  }
+}
+
 async function api(path,params={}){
-  const w=Math.max(0,lastCall+110-Date.now()); if(w)await sleep(w); lastCall=Date.now();
   const q=new URLSearchParams(params).toString();
-  const r=await fetch(`${API}${path}${q?'?'+q:''}`);
-  if(!r.ok)throw new Error('HTTP '+r.status);
-  const j=await r.json();
-  if(j.code!=='0')throw new Error(j.msg||'Lỗi OKX');
-  return j.data||[];
+  const url=`${API}${path}${q?'?'+q:''}`;
+  let lastErr=null;
+  for(let attempt=0;attempt<3;attempt++){
+    await rlTake();
+    try{
+      const r=await fetch(url);
+      if(r.status===429||r.status===503){
+        RL.tok=0;await sleep(500*(attempt+1));lastErr=new Error('HTTP '+r.status);continue;
+      }
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      const j=await r.json();
+      if(j.code!=='0')throw new Error(j.msg||'Lỗi OKX');
+      return j.data||[];
+    }catch(e){
+      lastErr=e;
+      if(attempt<2)await sleep(220*(attempt+1));
+    }
+  }
+  throw lastErr||new Error('Không gọi được API');
+}
+
+/* Bộ nhớ đệm nến. Vòng hai cần lại đúng khung vào lệnh mà vòng một đã tải —
+   không cache thì mỗi cặp sống sót tốn thêm một request thừa. */
+const KC=new Map();
+async function candles(sym,bar,limit=300){
+  const key=sym+'|'+bar+'|'+limit,now=Date.now(),hit=KC.get(key);
+  if(hit&&now-hit.t<75000)return hit.d;
+  const d=await api('/api/v5/market/candles',{instId:sym,bar,limit:String(limit)});
+  const rows=d.filter(r=>r[8]==='1').reverse();
+  if(!rows.length)throw new Error('Không có dữ liệu nến');
+  const res={t:rows.map(r=>+r[0]),o:rows.map(r=>+r[1]),h:rows.map(r=>+r[2]),
+    l:rows.map(r=>+r[3]),c:rows.map(r=>+r[4]),v:rows.map(r=>+r[5])};
+  if(KC.size>700)KC.clear();
+  KC.set(key,{t:now,d:res});
+  return res;
+}
+
+/* Chạy song song có giới hạn, có thể dừng giữa chừng */
+async function pool(items,worker,width,onDone,ctl){
+  const out=[];let i=0,done=0;
+  const run=async()=>{
+    for(;;){
+      if(ctl&&ctl.stop)return;
+      const idx=i++;
+      if(idx>=items.length)return;
+      try{const r=await worker(items[idx],idx);if(r)out.push(r);}catch(e){}
+      done++;if(onDone)onDone(done,items.length);
+    }
+  };
+  await Promise.all(Array.from({length:Math.min(width,items.length||1)},run));
+  return out;
+}
+
+/* Danh sách cặp. Trả về cả khối lượng để còn cảnh báo thanh khoản mỏng trên thẻ. */
+async function listSymbols(scope){
+  const t=await api('/api/v5/market/tickers',{instType:'SWAP'});
+  const arr=t.filter(x=>x.instId.endsWith('-USDT-SWAP'))
+    .map(x=>({id:x.instId,vol:(+x.volCcy24h||0)*(+x.last||0)}))
+    .sort((a,b)=>b.vol-a.vol);
+  if(scope==='all')return arr;
+  if(scope==='liquid')return arr.filter(x=>x.vol>5e6);
+  return arr.filter(x=>x.vol>3e7).slice(0,C.topN);
+}
+
+/* VÒNG MỘT — chỉ dùng dữ liệu tính được từ một khung nến duy nhất.
+   Không gọi funding, không gọi sổ lệnh, không tải khung lớn. */
+async function prescreen(sym,hzKey){
+  const H=HZ[hzKey];
+  const kr=await candles(sym,H.entry);
+  if(kr.c.length<210)return null;
+  const k=enrich(kr);
+  const n=k.c.length-1,price=k.c[n],a=k.atr[n];
+  const atrPct=a/price*100;
+  if(atrPct<.3||atrPct>12)return null;
+  const rg=regime(k),lv=keyLevels(k),bo=breakout(k),cp=chartPattern(k);
+  const tp=traps(k,lv,bo);
+  let best=-99,bestDir=null;
+  for(const dir of ['long','short']){
+    const[ss]=scoreStr(k,dir,rg,lv);
+    const[sm]=scoreMom(k,dir,rg);
+    const[sv]=scoreVol(k,dir);
+    const[sp]=ratePatterns(k,dir,rg,lv);
+    const[sb]=scoreBrk(k,dir,bo,cp);
+    const[st]=scoreTrap(k,dir,tp,rg);
+    const g=chaseGuard(k,dir);
+    const loc=ss+sm+sv+sp+sb+st-g.pen;
+    if(loc>best){best=loc;bestDir=dir;}
+  }
+  return{sym,pre:best,dir:bestDir,trapCount:tp.length};
+}
+
+/* Tương quan với BTC trên khung vào lệnh. Sáu tín hiệu Long tương quan 0.85 với
+   nhau không phải sáu lệnh phân tán — đó là một lệnh với sáu lần rủi ro. */
+function corrWithBtc(k,btc){
+  const n=Math.min(k.c.length,btc.c.length,120);
+  if(n<40)return null;
+  const r=arr=>{const s=arr.slice(-n),o=[];for(let i=1;i<s.length;i++)o.push(Math.log(s[i]/s[i-1]));return o;};
+  const x=r(k.c),y=r(btc.c),m=Math.min(x.length,y.length);
+  if(m<30)return null;
+  const mx=x.reduce((p,q)=>p+q,0)/m,my=y.reduce((p,q)=>p+q,0)/m;
+  let sxy=0,sxx=0,syy=0;
+  for(let i=0;i<m;i++){const dx=x[i]-mx,dy=y[i]-my;sxy+=dx*dy;sxx+=dx*dx;syy+=dy*dy;}
+  const d=Math.sqrt(sxx*syy);
+  return d?sxy/d:null;
 }
 function fmt(p){
   if(p>=1000)return p.toLocaleString('en-US',{maximumFractionDigits:1});
@@ -622,7 +751,7 @@ function scoreBrk(k,dir,bo,cp){
     else if(cp.d==='neutral')R.push(`Mô hình ${cp.n}: ${cp.t}.`);
     else{s-=2;R.push(`⚠ Mô hình ${cp.n} nghiêng về hướng ngược lại: ${cp.t}.`);}
   }
-  return[Math.max(0,Math.min(s*0.92,11)),R];
+  return[Math.max(0,Math.min(s*0.84,10)),R];
 }
 
 function keyLevels(k,lb=140,tol=.7){
@@ -805,7 +934,11 @@ function patterns(k){
       P.push({n:'Falling Three Methods',d:'short',s:3,ty:'cont',
         t:'một nến giảm lớn, ba phiên hồi nhỏ nằm gọn bên trong, rồi lại một nến giảm thủng đáy — nhịp nghỉ giữa xu hướng giảm'});
   }
-  return P;
+  /* Thư viện mở rộng: đảo chiều hiếm, tiếp diễn, cạn kiệt */
+  try{patternsExt(k).forEach(p=>P.push(p));}catch(e){}
+  const seen=new Map();
+  P.forEach(p=>{const c=seen.get(p.n);if(!c||p.s>c.s)seen.set(p.n,p);});
+  return[...seen.values()];
 }
 
 /* Bối cảnh quyết định giá trị của mô hình.
@@ -853,7 +986,496 @@ function ratePatterns(k,dir,rg,lv){
   if(op.length&&op[0].eff>1.4){sc-=Math.min(5,op[0].eff*1.6);
     R.push(`⚠ Cùng lúc xuất hiện ${op[0].n} ngược hướng — ${op[0].t}.`);}
   if(!out.length)R.push('Nến gần nhất không tạo thành mô hình đặc trưng nào.');
-  return[Math.max(0,Math.min(sc*0.92,11)),R,out];
+  return[Math.max(0,Math.min(sc*0.84,10)),R,out];
+}
+
+/* ============================================================ BẪY GIÁ (TRAPS)
+   Bẫy giá không phải là hình dạng nến. Nó là tình huống một nhóm người vừa vào
+   lệnh sai và bị kẹt. Lệnh cắt lỗ bắt buộc của họ chính là nhiên liệu đẩy giá
+   theo hướng ngược lại. Đây là lý do nhóm tín hiệu này đáng tin hơn hình nến:
+   nó mô tả VỊ THẾ của người khác, không chỉ mô tả hình dáng của giá.
+
+   Mỗi bẫy trả về: n (tên), d (hướng hưởng lợi), s (sức mạnh 1-3), t (giải thích),
+   lvl (mức giá bị quét), bar (chỉ số nến xảy ra). */
+
+function _uw(k,i){return k.h[i]-Math.max(k.o[i],k.c[i]);}
+function _dw(k,i){return Math.min(k.o[i],k.c[i])-k.l[i];}
+function _rg(k,i){return (k.h[i]-k.l[i])||1e-9;}
+
+/* Đỉnh/đáy bằng nhau — nơi tập trung lệnh dừng lỗ dày nhất trên thị trường.
+   Hai đỉnh ngang nhau là lời mời công khai: "stop của mọi người nằm ngay trên đây". */
+function equalLevels(k,side,tolAtr){
+  const sw=swings(k,2,2),a=k.atr[k.c.length-1]||1e-9,out=[];
+  const idx=(side==='hi'?sw.hi:sw.lo).slice(-8);
+  const val=i=>side==='hi'?k.h[i]:k.l[i];
+  for(let x=0;x<idx.length-1;x++){
+    for(let y=x+1;y<idx.length;y++){
+      if(idx[y]-idx[x]<4)continue;
+      if(Math.abs(val(idx[x])-val(idx[y]))<=a*tolAtr)
+        out.push({lvl:(val(idx[x])+val(idx[y]))/2,i1:idx[x],i2:idx[y],side});
+    }
+  }
+  return out;
+}
+
+function traps(k,lv,bo){
+  const n=k.c.length-1,a=k.atr[n]||1e-9,out=[];
+  const sw=swings(k,2,2);
+  const P=o=>{if(o)out.push(o);};
+
+  /* ---------- 1. SFP — Swing Failure Pattern ----------
+     Giá xuyên qua một đỉnh/đáy dao động cũ trong phiên rồi đóng cửa quay lại.
+     Khác với "quét thanh khoản chung": nó neo vào một mức mà ai cũng nhìn thấy. */
+  for(const i of sw.hi.slice(-6)){
+    if(n-i<3||n-i>70)continue;
+    const lvl=k.h[i];
+    for(let j=Math.max(i+3,n-2);j<=n;j++){
+      if(k.h[j]>lvl&&k.c[j]<lvl&&_uw(k,j)/_rg(k,j)>.28){
+        P({n:'SFP đỉnh (quét đỉnh thất bại)',d:'short',s:3,ty:'trap',lvl,bar:j,
+          t:`Giá xuyên lên trên đỉnh dao động ${fmt(lvl)} (cách đây ${n-i} phiên) rồi đóng cửa quay lại dưới mức đó. Ai mua đuổi theo cú phá đỉnh đều đang lỗ, và lệnh dừng lỗ phía trên đỉnh đã bị dọn sạch. Không còn thanh khoản để hút giá lên nữa.`});
+        break;
+      }
+    }
+  }
+  for(const i of sw.lo.slice(-6)){
+    if(n-i<3||n-i>70)continue;
+    const lvl=k.l[i];
+    for(let j=Math.max(i+3,n-2);j<=n;j++){
+      if(k.l[j]<lvl&&k.c[j]>lvl&&_dw(k,j)/_rg(k,j)>.28){
+        P({n:'SFP đáy (quét đáy thất bại)',d:'long',s:3,ty:'trap',lvl,bar:j,
+          t:`Giá xuyên xuống dưới đáy dao động ${fmt(lvl)} (cách đây ${n-i} phiên) rồi đóng cửa quay lại trên mức đó. Ai bán đuổi theo cú thủng đáy đều đang lỗ, và lệnh dừng lỗ phía dưới đáy đã bị dọn sạch.`});
+        break;
+      }
+    }
+  }
+
+  /* ---------- 2. Quét đỉnh/đáy bằng nhau (EQH / EQL) ----------
+     Bể thanh khoản đậm đặc nhất. Hai đỉnh ngang nhau bị lấy bằng râu = bẫy. */
+  for(const e of equalLevels(k,'hi',.35)){
+    if(n-e.i2>40)continue;
+    for(let j=Math.max(e.i2+2,n-3);j<=n;j++){
+      if(k.h[j]>e.lvl+a*.05&&k.c[j]<e.lvl&&_uw(k,j)/_rg(k,j)>.25){
+        P({n:'Quét đỉnh đôi bằng nhau (EQH)',d:'short',s:3,ty:'trap',lvl:e.lvl,bar:j,
+          t:`Hai đỉnh gần bằng nhau tại ${fmt(e.lvl)} vừa bị một cây râu lấy mất rồi giá đóng cửa xuống lại. Đỉnh ngang nhau là nơi lệnh dừng lỗ dồn dày nhất — cú quét này gần như chắc chắn là có chủ đích, không phải ngẫu nhiên.`});
+        break;
+      }
+    }
+  }
+  for(const e of equalLevels(k,'lo',.35)){
+    if(n-e.i2>40)continue;
+    for(let j=Math.max(e.i2+2,n-3);j<=n;j++){
+      if(k.l[j]<e.lvl-a*.05&&k.c[j]>e.lvl&&_dw(k,j)/_rg(k,j)>.25){
+        P({n:'Quét đáy đôi bằng nhau (EQL)',d:'long',s:3,ty:'trap',lvl:e.lvl,bar:j,
+          t:`Hai đáy gần bằng nhau tại ${fmt(e.lvl)} vừa bị một cây râu lấy mất rồi giá đóng cửa lên lại. Đáy ngang nhau là bể thanh khoản dày nhất — cú quét này có chủ đích.`});
+        break;
+      }
+    }
+  }
+
+  /* ---------- 3. Turtle Soup — phá đỉnh/đáy 20 phiên rồi thất bại trong 3 nến ----------
+     Nguyên bản của Linda Raschke. Người đánh breakout theo sách vở vừa vào lệnh
+     và sắp phải thoát ra bằng mọi giá. */
+  {
+    const lb=20;
+    for(let j=n-3;j<=n;j++){
+      if(j<lb+2)continue;
+      const ph=Math.max(...k.h.slice(j-lb,j)),pl=Math.min(...k.l.slice(j-lb,j));
+      if(k.c[j]>ph&&k.c[n]<ph&&n>j){
+        P({n:'Turtle Soup đỉnh',d:'short',s:3,ty:'trap',lvl:ph,bar:j,
+          t:`Giá đã ĐÓNG CỬA vượt đỉnh ${lb} phiên tại ${fmt(ph)} cách đây ${n-j} nến, rồi lại rơi ngược xuống dưới mức đó. Đóng cửa ra ngoài rồi quay vào nặng hơn nhiều so với chỉ xuyên bằng râu: những người đánh breakout đã vào lệnh thật, và họ đang kẹt thật.`});
+        break;
+      }
+      if(k.c[j]<pl&&k.c[n]>pl&&n>j){
+        P({n:'Turtle Soup đáy',d:'long',s:3,ty:'trap',lvl:pl,bar:j,
+          t:`Giá đã ĐÓNG CỬA thủng đáy ${lb} phiên tại ${fmt(pl)} cách đây ${n-j} nến, rồi lại bật ngược lên trên mức đó. Phe bán khống theo cú thủng đang kẹt và buộc phải mua lại để thoát.`});
+        break;
+      }
+    }
+  }
+
+  /* ---------- 4. Spring / Upthrust (Wyckoff) ----------
+     Neo vào biên của một vùng tích lũy đã hình thành rõ, khác với quét ngẫu nhiên. */
+  {
+    const B=findBox(k);
+    if(B&&B.bars>=10){
+      for(let j=Math.max(B.end,n-4);j<=n;j++){
+        if(k.l[j]<B.lo-a*.1&&k.c[j]>B.lo&&k.c[j]<B.hi){
+          P({n:'Spring (Wyckoff)',d:'long',s:3,ty:'trap',lvl:B.lo,bar:j,
+            t:`Sau ${B.bars} phiên tích lũy trong vùng ${fmt(B.lo)}–${fmt(B.hi)}, giá thò xuống dưới đáy vùng rồi lập tức bị kéo về bên trong. Đây là cú kiểm tra cuối cùng của bên mua: dọn nốt lệnh bán còn sót lại trước khi đánh lên. Cắt lỗ đặt dưới đáy cây spring, không phải dưới đáy hộp.`});
+          break;
+        }
+        if(k.h[j]>B.hi+a*.1&&k.c[j]<B.hi&&k.c[j]>B.lo){
+          P({n:'Upthrust (Wyckoff)',d:'short',s:3,ty:'trap',lvl:B.hi,bar:j,
+            t:`Sau ${B.bars} phiên tích lũy trong vùng ${fmt(B.lo)}–${fmt(B.hi)}, giá thò lên trên đỉnh vùng rồi bị ép về bên trong. Bên bán vừa dùng cú phá giả để bán hàng cho những người mua đuổi. Cắt lỗ đặt trên đỉnh cây upthrust.`});
+          break;
+        }
+      }
+    }
+  }
+
+  /* ---------- 5. Hikkake — bẫy nến trong (inside bar) ----------
+     Nến trong là setup breakout được dạy nhiều nhất. Chính vì thế nó là chỗ
+     dễ đặt bẫy nhất: phá một đầu để gom lệnh, rồi đi ngược lại. */
+  for(let m=n-5;m<=n-2;m++){
+    if(m<1)continue;
+    const inside=k.h[m]<=k.h[m-1]&&k.l[m]>=k.l[m-1];
+    if(!inside)continue;
+    for(let b=m+1;b<=Math.min(n,m+3);b++){
+      if(k.h[b]>k.h[m]){
+        for(let r=b+1;r<=Math.min(n,b+3);r++){
+          if(k.c[r]<k.l[m]){
+            P({n:'Hikkake giảm (bẫy nến trong)',d:'short',s:2,ty:'trap',lvl:k.h[m],bar:r,
+              t:`Một nến trong hình thành, giá phá lên trên nó tại ${fmt(k.h[m])} khiến người đánh breakout vào Long, rồi quay đầu thủng luôn đáy nến trong ${fmt(k.l[m])}. Cú phá lên chỉ để gom lệnh mua trước khi đi xuống.`});
+            break;
+          }
+        }
+      }
+      if(k.l[b]<k.l[m]){
+        for(let r=b+1;r<=Math.min(n,b+3);r++){
+          if(k.c[r]>k.h[m]){
+            P({n:'Hikkake tăng (bẫy nến trong)',d:'long',s:2,ty:'trap',lvl:k.l[m],bar:r,
+              t:`Một nến trong hình thành, giá thủng xuống dưới nó tại ${fmt(k.l[m])} khiến người đánh breakout vào Short, rồi quay đầu vượt luôn đỉnh nến trong ${fmt(k.h[m])}. Cú thủng chỉ để gom lệnh bán.`});
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  /* ---------- 6. Fakey — phá giả nến mẹ rồi đóng cửa quay vào ----------
+     Cùng ý tưởng Hikkake nhưng gói gọn trong một cây nến. */
+  {
+    const j=n,m=n-1;
+    if(m>=1){
+      const inside=k.h[m]<=k.h[m-1]&&k.l[m]>=k.l[m-1];
+      if(inside){
+        if(k.h[j]>k.h[m-1]&&k.c[j]<k.h[m-1]&&_uw(k,j)/_rg(k,j)>.35)
+          P({n:'Fakey giảm',d:'short',s:2,ty:'trap',lvl:k.h[m-1],bar:j,
+            t:`Giá phá lên trên nến mẹ tại ${fmt(k.h[m-1])} ngay trong phiên rồi đóng cửa quay lại bên trong, để lại râu trên dài. Cú phá không được ai bảo vệ.`});
+        if(k.l[j]<k.l[m-1]&&k.c[j]>k.l[m-1]&&_dw(k,j)/_rg(k,j)>.35)
+          P({n:'Fakey tăng',d:'long',s:2,ty:'trap',lvl:k.l[m-1],bar:j,
+            t:`Giá thủng xuống dưới nến mẹ tại ${fmt(k.l[m-1])} ngay trong phiên rồi đóng cửa quay lại bên trong, để lại râu dưới dài.`});
+      }
+    }
+  }
+
+  /* ---------- 7. Bẫy khối lượng — phá vỡ mà không ai tham gia ----------
+     Một cú phá vỡ thật cần người mua thật. Phá vỡ trên khối lượng dưới trung bình
+     nghĩa là không có lực đằng sau, chỉ là giá trôi qua mức. */
+  if(bo&&(bo.state==='fresh'||bo.state==='running')&&bo.vol!=null&&bo.vol<.9){
+    P({n:'Bẫy khối lượng (phá vỡ rỗng)',d:bo.dir==='long'?'short':'long',s:2,ty:'trap',lvl:bo.lvl,bar:n,
+      t:`Cú phá ${bo.dir==='long'?'lên':'xuống'} qua ${fmt(bo.lvl)} diễn ra với khối lượng chỉ ${bo.vol.toFixed(1)} lần trung bình — dưới cả mức nền. Phá vỡ không có người tham gia thường bị trả về trong vài phiên. Đây là dấu hiệu bẫy, không phải khởi đầu xu hướng.`});
+  }
+
+  /* ---------- 8. Nến kiệt sức có khối lượng đỉnh điểm ----------
+     Khối lượng lớn nhất trong 30 phiên, biên độ lớn, nhưng đóng cửa ở nửa ngược lại
+     và đang ở cực trị. Đây là lúc dòng tiền lớn giao hàng cho người vào sau. */
+  {
+    const win=k.vr.slice(Math.max(0,n-29),n+1);
+    const isMaxVol=k.vr[n]>=Math.max(...win)-1e-9&&k.vr[n]>=2.2;
+    const rgBig=_rg(k,n)>a*1.6;
+    if(isMaxVol&&rgBig){
+      const at20h=k.h[n]>=Math.max(...k.h.slice(Math.max(0,n-19),n+1))-1e-9;
+      const at20l=k.l[n]<=Math.min(...k.l.slice(Math.max(0,n-19),n+1))+1e-9;
+      const closeLow=(k.c[n]-k.l[n])/_rg(k,n)<.4;
+      const closeHigh=(k.h[n]-k.c[n])/_rg(k,n)<.4;
+      if(at20h&&closeLow)P({n:'Nến kiệt sức đỉnh (climax)',d:'short',s:3,ty:'trap',lvl:k.h[n],bar:n,
+        t:`Khối lượng cao nhất 30 phiên (${k.vr[n].toFixed(1)}× trung bình) với biên độ rộng, giá chạm đỉnh 20 phiên nhưng đóng cửa ở nửa dưới cây nến. Khối lượng lớn mà giá không giữ được nghĩa là có người bán ra đúng lượng người mua vào — và bên bán là bên có hàng.`});
+      if(at20l&&closeHigh)P({n:'Nến kiệt sức đáy (climax)',d:'long',s:3,ty:'trap',lvl:k.l[n],bar:n,
+        t:`Khối lượng cao nhất 30 phiên (${k.vr[n].toFixed(1)}× trung bình) với biên độ rộng, giá chạm đáy 20 phiên nhưng đóng cửa ở nửa trên cây nến. Bán tháo bị hấp thụ hết — đây thường là phiên đầu hàng cuối cùng.`});
+    }
+  }
+
+  /* ---------- 9. Quét hai đầu — thanh khoản bị lấy cả hai phía ----------
+     Trong 3 nến vừa qua giá vừa lấy đỉnh cũ vừa lấy đáy cũ rồi đóng ở giữa.
+     Đây là thị trường đang dọn sạch cả hai phe trước khi chọn hướng thật. */
+  {
+    const lb=15,s0=n-3;
+    if(s0>lb){
+      const ph=Math.max(...k.h.slice(s0-lb,s0)),pl=Math.min(...k.l.slice(s0-lb,s0));
+      const tookHi=Math.max(...k.h.slice(s0,n+1))>ph;
+      const tookLo=Math.min(...k.l.slice(s0,n+1))<pl;
+      if(tookHi&&tookLo){
+        const c=k.c[n],mid=(ph+pl)/2;
+        P({n:'Quét thanh khoản hai đầu',d:c>mid?'long':'short',s:1,ty:'trap',lvl:c>mid?pl:ph,bar:n,
+          t:`Trong 4 phiên gần nhất giá đã lấy cả đỉnh ${fmt(ph)} lẫn đáy ${fmt(pl)} của vùng trước đó rồi đóng cửa ở ${c>mid?'nửa trên':'nửa dưới'}. Cả hai phe đều vừa bị quét stop. Đây là vùng cực kỳ dễ bị lừa — nếu vào thì để khối lượng nhỏ và chờ nến xác nhận thêm.`});
+      }
+    }
+  }
+
+  /* ---------- 10. Phá đường xu hướng thất bại ----------
+     Phá trendline là tín hiệu được theo dõi nhiều, nên cũng bị lợi dụng nhiều. */
+  {
+    const R=trendline(k,'res'),S=trendline(k,'sup');
+    if(R&&!R.broke)for(let j=n-3;j<n;j++){
+      const at=R.now-R.slope*(n-j);
+      if(k.c[j]>at+a*.15){
+        P({n:'Phá kháng cự chéo thất bại',d:'short',s:2,ty:'trap',lvl:R.now,bar:j,
+          t:`Giá đã đóng cửa vượt lên trên đường kháng cự chéo (đã chạm ${R.touch} lần) cách đây ${n-j} phiên rồi lại rơi xuống dưới nó. Cú phá bị khước từ.`});
+        break;
+      }
+    }
+    if(S&&!S.broke)for(let j=n-3;j<n;j++){
+      const at=S.now-S.slope*(n-j);
+      if(k.c[j]<at-a*.15){
+        P({n:'Phá hỗ trợ chéo thất bại',d:'long',s:2,ty:'trap',lvl:S.now,bar:j,
+          t:`Giá đã đóng cửa thủng xuống dưới đường hỗ trợ chéo (đã chạm ${S.touch} lần) cách đây ${n-j} phiên rồi lại bật lên trên nó. Cú thủng bị khước từ.`});
+        break;
+      }
+    }
+  }
+
+  /* ---------- 11. Bẫy tại mức quan trọng — phá mức đã giữ nhiều lần rồi quay đầu ----------
+     Mức càng được chạm nhiều, càng nhiều người đặt lệnh quanh nó, bẫy càng đắt giá. */
+  if(lv&&lv.length){
+    for(const L of lv.filter(x=>x.n>=3&&x.dist<6).slice(0,6)){
+      for(let j=n-3;j<=n;j++){
+        const brokeUp=k.h[j]>L.lvl+a*.1&&k.c[n]<L.lvl-a*.05;
+        const brokeDn=k.l[j]<L.lvl-a*.1&&k.c[n]>L.lvl+a*.05;
+        if(brokeUp&&j<n){
+          P({n:'Bẫy tại mức quan trọng (trên)',d:'short',s:2,ty:'trap',lvl:L.lvl,bar:j,
+            t:`Mức ${fmt(L.lvl)} đã được chạm ${L.n} lần trong quá khứ. Giá vừa vượt qua nó rồi rơi ngược lại. Mức càng nhiều người theo dõi thì càng nhiều lệnh bị kẹt khi nó bị phá hỏng.`});
+          break;
+        }
+        if(brokeDn&&j<n){
+          P({n:'Bẫy tại mức quan trọng (dưới)',d:'long',s:2,ty:'trap',lvl:L.lvl,bar:j,
+            t:`Mức ${fmt(L.lvl)} đã được chạm ${L.n} lần trong quá khứ. Giá vừa thủng qua nó rồi bật ngược lại.`});
+          break;
+        }
+      }
+    }
+  }
+
+  /* Gộp trùng theo tên, giữ bản mạnh nhất, ưu tiên bẫy xảy ra gần hiện tại */
+  const seen=new Map();
+  out.forEach(o=>{
+    const cur=seen.get(o.n);
+    if(!cur||o.bar>cur.bar)seen.set(o.n,o);
+  });
+  return [...seen.values()]
+    .map(o=>({...o,fresh:n-o.bar}))
+    .sort((x,y)=>(y.s-x.s)||(x.fresh-y.fresh));
+}
+
+/* Chấm điểm khối bẫy giá. Bẫy càng mới càng có giá trị — một cú quét stop từ
+   15 phiên trước đã được thị trường tiêu hoá xong rồi. */
+function scoreTrap(k,dir,tp,rg){
+  let s=0;const R=[];
+  if(!tp.length){R.push('Không phát hiện bẫy giá nào trong vùng gần đây.');return[0,R];}
+  const al=tp.filter(p=>p.d===dir),op=tp.filter(p=>p.d!==dir);
+  const decay=f=>f<=1?1:f<=3?.8:f<=6?.55:f<=10?.3:.12;
+  if(al.length){
+    const t=al[0];
+    s+=t.s*3.2*decay(t.fresh);
+    R.push(`◆ ${t.n}: ${t.t}`);
+    if(al[1]){s+=Math.min(3,al[1].s*1.1*decay(al[1].fresh));R.push(`Kèm theo ${al[1].n}: ${al[1].t}`);}
+  }
+  if(op.length){
+    const t=op[0];
+    s-=Math.min(6,t.s*2.2*decay(t.fresh));
+    R.push(`⚠ Có bẫy giá ngược hướng vào lệnh — ${t.n}: ${t.t}`);
+  }
+  /* Bẫy có giá trị nhất khi thị trường đi ngang hoặc đang chuyển pha.
+     Giữa một xu hướng mạnh, cái trông như bẫy thường chỉ là nhịp chỉnh bình thường. */
+  if(rg&&rg.t==='trend'&&al.length&&al[0].d!==(k.ema50[k.c.length-1]>k.ema200[k.c.length-1]?'long':'short')){
+    s*=.75;R.push('Bẫy này ngược với xu hướng chính của khung vào lệnh nên bị chiết khấu.');
+  }
+  return[Math.max(0,Math.min(s,12)),R];
+}
+
+/* ============================================================ THƯ VIỆN NẾN MỞ RỘNG
+   Bổ sung các mô hình đảo chiều và tiếp diễn cổ điển chưa có trong patterns().
+   Ghi chú quan trọng về crypto: thị trường chạy 24/7 nên gần như KHÔNG có khoảng
+   trống giá (gap). Các mô hình bắt buộc phải có gap — Abandoned Baby, Tasuki Gap,
+   Separating Lines, Island Reversal, Two Crows nguyên bản — sẽ hiếm khi kích hoạt
+   trên BTC/ETH. Chúng chỉ nổ trên các cặp thanh khoản mỏng, mà đó đúng là chỗ tín
+   hiệu kém tin cậy nhất. Ở đây các mô hình đó được nới điều kiện "gap" thành
+   "mở cửa vượt hẳn qua thân nến trước", nên chúng vẫn chạy được nhưng bị hạ sức mạnh. */
+
+function patternsExt(k){
+  const n=k.c.length-1,P=[];
+  if(n<7)return P;
+  const G=i=>cndl(k,n-i);
+  const x=G(0),b=G(1),a=G(2),z=G(3),w=G(4),v5=G(5);
+  const atrv=k.atr[n]||1e-9;
+  const big=o=>o.b>atrv*.6, small=o=>o.b<atrv*.32;
+  const T=trendCtx(k,n);
+  const tol=atrv*.1;
+  const add=(nm,d,s,ty,t)=>P.push({n:nm,d,s,ty,t});
+
+  /* ---------- ĐẢO CHIỀU 2 NẾN ---------- */
+
+  /* Matching High — cặp đôi của Matching Low đã có sẵn */
+  if(b.bull&&x.bull&&Math.abs(b.c-x.c)<=Math.max(b.rg,x.rg)*.08&&T.d==='up')
+    add('Matching High','short',2,'rev',
+      'hai phiên tăng liên tiếp đóng cửa đúng cùng một giá — có lệnh bán lớn nằm chờ chặn ngay tại mức đó, hai lần đều không qua nổi');
+
+  /* Homing Pigeon — harami tăng nhưng cả hai nến đều giảm, tín hiệu mềm hơn */
+  if(T.d==='down'&&b.bear&&big(b)&&x.bear&&x.h<=b.h&&x.l>=b.l&&x.b<b.b*.5)
+    add('Homing Pigeon','long',2,'rev',
+      'sau một nến giảm lớn là một nến giảm nhỏ nằm gọn bên trong — vẫn là phe bán nhưng họ đã hết sức, biên độ co lại chỉ còn một nửa');
+
+  /* Descending Hawk — bản đối xứng ở đỉnh */
+  if(T.d==='up'&&b.bull&&big(b)&&x.bull&&x.h<=b.h&&x.l>=b.l&&x.b<b.b*.5)
+    add('Descending Hawk','short',2,'rev',
+      'sau một nến tăng lớn là một nến tăng nhỏ nằm gọn bên trong — vẫn là phe mua nhưng lực đẩy đã cạn rõ rệt');
+
+  /* Meeting Lines / Counterattack — hai nến ngược màu đóng cửa cùng mức */
+  if(T.d==='down'&&b.bear&&big(b)&&x.bull&&big(x)&&Math.abs(x.c-b.c)<=tol&&x.o<b.c)
+    add('Bullish Meeting Lines','long',2,'rev',
+      'nến tăng mở cửa thấp hơn hẳn nhưng kéo ngược lên đóng đúng bằng giá đóng phiên trước — bên mua chặn đứng đà rơi ngay tại mức đó');
+  if(T.d==='up'&&b.bull&&big(b)&&x.bear&&big(x)&&Math.abs(x.c-b.c)<=tol&&x.o>b.c)
+    add('Bearish Meeting Lines','short',2,'rev',
+      'nến giảm mở cửa cao hơn hẳn nhưng bị ép về đóng đúng bằng giá đóng phiên trước — bên bán chặn đứng đà tăng');
+
+  /* On Neck / In Neck / Thrusting — phản công yếu, thực chất là TIẾP DIỄN giảm.
+     Đây là nhóm hay bị đọc nhầm thành đảo chiều vì nhìn giống Piercing Line. */
+  if(T.d==='down'&&b.bear&&big(b)&&x.bull&&x.o<b.l){
+    if(Math.abs(x.c-b.l)<=atrv*.1)
+      add('On Neck Line','short',2,'cont',
+        'nến tăng chỉ hồi lên đúng bằng đáy nến giảm trước rồi tắt — quá yếu để gọi là phản công, phe bán vẫn kiểm soát');
+    else if(x.c>b.l&&x.c<b.mid)
+      add('Thrusting Line','short',2,'cont',
+        'nến tăng chọc vào thân nến giảm trước nhưng không tới được nửa thân — thiếu đúng một chút để thành Piercing Line, và cái thiếu đó là toàn bộ ý nghĩa');
+  }
+
+  /* ---------- ĐẢO CHIỀU 3 NẾN ---------- */
+
+  /* Three Inside Down — bản còn thiếu của bộ Three Inside */
+  if(a.bull&&big(a)&&b.bear&&b.h<=a.h&&b.l>=a.l&&b.b<a.b*.6&&x.bear&&x.c<a.o)
+    add('Three Inside Down','short',3,'rev',
+      'mô hình harami giảm được nến thứ ba xác nhận bằng cách đóng cửa xuống dưới cả thân nến tăng đầu tiên');
+
+  /* Deliberation / Stalled — ba nến tăng nhưng cây cuối hụt hơi thấy rõ */
+  if(a.bull&&b.bull&&x.bull&&a.c<b.c&&b.c<x.c&&big(a)&&big(b)&&x.b<b.b*.4)
+    add('Deliberation (Stalled Pattern)','short',2,'rev',
+      'hai nến tăng mạnh rồi nến thứ ba co lại chỉ còn một mẩu — đoàn tàu vẫn đi đúng hướng nhưng đã gần hết than, thường là phiên áp chót của nhịp tăng');
+
+  /* Two Crows — nới điều kiện gap thành "mở cửa trên giá đóng phiên trước" */
+  if(T.d==='up'&&a.bull&&big(a)&&b.bear&&b.o>a.c&&x.bear&&x.o<b.o&&x.o>b.c&&x.c<a.c&&x.c>a.o)
+    add('Two Crows','short',2,'rev',
+      'sau nến tăng mạnh, hai nến giảm liên tiếp gặm ngược vào thân nó — mỗi phiên bên bán lại lấy lại thêm một phần đất, mô hình phân phối ở đỉnh');
+
+  /* Unique Three River Bottom */
+  if(a.bear&&big(a)&&b.bear&&k.l[n-1]<k.l[n-2]&&b.dw>b.b&&b.c>a.c&&x.bull&&x.b<b.b&&x.c<b.c)
+    add('Unique Three River Bottom','long',2,'rev',
+      'nến giữa tạo đáy mới sâu hơn nhưng có râu dưới dài và đóng cửa cao hơn nến trước, rồi một nến tăng nhỏ giữ được vùng đó — đáy đang được dò và giữ chứ không rơi tự do');
+
+  /* Three Stars in the South — hiếm, đảo chiều đáy */
+  if(T.d==='down'&&a.bear&&big(a)&&a.dw>a.b*.3&&b.bear&&b.b<a.b&&k.l[n-1]>k.l[n-2]&&
+     x.bear&&x.b<b.b&&x.h<=b.h&&x.l>=b.l)
+    add('Three Stars in the South','long',3,'rev',
+      'ba nến giảm liên tiếp nhưng mỗi nến lại nhỏ hơn và đáy lại cao hơn nến trước — phe bán vẫn đang đẩy nhưng mỗi lần đẩy lại yếu hơn, mô hình cạn kiệt kinh điển');
+
+  /* Three Line Strike — về thống kê là TIẾP DIỄN chứ không phải đảo chiều */
+  if(z.bull&&a.bull&&b.bull&&z.c<a.c&&a.c<b.c&&x.bear&&x.o>b.c&&x.c<z.o)
+    add('Bullish Three Line Strike','long',2,'cont',
+      'ba nến tăng liên tiếp rồi một nến giảm nuốt trọn cả ba — trông như sụp đổ nhưng theo thống kê đây thường chỉ là cú rũ bỏ trước khi xu hướng tăng chạy tiếp');
+  if(z.bear&&a.bear&&b.bear&&z.c>a.c&&a.c>b.c&&x.bull&&x.o<b.c&&x.c>z.o)
+    add('Bearish Three Line Strike','short',2,'cont',
+      'ba nến giảm liên tiếp rồi một nến tăng nuốt trọn cả ba — trông như đảo chiều nhưng thường chỉ là cú rũ trước khi xu hướng giảm tiếp diễn');
+
+  /* ---------- ĐẢO CHIỀU 4-5 NẾN ---------- */
+
+  /* Concealing Baby Swallow — rất hiếm, đảo chiều đáy mạnh */
+  if(z.bear&&a.bear&&z.bp>80&&a.bp>80&&b.bear&&b.o<a.c&&b.uw>b.b&&x.bear&&x.h>b.h&&x.l<b.l)
+    add('Concealing Baby Swallow','long',3,'rev',
+      'bốn nến giảm nhưng cây cuối cùng mở rộng trùm hết cây trước rồi vẫn đóng thấp — bên bán đang phải dùng nỗ lực ngày càng lớn để đạt kết quả ngày càng nhỏ, mô hình cạn kiệt hiếm gặp');
+
+  /* Ladder Bottom */
+  if(w.bear&&z.bear&&a.bear&&w.c>z.c&&z.c>a.c&&b.bear&&b.uw>b.b*.5&&x.bull&&x.o>b.o)
+    add('Ladder Bottom','long',3,'rev',
+      'ba nến giảm đều đặn như bậc thang, rồi một nến giảm có râu trên (lần đầu bên mua thăm dò), rồi một nến tăng mở cửa cao hơn hẳn — chuỗi giảm bị bẻ gãy đúng theo trình tự sách vở');
+
+  /* Tower Top / Tower Bottom — nến lớn, cụm nến nhỏ, nến lớn ngược chiều */
+  if(w.bear&&big(w)&&[z,a,b].every(small)&&x.bull&&big(x)&&T.d!=='up')
+    add('Tower Bottom','long',3,'rev',
+      'một nến giảm lớn, rồi thị trường đứng im mấy phiên với thân nến bé xíu, rồi một nến tăng lớn — đáy được xây bằng thời gian chứ không phải bằng một cú bật, thường bền hơn');
+  if(w.bull&&big(w)&&[z,a,b].every(small)&&x.bear&&big(x)&&T.d!=='down')
+    add('Tower Top','short',3,'rev',
+      'một nến tăng lớn, rồi mấy phiên thân nến bé xíu đi ngang, rồi một nến giảm lớn — đỉnh được xây bằng sự đình trệ chứ không phải một cú sập bất ngờ');
+
+  /* Frypan Bottom / Dumpling Top — đáy/đỉnh tròn */
+  {
+    const seg=[v5,w,z,a,b];
+    const lows=[k.l[n-5],k.l[n-4],k.l[n-3],k.l[n-2],k.l[n-1]];
+    const his=[k.h[n-5],k.h[n-4],k.h[n-3],k.h[n-2],k.h[n-1]];
+    const allSmall=seg.every(o=>o.b<atrv*.45);
+    const uShape=lows[0]>lows[2]&&lows[4]>lows[2]&&lows[1]>=lows[2]&&lows[3]>=lows[2];
+    const nShape=his[0]<his[2]&&his[4]<his[2]&&his[1]<=his[2]&&his[3]<=his[2];
+    if(allSmall&&uShape&&x.bull&&x.c>Math.max(...his))
+      add('Frypan Bottom (đáy chảo)','long',2,'rev',
+        'năm phiên thân nến nhỏ vẽ thành một vòng cung đáy, rồi giá bứt lên khỏi toàn bộ vùng đó — chuyển pha diễn ra từ từ nên ít ai kịp nhận ra, khác hẳn một cú bật hoảng loạn');
+    if(allSmall&&nShape&&x.bear&&x.c<Math.min(...lows))
+      add('Dumpling Top (đỉnh vòm)','short',2,'rev',
+        'năm phiên thân nến nhỏ vẽ thành vòm đỉnh rồi giá tuột xuống dưới cả vùng — đỉnh tròn, phân phối âm thầm');
+  }
+
+  /* ---------- TIẾP DIỄN ---------- */
+
+  /* Tasuki Gap — cần gap, hiếm trên crypto, đã nới điều kiện */
+  if(a.bull&&b.bull&&b.o>a.c&&x.bear&&x.o<b.c&&x.o>b.o&&x.c<b.o&&x.c>a.c)
+    add('Upside Tasuki Gap','long',2,'cont',
+      'giá nhảy lên tạo khoảng trống rồi một nến giảm chọc vào nhưng không lấp hết khoảng trống — nhịp chỉnh nông, xu hướng tăng còn nguyên');
+  if(a.bear&&b.bear&&b.o<a.c&&x.bull&&x.o>b.c&&x.o<b.o&&x.c>b.o&&x.c<a.c)
+    add('Downside Tasuki Gap','short',2,'cont',
+      'giá rơi tạo khoảng trống rồi một nến tăng hồi lại nhưng không lấp hết — nhịp hồi nông, xu hướng giảm còn nguyên');
+
+  /* Separating Lines — hai nến ngược màu mở cùng giá */
+  if(Math.abs(x.o-b.o)<=atrv*.06){
+    if(b.bear&&x.bull&&T.d==='up'&&big(x))
+      add('Bullish Separating Lines','long',2,'cont',
+        'sau một phiên điều chỉnh giảm, nến mới mở cửa đúng chỗ nến cũ mở rồi chạy thẳng lên — nhịp chỉnh bị xoá sạch chỉ trong một phiên');
+    if(b.bull&&x.bear&&T.d==='down'&&big(x))
+      add('Bearish Separating Lines','short',2,'cont',
+        'sau một phiên hồi tăng, nến mới mở cửa đúng chỗ nến cũ mở rồi rơi thẳng — nhịp hồi bị xoá sạch');
+  }
+
+  /* Side-by-side White Lines */
+  if(a.bull&&b.bull&&x.bull&&Math.abs(x.o-b.o)<=atrv*.08&&Math.abs(x.b-b.b)<b.b*.35&&b.o>a.c)
+    add('Side-by-side White Lines','long',2,'cont',
+      'hai nến tăng gần như giống hệt nhau nằm cạnh nhau sau một cú nhảy giá — lực mua đều đặn và có tổ chức, không phải một cú giật đơn lẻ');
+
+  /* Mat Hold — nghỉ ngắn giữa xu hướng tăng */
+  if(w.bull&&big(w)&&[z,a,b].every(o=>o.b<w.b*.5)&&
+     Math.min(k.l[n-3],k.l[n-2],k.l[n-1])>k.l[n-4]&&x.bull&&x.c>Math.max(k.h[n-3],k.h[n-2],k.h[n-1]))
+    add('Mat Hold','long',3,'cont',
+      'một nến tăng lớn rồi ba phiên nghỉ trôi nhẹ xuống nhưng không phá đáy nến lớn, rồi lại một nến tăng phá đỉnh — nhịp nghỉ có kỷ luật giữa xu hướng, không phải mất đà');
+
+  /* ---------- CẠN KIỆT ---------- */
+
+  /* Eight/Ten New Price Lines — chuỗi đóng cửa cao/thấp dần quá dài */
+  {
+    let up=0,dn=0;
+    for(let i=n;i>Math.max(0,n-12);i--){if(k.c[i]>k.c[i-1])up++;else break;}
+    for(let i=n;i>Math.max(0,n-12);i--){if(k.c[i]<k.c[i-1])dn++;else break;}
+    if(up>=8)add('Eight New Price Lines','short',2,'rev',
+      `${up} phiên liên tiếp đóng cửa cao hơn phiên trước. Chuỗi dài như vậy hiếm khi kéo thêm được nhiều — người mua muộn ngày càng đông và ngày càng dễ hoảng`);
+    if(dn>=8)add('Eight New Price Lines (giảm)','long',2,'rev',
+      `${dn} phiên liên tiếp đóng cửa thấp hơn phiên trước. Chuỗi giảm dài như vậy thường sắp có nhịp hồi kỹ thuật`);
+  }
+
+  /* Rickshaw Man — doji chân dài với thân nằm đúng giữa */
+  if(x.bp<=6&&x.uw>x.rg*.35&&x.dw>x.rg*.35&&Math.abs(x.mid-(x.h+x.l)/2)<x.rg*.12)
+    add('Rickshaw Man','neutral',1,'ind',
+      'giá bị đẩy mạnh cả hai đầu rồi kết thúc đúng ngay giữa — thị trường hoàn toàn mất phương hướng, thường xuất hiện tại điểm ngoặt hoặc ngay trước tin');
+
+  /* Takuri Line — búa có râu dưới cực dài */
+  if(T.d==='down'&&x.bp<=25&&x.dw>=3*x.b&&x.uw<=x.b*.6)
+    add('Takuri Line','long',3,'rev',
+      'râu dưới dài gấp hơn ba lần thân nến — giá bị dìm rất sâu rồi bị mua ngược lên gần hết, phiên bản mạnh hơn của cây búa thường');
+
+  /* Belt Hold ngược hướng ở cực trị — dấu hiệu chốt lời hàng loạt */
+  if(x.bp>=70&&T.ext>1.8){
+    if(T.d==='up'&&x.bear&&x.uw<x.rg*.05)
+      add('Bearish Belt Hold sau nhịp kéo giãn','short',3,'rev',
+        'nến giảm mở cửa ngay tại đỉnh phiên rồi chạy một mạch xuống, xuất hiện đúng sau một nhịp tăng đã kéo giãn bất thường — lệnh chốt lời được kích hoạt hàng loạt ngay từ đầu phiên');
+    if(T.d==='down'&&x.bull&&x.dw<x.rg*.05)
+      add('Bullish Belt Hold sau nhịp kéo giãn','long',3,'rev',
+        'nến tăng mở cửa ngay tại đáy phiên rồi chạy một mạch lên, sau một nhịp giảm đã kéo giãn — lực mua vào đồng loạt ngay từ đầu phiên');
+  }
+
+  return P;
 }
 
 /* ============================================================ CHẶN ĐUỔI GIÁ
@@ -1019,7 +1641,7 @@ function scoreLiq(dir,bk,fl,price,atrv,tps){
       s-=2;R.push(`⚠ Dòng lệnh khớp gần đây nghiêng ${fr>0?'về phía mua':'về phía bán'} chủ động, ngược hướng vào lệnh.`);
     }
   }
-  return[Math.max(0,Math.min(s,12)),R];
+  return[Math.max(0,Math.min(s*0.84,10)),R];
 }
 
 /* ============================================================ CHẤM ĐIỂM */
@@ -1047,7 +1669,7 @@ function scoreHTF(t,dir){
     if(fav===dir){s+=2;R.push('Khung lớn vừa có tín hiệu chuyển pha (CHoCH) nghiêng về hướng này.');}
     else R.push('⚠ Khung lớn: '+ms.label+'.');
   }
-  return[Math.max(0,Math.min(s*0.8,16)),R];
+  return[Math.max(0,Math.min(s*0.6,12)),R];
 }
 function scoreStr(k,dir,rg,lv){
   let s=0;const R=[];
@@ -1087,7 +1709,7 @@ function scoreStr(k,dir,rg,lv){
 
   const ahead=lv.find(L=>L.dist>.3&&L.dist<3.5&&((dir==='long'&&L.side==='res')||(dir==='short'&&L.side==='sup'))&&L.n>=3);
   if(ahead){s-=2;R.push(`⚠ Có ${ahead.side==='res'?'kháng cự':'hỗ trợ'} mạnh tại ${fmt(ahead.lvl)} (chạm ${ahead.n} lần) chỉ cách ${ahead.dist.toFixed(1)}% — cản đường tới mục tiêu.`);}
-  return[Math.max(0,Math.min(s*0.78,14)),R];
+  return[Math.max(0,Math.min(s*0.67,12)),R];
 }
 function scoreMom(k,dir,rg){
   let s=0;const R=[],n=k.c.length-1;
@@ -1110,7 +1732,7 @@ function scoreMom(k,dir,rg){
   if(dv==='bull'&&dir==='long'){s+=4;R.push('◆ Phân kỳ tăng: giá tạo đáy thấp hơn nhưng RSI lại tạo đáy cao hơn — lực bán đang yếu dần dù giá vẫn xuống.');}
   else if(dv==='bear'&&dir==='short'){s+=4;R.push('◆ Phân kỳ giảm: giá tạo đỉnh cao hơn nhưng RSI lại tạo đỉnh thấp hơn — lực mua đang yếu dần dù giá vẫn lên.');}
   else if(dv){s-=3;R.push(`⚠ Đang có phân kỳ ${dv==='bull'?'tăng':'giảm'} ngược hướng vào lệnh.`);}
-  return[Math.max(0,Math.min(s*0.75,9)),R];
+  return[Math.max(0,Math.min(s*0.67,8)),R];
 }
 function scoreVol(k,dir){
   let s=0;const R=[],n=k.c.length-1;
@@ -1136,7 +1758,7 @@ function scoreVol(k,dir){
     const avgRg=k.h.slice(-20).map((h,i)=>h-k.l.slice(-20)[i]).reduce((a,b)=>a+b,0)/20||1e-9;
     if(x.rg<avgRg*.7){s-=3;R.push('⚠ Khối lượng lớn nhưng giá gần như không đi đâu — có lực cản ẩn đang hấp thụ toàn bộ lệnh.');}
   }
-  return[Math.max(0,Math.min(s*0.75,15)),R,{ratio,lab}];
+  return[Math.max(0,Math.min(s*0.6,12)),R,{ratio,lab}];
 }
 function oiMatrix(pc,oc,th=.3){
   const pu=pc>th,pd=pc<-th,ou=oc>th,od=oc<-th;
@@ -1171,7 +1793,7 @@ function scoreDer(dir,fund,oiM){
     if(dir==='long'&&d>.09)R.push(`Giữ lệnh Long tốn khoảng ${d.toFixed(3)}%/ngày tiền funding.`);
     if(dir==='short'&&d<-.09)R.push(`Giữ lệnh Short tốn khoảng ${Math.abs(d).toFixed(3)}%/ngày tiền funding.`);
   }
-  return[Math.max(0,Math.min(s*0.67,12)),R];
+  return[Math.max(0,Math.min(s*0.61,11)),R];
 }
 
 /* ============================================================ KẾ HOẠCH */
@@ -1203,13 +1825,7 @@ function plan(dir,trig,a,lvl,sl,tps){
 }
 
 /* ============================================================ PHÂN TÍCH */
-async function candles(sym,bar,limit=300){
-  const d=await api('/api/v5/market/candles',{instId:sym,bar,limit:String(limit)});
-  const rows=d.filter(r=>r[8]==='1').reverse();
-  if(!rows.length)throw new Error('Không có dữ liệu nến');
-  return{t:rows.map(r=>+r[0]),o:rows.map(r=>+r[1]),h:rows.map(r=>+r[2]),
-    l:rows.map(r=>+r[3]),c:rows.map(r=>+r[4]),v:rows.map(r=>+r[5])};
-}
+/* candles() và api() đã chuyển lên phần BỘ QUÉT TOÀN SÀN ở đầu script */
 async function analyze(sym,hzKey,opt={}){
   const H=HZ[hzKey];
   const kr=await candles(sym,H.entry);
@@ -1243,6 +1859,7 @@ async function analyze(sym,hzKey,opt={}){
   }
 
   const rg=regime(k), lv=keyLevels(k), bo=breakout(k), cp=chartPattern(k);
+  const tp=traps(k,lv,bo);
   const results=[];
   /* Luôn chấm cả hai hướng. Điểm số tự quyết định, không dùng cổng lọc cứng. */
   for(const dir of ['long','short']){
@@ -1252,6 +1869,7 @@ async function analyze(sym,hzKey,opt={}){
     const[sv,rv,vi]=scoreVol(k,dir);
     const[sp,rp,ps]=ratePatterns(k,dir,rg,lv);
     const[sb,rb]=scoreBrk(k,dir,bo,cp);
+    const[st,rt]=scoreTrap(k,dir,tp,rg);
     const[sd,rd]=scoreDer(dir,fund,oiM);
     const[scf,rcf]=confirmLayer(cf,dir);
     const guard=chaseGuard(k,dir);
@@ -1272,18 +1890,20 @@ async function analyze(sym,hzKey,opt={}){
       tps=[trig-r*1.5,trig-r*2.5,trig-r*4];
     }
     const[sq,rq]=scoreLiq(dir,bk,fl,price,a,tps);
-    const htfAdj=Math.max(0,Math.min(16,sh+scf));
-    const total=Math.max(0,htfAdj+ss+sm+sv+sp+sb+sd+sq-guard.pen);
+    /* Trần 15 với sh tối đa 12 nên khung xác nhận còn chỗ để CỘNG điểm,
+       chứ không phải chỉ trừ được như trước. */
+    const htfAdj=Math.max(0,Math.min(WMAX.htf,sh+scf));
+    const total=Math.max(0,htfAdj+ss+sm+sv+sp+sb+st+sd+sq-guard.pen);
     const P=plan(dir,trig,a,lvl,sl,tps);
     if(!P)continue;
-    const all=[...rh,...rcf,...rs,...rm,...rv,...rp,...rb,...rd,...rq];
+    const all=[...rh,...rcf,...rs,...rm,...rv,...rp,...rb,...rt,...rd,...rq];
     if(anc.pulled)all.push('◆ '+anc.note);
     guard.flags.forEach(f=>all.push('⚠ '+f));
     results.push({sym,hz:hzKey,hzLabel:H.label,hold:H.hold,entryTf:H.entry,trendTf:H.trend,
       dir,score:total,grade:total>=88?'A+':total>=80?'A':total>=72?'B':total>=64?'C':'D',
-      price,parts:{htf:htfAdj,str:ss,mom:sm,vol:sv,pat:sp,brk:sb,der:sd,liq:sq},
+      price,parts:{htf:htfAdj,str:ss,mom:sm,vol:sv,pat:sp,brk:sb,trap:st,der:sd,liq:sq},
       reasons:all.filter(x=>!x.startsWith('⚠')),warns:all.filter(x=>x.startsWith('⚠')),
-      pats:ps,vi,plan:P,k,candleDesc:describeCandle(k),fund,oiM,rg,lv,bo,cp,bk,fl,guard,anc,cf});
+      pats:ps,traps:tp,vi,plan:P,k,candleDesc:describeCandle(k),fund,oiM,rg,lv,bo,cp,bk,fl,guard,anc,cf});
   }
   if(!results.length)return null;
   results.sort((x,y)=>y.score-x.score);
@@ -1341,6 +1961,11 @@ function narrate(sig){
 
   const sw=sweep(k);
   if(sw&&sw.d===sig.dir)S.push(sw.note);
+  if(sig.traps&&sig.traps.length){
+    const tAl=sig.traps.filter(p=>p.d===sig.dir),tOp=sig.traps.filter(p=>p.d!==sig.dir);
+    if(tAl.length)S.push(`Bẫy giá: ${tAl[0].n} (xảy ra ${tAl[0].fresh===0?'ngay nến hiện tại':'cách đây '+tAl[0].fresh+' phiên'}). ${tAl[0].t}`);
+    if(tOp.length)S.push(`Ngược lại, cũng đang có ${tOp[0].n} nghiêng về hướng đối diện. ${tOp[0].t}`);
+  }
   if(sig.bo)S.push(sig.bo.note);
   if(sig.cp)S.push(`Nhìn rộng ra, giá đang tạo thành mô hình ${sig.cp.n}: ${sig.cp.t}.`);
 
@@ -1508,14 +2133,21 @@ function render(sig,idx){
       <span class="side ${sig.dir}">${sig.dir==='long'?'LONG':'SHORT'}</span>
       <span class="hz">${sig.hzLabel}</span>
       <span class="sc">${sig.score.toFixed(0)}<span class="gr">${sig.grade}</span></span></div>
+    ${sig.traps&&sig.traps.length?`<div style="margin:8px 0 2px">${sig.traps.slice(0,3).map(p=>
+      `<span class="chip ${p.d==='long'?'up':'dn'}">${p.d==='long'?'▲':'▼'} ${esc(p.n)}</span>`).join('')}</div>`:''}
     ${segBar(sig.parts)}
     <div class="body">
       ${low?`<div class="warn">Điểm ${sig.score.toFixed(0)} dưới ngưỡng lọc ${C.minScore}. Setup này không xuất hiện khi quét — hiển thị vì bạn chủ động hỏi.</div>`:''}
+      ${sig.vol24!=null&&sig.vol24<2e7?`<div class="warn">Cặp này chỉ giao dịch ${(sig.vol24/1e6).toFixed(1)} triệu USD trong 24 giờ. Thanh khoản mỏng nghĩa là trượt giá khi vào và ra, râu nến bất thường, và cắt lỗ dễ bị quét bởi một lệnh đơn lẻ. Tính toán bên dưới giả định bạn khớp được ở đúng giá — trên cặp mỏng thì giả định đó thường sai.</div>`:''}
       <canvas></canvas>
       <p class="hint">Chạm và giữ trên biểu đồ để xem giá và khối lượng từng nến.</p>
       ${sig.other?`<div class="opp">Chiều ngược lại (<b style="color:${sig.other.dir==='long'?'var(--long)':'var(--short)'}">${sig.other.dir==='long'?'LONG':'SHORT'}</b>) chấm được <b>${sig.other.score.toFixed(0)}</b> điểm — chênh ${(sig.score-sig.other.score).toFixed(0)} điểm.</div>`:''}
       <h3>Đọc biểu đồ</h3>
       <div class="read">${narrate(sig).map(s=>`<p>${esc(s)}</p>`).join('')}</div>
+      ${sig.traps&&sig.traps.length?`<h3>Bẫy giá phát hiện được</h3><ul>${sig.traps.slice(0,5).map(p=>{
+        const tag=p.d===sig.dir?'<span class="tg ok">cùng hướng</span>':'<span class="tg no">ngược hướng</span>';
+        const fr=p.fresh<=1?'<span class="tg st">vừa xảy ra</span>':`<span class="tg nt">${p.fresh} phiên trước</span>`;
+        return `<li><b>${esc(p.n)}</b> ${tag} ${fr}<br>${esc(p.t)}</li>`;}).join('')}</ul>`:''}
       ${sig.pats.length?`<h3>Mô hình nến nhận diện được</h3><ul>${sig.pats.slice(0,4).map(p=>{
         const tag=p.d===sig.dir?'<span class="tg ok">cùng hướng</span>':p.d==='neutral'?'<span class="tg nt">trung tính</span>':'<span class="tg no">ngược hướng</span>';
         const st=p.eff>=3?'<span class="tg st">mạnh</span>':'';
@@ -1536,14 +2168,19 @@ function render(sig,idx){
       <p class="note">Nếu giá thủng cắt lỗ thì đóng lệnh. Không thêm chân entry thứ tư — chân sâu nhất đã là giới hạn của luận điểm.</p>
     </div></div>`;
 }
-const store=[];
-function attach(box){
+/* Hai kho riêng. Trước đây tab Quét và tab Một cặp dùng chung một mảng, nên mở
+   một cặp lẻ sẽ xoá mất dữ liệu của các thẻ đang hiển thị ở tab Quét và bấm vào
+   chúng sẽ vẽ nhầm coin hoặc lỗi. */
+const storeScan=[],storeOne=[];
+function attach(box,arr){
   box.querySelectorAll('.card').forEach(card=>{
     card.querySelector('.chead').onclick=()=>{
       const open=card.classList.toggle('open');
       if(open&&!card.dataset.drawn){
+        const sig=arr[+card.dataset.i];
+        if(!sig)return;
         card.dataset.drawn='1';
-        requestAnimationFrame(()=>chart(card.querySelector('canvas'),store[+card.dataset.i]));
+        requestAnimationFrame(()=>chart(card.querySelector('canvas'),sig));
       }
     };
   });
@@ -1554,7 +2191,7 @@ function attach(box){
    kết quả phân tích vừa chạy. Nó không bịa, không đoán — nếu chưa có dữ liệu nó
    nói thẳng là chưa có. Đổi lại, nó chạy offline và không cần khóa API nào. */
 let CTX=[];
-const CHIPS=['Tại sao chọn hướng này','Vào lệnh ở đâu','Thanh khoản thế nào',
+const CHIPS=['Tại sao chọn hướng này','Vào lệnh ở đâu','Có bẫy giá không','Thanh khoản thế nào',
   'Rủi ro là gì','Nến gì','Nên vào không','Phá vỡ thế nào','Funding'];
 
 function cpush(who,html){
@@ -1633,6 +2270,12 @@ function answer(q){
     return `Rủi ro của <b>${nm}</b> ${side}:<br><br>`+
       s.warns.slice(0,6).map(w=>'• '+esc(w.replace(/^⚠\s*/,''))).join('<br>');
   }
+  if(/bẫy|trap|quét stop|sfp|spring|upthrust|lừa|giả/.test(Q)){
+    if(!s.traps||!s.traps.length)return `<b>${nm}</b> hiện không có bẫy giá nào rõ ràng trong vùng gần đây.`;
+    return `Bẫy giá của <b>${nm}</b>:<br><br>`+s.traps.slice(0,4).map(p=>
+      `• <b>${esc(p.n)}</b> (${p.d===s.dir?'cùng hướng':'ngược hướng'}, ${p.fresh<=1?'vừa xảy ra':p.fresh+' phiên trước'})<br>&nbsp;&nbsp;${esc(p.t)}`).join('<br><br>')+
+      `<br><br>Khối bẫy giá được ${s.parts.trap.toFixed(1)}/${WMAX.trap} điểm.`;
+  }
   if(/nến|mô hình|pattern|candle/.test(Q)){
     if(!s.pats.length)return `<b>${nm}</b>: ${esc(s.candleDesc)}. Không có mô hình đặc trưng nào.`;
     return `<b>${nm}</b>: ${esc(s.candleDesc)}.<br><br>`+
@@ -1689,54 +2332,104 @@ function initChat(){
 
 /* ============================================================ HÀNH ĐỘNG */
 async function topSymbols(n){
-  const t=await api('/api/v5/market/tickers',{instType:'SWAP'});
-  return t.filter(x=>x.instId.endsWith('-USDT-SWAP'))
-    .map(x=>({id:x.instId,vol:(+x.volCcy24h||0)*(+x.last||0)}))
-    .filter(x=>x.vol>3e7).sort((a,b)=>b.vol-a.vol).slice(0,n).map(x=>x.id);
+  return (await listSymbols('top')).slice(0,n).map(x=>x.id);
 }
+const SCAN={stop:false,running:false};
+$('#stop').onclick=()=>{SCAN.stop=true;$('#stat').textContent='Đang dừng, chờ các luồng đang chạy kết thúc...';};
+
 $('#go').onclick=async()=>{
-  const btn=$('#go'),out=$('#out'),st=$('#stat');
-  btn.disabled=true;out.innerHTML='';store.length=0;
+  if(SCAN.running)return;
+  const btn=$('#go'),out=$('#out'),st=$('#stat'),sb=$('#stop');
+  SCAN.stop=false;SCAN.running=true;
+  btn.disabled=true;sb.hidden=false;out.innerHTML='';storeScan.length=0;
   $('#prog').classList.add('on');$('#bar').style.width='0';
-  const hz=$('#hz').value, side=$('#side').value;
+  const hz=$('#hz').value, side=$('#side').value, scope=$('#scope').value;
+  const t0=Date.now();
   try{
     st.textContent='Đang lấy danh sách cặp...';
-    const syms=await topSymbols(C.topN),found=[];
-    let nL=0,nS=0;
-    for(let i=0;i<syms.length;i++){
-      st.textContent=`Đang phân tích ${syms[i].replace('-USDT-SWAP','')} — ${i+1}/${syms.length}`;
-      $('#bar').style.width=((i+1)/syms.length*100)+'%';
-      try{const s=await analyze(syms[i],hz,{side});if(s){found.push(s);s.dir==='long'?nL++:nS++;}}catch(e){}
-    }
+    const list=await listSymbols(scope);
+    if(!list.length)throw new Error('Không có cặp nào khớp bộ lọc đã chọn');
+    const volMap=new Map(list.map(x=>[x.id,x.vol]));
+    const syms=list.map(x=>x.id);
+
+    /* VÒNG 1 — mỗi cặp đúng một request. Loại phần lớn ngay tại đây. */
+    const pre=await pool(syms,s=>prescreen(s,hz),6,(d,t)=>{
+      $('#bar').style.width=(d/t*55)+'%';
+      if(d%4===0||d===t)st.textContent=`Vòng 1 · lọc nhanh ${d}/${t} cặp`;
+    },SCAN);
+    if(SCAN.stop)throw new Error('__ABORT__');
+
+    const floor=Math.max(16,C.minScore*0.36);
+    let cand=pre.filter(x=>x.pre>=floor).sort((a,b)=>b.pre-a.pre).slice(0,90);
+    if(!cand.length)cand=pre.sort((a,b)=>b.pre-a.pre).slice(0,20);
+
+    /* VÒNG 2 — chỉ những cặp sống sót mới tốn thêm 4 request mỗi cặp. */
+    const found=await pool(cand,async c=>{
+      const s=await analyze(c.sym,hz,{side});
+      if(s)s.vol24=volMap.get(c.sym)||null;
+      return s;
+    },4,(d,t)=>{
+      $('#bar').style.width=(55+d/t*45)+'%';
+      st.textContent=`Vòng 2 · phân tích sâu ${d}/${t} cặp đã lọt vòng 1`;
+    },SCAN);
+
     found.sort((a,b)=>b.score-a.score);
+    let nL=0,nS=0;found.forEach(s=>s.dir==='long'?nL++:nS++);
+
+    /* Tương quan với BTC. Sáu tín hiệu Long tương quan 0.85 không phải sáu lệnh
+       phân tán — đó là một lệnh với sáu lần rủi ro. */
+    let corrNote='';
+    if(found.length>1){
+      try{
+        const btc=await candles('BTC-USDT-SWAP',HZ[hz].entry);
+        const cs=[];
+        found.forEach(s=>{const r=corrWithBtc(s.k,btc);s.corr=r;if(r!=null)cs.push(Math.abs(r));});
+        if(cs.length>1){
+          const avg=cs.reduce((a,b)=>a+b,0)/cs.length;
+          const eff=Math.max(1,found.length*(1-avg*0.9));
+          const totalRisk=C.risk*found.length;
+          corrNote=`<div class="warn">Tương quan tuyệt đối trung bình với BTC: <b>${avg.toFixed(2)}</b>.
+            ${found.length} setup này chỉ tương đương khoảng <b>${eff.toFixed(1)} lệnh độc lập</b>.
+            Vào cả ${found.length} lệnh với ${C.risk}% mỗi lệnh không phải là rủi ro ${totalRisk.toFixed(1)}% đã phân tán —
+            đó là ${totalRisk.toFixed(1)}% đặt vào cùng một canh bạc. Khi BTC quay đầu, phần lớn số này chạm cắt lỗ trong cùng một giờ.</div>`;
+        }
+      }catch(e){}
+    }
+
     $('#prog').classList.remove('on');
+    const secs=((Date.now()-t0)/1000).toFixed(0);
     if(!found.length){
       st.textContent='';
       out.innerHTML=`<div class="empty"><div class="lg">Không có setup nào đạt ${C.minScore} điểm</div>
-        Đây là chuyện bình thường. Có phiên cả trăm cặp không cặp nào đủ điều kiện.<br>
-        Bộ lọc im lặng nghĩa là nó đang làm đúng việc.</div>`;
+        Đã quét ${syms.length} cặp trong ${secs} giây, ${cand.length} cặp lọt vào vòng phân tích sâu.<br>
+        Không tìm được gì là chuyện bình thường. Bộ lọc im lặng nghĩa là nó đang làm đúng việc.</div>`;
     }else{
-      st.textContent=`Tìm thấy ${found.length} setup trong ${syms.length} cặp — ${nL} Long, ${nS} Short`;
-      found.forEach(s=>store.push(s));CTX=found.slice();
-      out.innerHTML=found.map((s,i)=>{
+      st.textContent=`${found.length} setup · ${nL} Long, ${nS} Short · quét ${syms.length} cặp trong ${secs}s`
+        +(SCAN.stop?' · đã dừng giữa chừng':'');
+      found.forEach(s=>storeScan.push(s));CTX=found.slice();
+      out.innerHTML=corrNote+found.map((s,i)=>{
         try{return render(s,i);}
         catch(err){return `<div class="err">Không dựng được thẻ ${esc(s.sym)}: ${esc(err.message)}</div>`;}
       }).join('');
-      attach(out);
+      attach(out,storeScan);
     }
   }catch(e){
     $('#prog').classList.remove('on');st.textContent='';
-    out.innerHTML=`<div class="err">Không lấy được dữ liệu từ OKX: ${esc(e.message)}<br><br>
-      Nếu mạng của bạn chặn OKX, thử bật VPN.</div>`;
+    if(e.message==='__ABORT__'){
+      out.innerHTML=`<div class="warn">Đã dừng quét theo yêu cầu.</div>`;
+    }else{
+      out.innerHTML=`<div class="err">Không lấy được dữ liệu từ OKX: ${esc(e.message)}<br><br>
+        Nếu mạng của bạn chặn OKX, thử bật VPN.</div>`;
+    }
   }
-  btn.disabled=false;
+  SCAN.running=false;btn.disabled=false;sb.hidden=true;
 };
 $('#go1').onclick=async()=>{
   const raw=$('#sym').value.trim().toUpperCase();
   if(!raw)return;
   const sym=raw.endsWith('-SWAP')?raw:raw.endsWith('-USDT')?raw+'-SWAP':`${raw}-USDT-SWAP`;
   const btn=$('#go1'),out=$('#out1'),st=$('#stat1');
-  btn.disabled=true;out.innerHTML='';store.length=0;
+  btn.disabled=true;out.innerHTML='';storeOne.length=0;
   try{
     const res=[];
     for(const hz of Object.keys(HZ)){
@@ -1747,12 +2440,12 @@ $('#go1').onclick=async()=>{
       out.innerHTML=`<div class="err">Không phân tích được ${esc(sym)}. Kiểm tra lại tên cặp — thử BTC, ETH, SOL.</div>`;
     }else{
       st.textContent='';
-      res.forEach(s=>store.push(s));CTX=res.slice();
+      res.forEach(s=>storeOne.push(s));CTX=res.slice();
       out.innerHTML=res.map((s,i)=>{
         try{return render(s,i);}
         catch(err){return `<div class="err">Không dựng được thẻ ${esc(s.hzLabel)}: ${esc(err.message)}</div>`;}
       }).join('');
-      attach(out);
+      attach(out,storeOne);
       out.querySelector('.chead')?.click();
     }
   }catch(e){st.textContent='';out.innerHTML=`<div class="err">Lỗi: ${esc(e.message)}</div>`;}
