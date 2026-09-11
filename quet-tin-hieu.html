@@ -165,7 +165,7 @@ li.w{color:#E8C9A4}
     <div id="out1"></div>
   </section>
   <section id="brk" hidden>
-    <p class="note" style="margin-top:0">Quét toàn bộ cặp trên OKX để tìm coin đang <b>phá đường xu hướng chéo</b>, <b>breakout khỏi vùng tích lũy</b>, hoặc vừa hoàn tất <b>mô hình giá đảo chiều/tiếp diễn</b> (vai đầu vai, hai đỉnh/hai đáy, tam giác, nêm, cờ). Đây là bộ lọc sự kiện cấu trúc — không chấm điểm setup như tab Quét.</p>
+    <p class="note" style="margin-top:0">Tìm coin đang <b>phá đường xu hướng chéo</b>, <b>breakout khỏi vùng tích lũy</b>, hoặc vừa hoàn tất <b>mô hình giá đảo chiều/tiếp diễn</b> (vai đầu vai, hai đỉnh/hai đáy, tam giác, nêm, cờ). Đây là bộ lọc sự kiện cấu trúc — không chấm điểm setup như tab Quét.</p>
     <div class="row">
       <select id="bkTf">
         <option value="15m">15 phút</option>
@@ -187,6 +187,14 @@ li.w{color:#E8C9A4}
         <option value="short">Chỉ Giảm</option>
       </select>
       <button class="act" id="goBk">Quét</button>
+    </div>
+    <div class="row">
+      <select id="bkScope">
+        <option value="top" selected>Top thanh khoản (theo cài đặt)</option>
+        <option value="liquid">Mọi cặp trên 5 triệu USD/24h</option>
+        <option value="all">Toàn bộ cặp USDT-SWAP</option>
+      </select>
+      <button class="ghost" id="stopB" hidden>Dừng</button>
     </div>
     <div id="progB"><div id="barB"></div></div>
     <div id="statB"></div>
@@ -317,14 +325,14 @@ async function pool(items,worker,width,onDone,ctl){
 }
 
 /* Danh sách cặp. Trả về cả khối lượng để còn cảnh báo thanh khoản mỏng trên thẻ. */
-async function listSymbols(scope){
+async function listSymbols(scope,limit){
   const t=await api('/api/v5/market/tickers',{instType:'SWAP'});
   const arr=t.filter(x=>x.instId.endsWith('-USDT-SWAP'))
     .map(x=>({id:x.instId,vol:(+x.volCcy24h||0)*(+x.last||0)}))
     .sort((a,b)=>b.vol-a.vol);
   if(scope==='all')return arr;
   if(scope==='liquid')return arr.filter(x=>x.vol>5e6);
-  return arr.filter(x=>x.vol>3e7).slice(0,C.topN);
+  return arr.filter(x=>x.vol>3e7).slice(0,limit||C.topN);
 }
 
 /* VÒNG MỘT — chỉ dùng dữ liệu tính được từ một khung nến duy nhất.
@@ -2332,7 +2340,7 @@ function initChat(){
 
 /* ============================================================ HÀNH ĐỘNG */
 async function topSymbols(n){
-  return (await listSymbols('top')).slice(0,n).map(x=>x.id);
+  return (await listSymbols('top',n)).map(x=>x.id);
 }
 const SCAN={stop:false,running:false};
 $('#stop').onclick=()=>{SCAN.stop=true;$('#stat').textContent='Đang dừng, chờ các luồng đang chạy kết thúc...';};
@@ -2504,7 +2512,7 @@ function renderBk(item,idx){
     <div style="margin-top:8px">${chips}</div>
     <div class="body">
       <canvas></canvas>
-      <p class="hint">Chạm và giữ trên biểu đồ để xem giá từng nến.</p>
+      <p class="hint">Biểu đồ hiển thị 90 phiên gần nhất trên khung đã chọn.</p>
       ${item.events.map(e=>`<div class="evt"><b>${esc(e.title)}</b><br>${esc(e.note)}</div>`).join('')}
     </div></div>`;
 }
@@ -2519,59 +2527,78 @@ function attachBk(box){
     };
   });
 }
+const SCANB={stop:false,running:false};
 async function scanBreak(){
-  const tf=$('#bkTf').value,type=$('#bkType').value,dirF=$('#bkDir').value;
-  const btn=$('#goBk'),out=$('#outB'),st=$('#statB');
-  btn.disabled=true;out.innerHTML='';storeBk.length=0;
+  if(SCANB.running)return;
+  const tf=$('#bkTf').value,type=$('#bkType').value,dirF=$('#bkDir').value,scope=$('#bkScope').value;
+  const btn=$('#goBk'),out=$('#outB'),st=$('#statB'),sb=$('#stopB');
+  SCANB.stop=false;SCANB.running=true;
+  btn.disabled=true;sb.hidden=false;out.innerHTML='';storeBk.length=0;
   $('#progB').classList.add('on');$('#barB').style.width='0';
+  const t0=Date.now();
   try{
     st.textContent='Đang lấy danh sách cặp...';
-    const syms=await topSymbols(Math.max(C.topN,60));
-    const found=[];
-    for(let i=0;i<syms.length;i++){
-      st.textContent=`Đang quét ${syms[i].replace('-USDT-SWAP','')} — ${i+1}/${syms.length}`;
-      $('#barB').style.width=((i+1)/syms.length*100)+'%';
-      try{
-        const kr=await candles(syms[i],tf,220);
-        if(kr.c.length<80)continue;
-        const k=enrich(kr),n=k.c.length-1;
-        const bo=breakout(k),Rl=trendline(k,'res'),Sl=trendline(k,'sup'),pats=patternScan(k);
-        const events=[];
-        if(bo){
-          if((bo.state==='fresh'||bo.state==='running'||bo.state==='retest')&&bo.dir){
-            events.push({cat:'box',dir:bo.dir,lvl:bo.lvl,
-              title:(bo.state==='retest'?'Breakout đã retest · ':bo.state==='fresh'?'Breakout mới · ':'Breakout đang chạy · ')+(bo.dir==='long'?'Tăng':'Giảm'),
-              note:bo.note});
-          }else if(bo.state==='fakeout'){
-            events.push({cat:'box',dir:bo.fav,lvl:bo.lvl,
-              title:'Phá vỡ giả (Fakeout) · nghiêng '+(bo.fav==='long'?'Tăng':'Giảm'),note:bo.note});
-          }else if(bo.state==='inside'&&bo.squeeze){
-            events.push({cat:'box',dir:'neutral',lvl:bo.box.hi,
-              title:'Đang nén chặt, chờ bung',note:bo.note});
-          }
+    const list=await listSymbols(scope);
+    if(!list.length)throw new Error('Không có cặp nào khớp bộ lọc đã chọn');
+    const volMap=new Map(list.map(x=>[x.id,x.vol]));
+    const syms=list.map(x=>x.id);
+
+    /* Chạy song song như tab Quét. Mỗi cặp chỉ tốn đúng một request nên quét
+       toàn sàn ở đây rẻ hơn nhiều so với tab Quét. */
+    const found=await pool(syms,async sym=>{
+      const kr=await candles(sym,tf,220);
+      if(kr.c.length<80)return null;
+      const k=enrich(kr),n=k.c.length-1;
+      const bo=breakout(k),Rl=trendline(k,'res'),Sl=trendline(k,'sup'),pats=patternScan(k);
+      const events=[];
+      if(bo){
+        if((bo.state==='fresh'||bo.state==='running'||bo.state==='retest')&&bo.dir){
+          events.push({cat:'box',dir:bo.dir,lvl:bo.lvl,
+            title:(bo.state==='retest'?'Breakout đã retest · ':bo.state==='fresh'?'Breakout mới · ':'Breakout đang chạy · ')+(bo.dir==='long'?'Tăng':'Giảm'),
+            note:bo.note});
+        }else if(bo.state==='fakeout'){
+          events.push({cat:'box',dir:bo.fav,lvl:bo.lvl,
+            title:'Phá vỡ giả (Fakeout) · nghiêng '+(bo.fav==='long'?'Tăng':'Giảm'),note:bo.note});
+        }else if(bo.state==='inside'&&bo.squeeze){
+          events.push({cat:'box',dir:'neutral',lvl:bo.box.hi,
+            title:'Đang nén chặt, chờ bung',note:bo.note});
         }
-        if(Rl&&Rl.broke)events.push({cat:'tl',dir:'long',lvl:Rl.now,
-          title:`Phá đường kháng cự chéo (đã chạm ${Rl.touch} lần)`,
-          note:`Giá vừa vượt lên trên đường kháng cự chéo tại ${fmt(Rl.now)} — đường này đã bị test ${Rl.touch} lần trước khi bị phá. Kháng cự cũ nếu giữ được có thể đổi vai thành hỗ trợ.`});
-        if(Sl&&Sl.broke)events.push({cat:'tl',dir:'short',lvl:Sl.now,
-          title:`Phá đường hỗ trợ chéo (đã chạm ${Sl.touch} lần)`,
-          note:`Giá vừa thủng xuống dưới đường hỗ trợ chéo tại ${fmt(Sl.now)} — đường này đã bị test ${Sl.touch} lần trước khi bị phá. Hỗ trợ cũ nếu mất có thể đổi vai thành kháng cự.`});
-        pats.forEach(p=>events.push({cat:'pat',dir:p.d,lvl:p.lvl,
-          title:p.n+(p.d==='neutral'?'':p.status==='confirmed'?' · đã xác nhận':' · đang hình thành'),note:p.t}));
-        let use=events;
-        if(type!=='all')use=use.filter(e=>e.cat===type);
-        if(dirF!=='both')use=use.filter(e=>e.dir===dirF);
-        if(!use.length)continue;
-        found.push({sym:syms[i],price:k.c[n],tf,k,events:use});
+      }
+      if(Rl&&Rl.broke)events.push({cat:'tl',dir:'long',lvl:Rl.now,
+        title:`Phá đường kháng cự chéo (đã chạm ${Rl.touch} lần)`,
+        note:`Giá vừa vượt lên trên đường kháng cự chéo tại ${fmt(Rl.now)} — đường này đã bị test ${Rl.touch} lần trước khi bị phá. Kháng cự cũ nếu giữ được có thể đổi vai thành hỗ trợ.`});
+      if(Sl&&Sl.broke)events.push({cat:'tl',dir:'short',lvl:Sl.now,
+        title:`Phá đường hỗ trợ chéo (đã chạm ${Sl.touch} lần)`,
+        note:`Giá vừa thủng xuống dưới đường hỗ trợ chéo tại ${fmt(Sl.now)} — đường này đã bị test ${Sl.touch} lần trước khi bị phá. Hỗ trợ cũ nếu mất có thể đổi vai thành kháng cự.`});
+      /* Bẫy giá cũng là sự kiện cấu trúc — đưa luôn vào tab này */
+      try{
+        traps(k,keyLevels(k),bo).slice(0,3).forEach(p=>events.push({cat:'trap',dir:p.d,lvl:p.lvl,
+          title:`${p.n} · nghiêng ${p.d==='long'?'Tăng':'Giảm'}${p.fresh<=1?' · vừa xảy ra':' · '+p.fresh+' phiên trước'}`,
+          note:p.t}));
       }catch(e){}
-    }
+      pats.forEach(p=>events.push({cat:'pat',dir:p.d,lvl:p.lvl,
+        title:p.n+(p.d==='neutral'?'':p.status==='confirmed'?' · đã xác nhận':' · đang hình thành'),note:p.t}));
+      let use=events;
+      if(type!=='all')use=use.filter(e=>e.cat===type);
+      if(dirF!=='both')use=use.filter(e=>e.dir===dirF);
+      if(!use.length)return null;
+      return{sym,price:k.c[n],tf,k,events:use,vol24:volMap.get(sym)||null};
+    },6,(d,t)=>{
+      $('#barB').style.width=(d/t*100)+'%';
+      if(d%4===0||d===t)st.textContent=`Đang quét ${d}/${t} cặp`;
+    },SCANB);
+
     $('#progB').classList.remove('on');
+    const secs=((Date.now()-t0)/1000).toFixed(0);
     if(!found.length){
       st.textContent='';
-      out.innerHTML=`<div class="empty"><div class="lg">Không tìm thấy tín hiệu nào</div>Thử đổi khung thời gian, loại tín hiệu, hoặc mở lại "Cả hai chiều".</div>`;
+      out.innerHTML=`<div class="empty"><div class="lg">Không tìm thấy tín hiệu nào</div>
+        Đã quét ${syms.length} cặp trong ${secs} giây.<br>
+        Thử đổi khung thời gian, loại tín hiệu, hoặc mở lại "Cả hai chiều".</div>`;
     }else{
       found.sort((a,b)=>b.events.length-a.events.length);
-      st.textContent=`Tìm thấy ${found.length} cặp có tín hiệu trong ${syms.length} cặp quét`;
+      st.textContent=`${found.length} cặp có tín hiệu trên ${syms.length} cặp đã quét · ${secs}s`
+        +(SCANB.stop?' · đã dừng giữa chừng':'');
       found.forEach(f=>storeBk.push(f));
       out.innerHTML=found.map((f,i)=>renderBk(f,i)).join('');
       attachBk(out);
@@ -2580,8 +2607,9 @@ async function scanBreak(){
     $('#progB').classList.remove('on');st.textContent='';
     out.innerHTML=`<div class="err">Không lấy được dữ liệu từ OKX: ${esc(e.message)}<br><br>Nếu mạng của bạn chặn OKX, thử bật VPN.</div>`;
   }
-  btn.disabled=false;
+  SCANB.running=false;btn.disabled=false;sb.hidden=true;
 }
+$('#stopB').onclick=()=>{SCANB.stop=true;$('#statB').textContent='Đang dừng, chờ các luồng đang chạy kết thúc...';};
 $('#goBk').onclick=scanBreak;
 
 document.querySelectorAll('nav button').forEach(b=>{
