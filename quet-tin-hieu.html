@@ -42,10 +42,10 @@ button.ghost{background:var(--panel);border:1px solid var(--line);color:var(--te
   color:#E8CBA0;margin:12px 0;line-height:1.55}
 .err{background:#2A1614;border-left:2px solid var(--short);padding:11px 13px;font-size:13.5px;
   color:#F0B5B0;margin:12px 0;line-height:1.55}
-#prog,#progB{height:2px;background:var(--panel2);border-radius:2px;overflow:hidden;margin:14px 0 6px;display:none}
-#prog.on,#progB.on{display:block}
-#bar,#barB{height:100%;width:0;background:var(--mark);transition:width .25s}
-#stat,#stat1,#statB{font-size:13px;color:var(--dim);min-height:19px}
+#prog,#progB,#progN{height:2px;background:var(--panel2);border-radius:2px;overflow:hidden;margin:14px 0 6px;display:none}
+#prog.on,#progB.on,#progN.on{display:block}
+#bar,#barB,#barN{height:100%;width:0;background:var(--mark);transition:width .25s}
+#stat,#stat1,#statB,#statN{font-size:13px;color:var(--dim);min-height:19px}
 .chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 8px;
   border-radius:20px;margin:0 5px 5px 0;letter-spacing:.1px}
 .chip.up{background:#12362A;color:#63D6AC} .chip.dn{background:#38201E;color:#F0938C}
@@ -123,6 +123,7 @@ li.w{color:#E8C9A4}
     <button role="tab" aria-selected="true" data-t="scan">Quét</button>
     <button role="tab" aria-selected="false" data-t="one">Một cặp</button>
     <button role="tab" aria-selected="false" data-t="brk">Phá vỡ</button>
+    <button role="tab" aria-selected="false" data-t="nbk">Sắp phá</button>
     <button role="tab" aria-selected="false" data-t="chat">Hỏi</button>
     <button role="tab" aria-selected="false" data-t="cfg">Cài đặt</button>
   </nav>
@@ -148,6 +149,7 @@ li.w{color:#E8C9A4}
         <option value="top" selected>Top thanh khoản (theo cài đặt)</option>
         <option value="liquid">Mọi cặp trên 5 triệu USD/24h</option>
         <option value="all">Toàn bộ cặp USDT-SWAP</option>
+        <option value="new">Coin mới niêm yết (≤ 45 ngày)</option>
       </select>
       <button class="ghost" id="stop" hidden>Dừng</button>
     </div>
@@ -193,6 +195,7 @@ li.w{color:#E8C9A4}
         <option value="top" selected>Top thanh khoản (theo cài đặt)</option>
         <option value="liquid">Mọi cặp trên 5 triệu USD/24h</option>
         <option value="all">Toàn bộ cặp USDT-SWAP</option>
+        <option value="new">Coin mới niêm yết (≤ 45 ngày)</option>
       </select>
       <button class="ghost" id="stopB" hidden>Dừng</button>
     </div>
@@ -200,6 +203,49 @@ li.w{color:#E8C9A4}
     <div id="statB"></div>
     <div id="outB"></div>
   </section>
+  <section id="nbk" hidden>
+    <p class="note" style="margin-top:0">Tìm coin đang <b>nén sát một mức chưa bị phá</b> — đường chéo, biên vùng tích lũy, hoặc mức ngang đã chạm nhiều lần — kèm <b>một cây volume mạnh ép vào mức đó</b>. Kết quả tách thành hai nhóm riêng: <b>Đã phá</b> (đã đóng cửa qua mức) và <b>Sắp phá</b> (chưa qua).</p>
+    <div class="row">
+      <select id="nbTf">
+        <option value="15m">Cấu trúc 15 phút</option>
+        <option value="1H" selected>Cấu trúc 1 giờ</option>
+        <option value="4H">Cấu trúc 4 giờ</option>
+        <option value="1Dutc">Cấu trúc 1 ngày</option>
+      </select>
+      <select id="nbTrig">
+        <option value="1H" selected>Nến kích hoạt H1</option>
+        <option value="same">Nến kích hoạt cùng khung</option>
+        <option value="15m">Nến kích hoạt 15 phút</option>
+      </select>
+    </div>
+    <div class="row">
+      <select id="nbVol">
+        <option value="1.5">Volume ≥ 1.5× trung bình</option>
+        <option value="2" selected>Volume ≥ 2× trung bình</option>
+        <option value="2.5">Volume ≥ 2.5× trung bình</option>
+        <option value="3">Volume ≥ 3× trung bình</option>
+      </select>
+      <select id="nbDir" style="max-width:138px">
+        <option value="both">Cả hai chiều</option>
+        <option value="long">Chỉ Tăng</option>
+        <option value="short">Chỉ Giảm</option>
+      </select>
+    </div>
+    <div class="row">
+      <select id="nbScope">
+        <option value="top" selected>Top thanh khoản (theo cài đặt)</option>
+        <option value="liquid">Mọi cặp trên 5 triệu USD/24h</option>
+        <option value="all">Toàn bộ cặp USDT-SWAP</option>
+        <option value="new">Coin mới niêm yết (≤ 45 ngày)</option>
+      </select>
+      <button class="act" id="goNb">Quét</button>
+      <button class="ghost" id="stopNb" hidden>Dừng</button>
+    </div>
+    <div id="progN"><div id="barN"></div></div>
+    <div id="statN"></div>
+    <div id="outN"></div>
+  </section>
+
   <section id="chat" hidden>
     <div id="clog"></div>
     <div class="row" style="margin-top:12px">
@@ -325,12 +371,36 @@ async function pool(items,worker,width,onDone,ctl){
 }
 
 /* Danh sách cặp. Trả về cả khối lượng để còn cảnh báo thanh khoản mỏng trên thẻ. */
+/* Ngày niêm yết của từng hợp đồng. OKX liên tục thêm cặp mới; endpoint tickers
+   không cho biết cặp nào mới, nên phải hỏi thêm /public/instruments một lần rồi
+   đệm lại. Nhờ đó danh sách coin luôn tự cập nhật theo sàn, và biết cặp nào vừa
+   lên để gắn nhãn cảnh báo. */
+let INSTR=null;
+async function instrumentMeta(){
+  if(INSTR)return INSTR;
+  try{
+    const d=await api('/api/v5/public/instruments',{instType:'SWAP'});
+    INSTR=new Map(d.filter(x=>x.instId.endsWith('-USDT-SWAP'))
+      .map(x=>[x.instId,{listTime:+x.listTime||0,state:x.state}]));
+  }catch(e){INSTR=new Map();}
+  return INSTR;
+}
 async function listSymbols(scope,limit){
-  const t=await api('/api/v5/market/tickers',{instType:'SWAP'});
+  const [t,meta]=await Promise.all([
+    api('/api/v5/market/tickers',{instType:'SWAP'}),
+    instrumentMeta()
+  ]);
+  const now=Date.now();
   const arr=t.filter(x=>x.instId.endsWith('-USDT-SWAP'))
-    .map(x=>({id:x.instId,vol:(+x.volCcy24h||0)*(+x.last||0)}))
+    .filter(x=>{const m=meta.get(x.instId);return !m||!m.state||m.state==='live';})
+    .map(x=>{
+      const m=meta.get(x.instId),lt=m&&m.listTime?m.listTime:0;
+      return{id:x.instId,vol:(+x.volCcy24h||0)*(+x.last||0),
+        listTime:lt,ageDays:lt?Math.floor((now-lt)/864e5):null};
+    })
     .sort((a,b)=>b.vol-a.vol);
   if(scope==='all')return arr;
+  if(scope==='new')return arr.filter(x=>x.ageDays!=null&&x.ageDays<=45&&x.vol>1e6);
   if(scope==='liquid')return arr.filter(x=>x.vol>5e6);
   return arr.filter(x=>x.vol>3e7).slice(0,limit||C.topN);
 }
@@ -1486,6 +1556,154 @@ function patternsExt(k){
   return P;
 }
 
+/* ============================================================ SẮP PHÁ VỠ
+   Bắt đúng tình huống trong hình: giá nén lại thành một cụm nến nhỏ NGAY SÁT
+   một mức chưa bị phá (đường chéo, biên hộp, hoặc mức ngang đã chạm nhiều lần),
+   rồi một cây volume mạnh đẩy vào mức đó.
+
+   Điểm quan trọng nhất của module này: cấu trúc (vùng nén + mức) phải được đo
+   TẠI THỜI ĐIỂM TRƯỚC nhịp đẩy. Nếu tính cả cây breakout vào thì cụm nén tự
+   phình ra và đường kháng cự tự bị đánh dấu "đã phá" bởi chính cây đó — mô hình
+   sẽ không bao giờ khớp. Nên hàm này cắt bỏ 1-3 nến cuối, dựng mức trên phần
+   còn lại, rồi mới đối chiếu cây kích hoạt với mức đó.
+
+   Hai mức tín hiệu tách biệt:
+     'near'   — cây volume mạnh ép vào mức nhưng CHƯA đóng cửa qua. Cảnh báo sớm,
+                còn thời gian đặt lệnh chờ, nhưng xác suất thất bại cao hơn.
+     'broken' — cây volume mạnh đã đóng cửa HẲN bên kia mức. Xác nhận rồi,
+                vào muộn hơn nhưng chắc tay hơn. */
+
+const KFIELDS=['t','o','h','l','c','v','ema20','ema50','ema200','rsi','atr','adx','mh','obv','obvE','vs','vr','bbw'];
+function sliceK(k,cut){
+  if(!cut)return k;
+  const d={},len=k.c.length-cut;
+  KFIELDS.forEach(f=>{if(Array.isArray(k[f]))d[f]=k[f].slice(0,len);});
+  if(Array.isArray(k.di))d.di=k.di.slice(0,len);
+  return d;
+}
+
+function compression(k,win){
+  /* Cụm nến cuối có đang co lại không, và co bao nhiêu so với đoạn ngay trước. */
+  const n=k.c.length-1,a=k.atr[n]||1e-9;
+  if(n<win*2+2)return null;
+  const hi=Math.max(...k.h.slice(n-win+1,n+1)),lo=Math.min(...k.l.slice(n-win+1,n+1));
+  const pHi=Math.max(...k.h.slice(n-win*2+1,n-win+1)),pLo=Math.min(...k.l.slice(n-win*2+1,n-win+1));
+  const rg=hi-lo,prev=(pHi-pLo)||1e-9;
+  return{hi,lo,rg,bars:win,atr:a,ratio:rg/a,shrink:rg/prev};
+}
+
+/* Mọi mức còn đang tranh chấp quanh giá hiện tại.
+   Với đường chéo ta KHÔNG dùng cờ broke của trendline() — ngưỡng của nó chỉ
+   0.15 ATR, tức mức nhiễu. Ở đây dùng khoảng cách: đường vẫn còn "đáng kể"
+   chừng nào giá chưa đi hẳn quá 1 ATR sang phía bên kia. */
+function pendingLevels(k){
+  const n=k.c.length-1,c=k.c[n],a=k.atr[n]||1e-9,out=[];
+  const R=trendline(k,'res'),S=trendline(k,'sup');
+  if(R&&R.now>0&&(c-R.now)/a<1)out.push({lvl:R.now,dir:'long',ty:'tl',
+    label:`đường kháng cự chéo đã chạm ${R.touch} lần`});
+  if(S&&S.now>0&&(S.now-c)/a<1)out.push({lvl:S.now,dir:'short',ty:'tl',
+    label:`đường hỗ trợ chéo đã chạm ${S.touch} lần`});
+  const B=findBox(k);
+  if(B&&B.bars>=8){
+    if((c-B.hi)/a<1)out.push({lvl:B.hi,dir:'long',ty:'box',label:`biên trên vùng tích lũy ${B.bars} phiên`});
+    if((B.lo-c)/a<1)out.push({lvl:B.lo,dir:'short',ty:'box',label:`biên dưới vùng tích lũy ${B.bars} phiên`});
+  }
+  const lv=keyLevels(k).filter(L=>L.n>=2&&L.dist<8);
+  const res=lv.filter(L=>L.side==='res')[0],sup=lv.filter(L=>L.side==='sup')[0];
+  if(res)out.push({lvl:res.lvl,dir:'long',ty:'hz',label:`mức ngang đã chạm ${res.n} lần`});
+  if(sup)out.push({lvl:sup.lvl,dir:'short',ty:'hz',label:`mức ngang đã chạm ${sup.n} lần`});
+  /* Gộp mức trùng trong 0.3 ATR, giữ loại có mô tả mạnh nhất */
+  const rank={tl:3,box:2,hz:1},merged=[];
+  out.sort((x,y)=>rank[y.ty]-rank[x.ty]).forEach(L=>{
+    if(L.lvl>0&&!merged.some(m=>m.dir===L.dir&&Math.abs(m.lvl-L.lvl)<a*.3))merged.push(L);
+  });
+  return merged;
+}
+
+/* Cây kích hoạt: nến volume mạnh đang đẩy về phía mức.
+   KHÔNG lọc theo thân đặc ở đây. Một cây chọc qua mức rồi bị đẩy về luôn có
+   thân mỏng và râu dài — lọc thân ở bước này thì nhánh "sắp phá" không bao giờ
+   kích hoạt được. Thân đặc chỉ là điều kiện để XÁC NHẬN ở bước phân loại. */
+function triggerCandle(kt,dir,volMin,lookback){
+  const n=kt.c.length-1,out=[];
+  for(let i=n;i>Math.max(-1,n-lookback);i--){
+    const x=cndl(kt,i),vr=kt.vr[i]||0,a=kt.atr[i]||1e-9;
+    if(vr<volMin)continue;
+    if(x.rg<a*.4)continue;                       /* nến quá bé, không phải cú đẩy */
+    const probe=dir==='long'?x.uw:x.dw;          /* phần râu thăm dò về phía mức */
+    const rightBody=dir==='long'?x.bull:x.bear;
+    if(!rightBody&&probe<x.rg*.35)continue;      /* không có thân đúng hướng mà cũng không đâm vào mức */
+    out.push({i,vr,o:x.o,c:x.c,h:x.h,l:x.l,bp:x.bp,rg:x.rg,bull:x.bull,age:n-i});
+  }
+  return out.sort((a,b)=>b.vr-a.vr)[0]||null;
+}
+
+function nearBreakout(k,kt,opt){
+  opt=opt||{};
+  const volMin=opt.volMin||2,win=opt.win||6,nearMax=opt.nearMax||1.1,compMax=opt.compMax||1.8;
+  const same=kt===k;
+  const events=[];
+
+  /* Cắt bỏ 1..3 nến cuối để dựng cấu trúc "trước nhịp đẩy" */
+  for(let skip=1;skip<=3;skip++){
+    const base=sliceK(k,skip),bn=base.c.length-1;
+    if(bn<40)continue;
+    const a=base.atr[bn]||1e-9,lastC=base.c[bn];
+    const cmp=compression(base,win);
+    if(!cmp||cmp.ratio>compMax)continue;
+
+    for(const L of pendingLevels(base)){
+      /* Mức phải nằm trong hoặc ngay sát mép cụm nén, và giá lúc đó chưa
+         đóng cửa vượt qua — nếu đã vượt từ trước thì đây không còn là "sắp phá". */
+      if(L.dir==='long'){
+        if(lastC>L.lvl+a*.15)continue;
+        if(L.lvl-cmp.hi>a*nearMax)continue;
+        if(L.lvl<cmp.lo-a*.5)continue;
+      }else{
+        if(lastC<L.lvl-a*.15)continue;
+        if(cmp.lo-L.lvl>a*nearMax)continue;
+        if(L.lvl>cmp.hi+a*.5)continue;
+      }
+
+      const T=triggerCandle(kt,L.dir,volMin,same?skip:3);
+      if(!T)continue;
+
+      const closedThrough=L.dir==='long'?T.c>L.lvl:T.c<L.lvl;
+      const touched=L.dir==='long'?T.h>=L.lvl-a*.25:T.l<=L.lvl+a*.25;
+      if(!closedThrough&&!touched)continue;
+      /* Đóng cửa qua mức thôi chưa đủ: thân phải đặc. Một cây đóng cửa nhỉnh
+         qua mức rồi để lại râu ngược dài là cú phá đang bị khước từ. */
+      const decisive=T.bp>=45;
+      const tier=closedThrough&&decisive?'broken':'near';
+
+      const c=k.c[k.c.length-1];
+      const distPct=Math.abs(L.lvl-c)/c*100;
+      const side=L.dir==='long'?'trên':'dưới';
+      const when=T.age?`cách đây ${T.age} nến kích hoạt`:'ngay nến vừa đóng';
+      const head=`Giá nén ${cmp.bars} phiên sát ${L.label} tại ${fmt(L.lvl)} — biên độ cụm chỉ ${cmp.ratio.toFixed(1)}× ATR, co lại còn ${(cmp.shrink*100).toFixed(0)}% so với đoạn ngay trước.`;
+      const note = tier==='broken'
+        ? `${head} Sau đó một cây volume ${T.vr.toFixed(1)}× trung bình đóng cửa hẳn ${side} mức, thân đặc ${T.bp.toFixed(0)}% (${when}). Cú phá được khối lượng xác nhận, không phải giá trôi qua mức.`
+        : closedThrough
+        ? `${head} Một cây volume ${T.vr.toFixed(1)}× trung bình đã nhỉnh qua mức nhưng thân chỉ ${T.bp.toFixed(0)}% biên độ, râu ngược dài (${when}) — cú phá đang bị khước từ ngay tại mức, chưa coi là xác nhận.`
+        : `${head} Hiện còn cách mức ${distPct.toFixed(2)}%. Một cây volume ${T.vr.toFixed(1)}× trung bình vừa ép thẳng vào mức nhưng CHƯA đóng cửa qua (${when}). Đây là lúc đặt lệnh chờ chứ chưa phải lúc vào thị trường — nén sát mức cũng thường kết thúc bằng một cú quét ngược.`;
+
+      events.push({dir:L.dir,tier,lvl:L.lvl,lvlType:L.ty,label:L.label,
+        vr:T.vr,age:T.age,comp:cmp.ratio,shrink:cmp.shrink,bars:cmp.bars,skip,distPct,note,
+        title:(tier==='broken'?'Đã phá · ':'Sắp phá · ')+(L.dir==='long'?'Tăng':'Giảm')+
+          ` · vol ${T.vr.toFixed(1)}×`});
+    }
+  }
+
+  /* Mỗi hướng giữ một sự kiện: ưu tiên 'broken', rồi volume lớn hơn, rồi cụm nén chặt hơn. */
+  const best=new Map();
+  events.forEach(e=>{
+    const s=(e.tier==='broken'?100:0)+e.vr-e.comp*.2;
+    const cur=best.get(e.dir);
+    if(!cur||s>cur._s){e._s=s;best.set(e.dir,e);}
+  });
+  return [...best.values()].sort((x,y)=>y._s-x._s);
+}
+
 /* ============================================================ CHẶN ĐUỔI GIÁ
    Đây là bộ lọc quan trọng nhất trong toàn bộ hệ thống.
 
@@ -2612,10 +2830,122 @@ async function scanBreak(){
 $('#stopB').onclick=()=>{SCANB.stop=true;$('#statB').textContent='Đang dừng, chờ các luồng đang chạy kết thúc...';};
 $('#goBk').onclick=scanBreak;
 
+/* ============================================================ TAB SẮP PHÁ */
+const storeNb=[];
+const SCANN={stop:false,running:false};
+
+function renderNb(item,idx){
+  const nm=item.sym.replace('-USDT-SWAP','');
+  const chips=item.events.map(e=>`<span class="chip ${e.dir==='long'?'up':'dn'}">`+
+    `${e.dir==='long'?'▲':'▼'} ${esc(e.title)}</span>`).join('');
+  const isNew=item.ageDays!=null&&item.ageDays<=45;
+  const tags=(isNew?`<span class="tg st">niêm yết ${item.ageDays} ngày</span> `:'')+
+    (item.vol24!=null&&item.vol24<2e7?`<span class="tg nt">thanh khoản mỏng</span>`:'');
+  return `<div class="card" data-bi="${idx}">
+    <div class="bkhead chead"><span class="sym">${nm}</span><span class="hz">${item.tf}</span><span class="bkpx">${fmt(item.price)}</span></div>
+    ${tags?`<div style="margin-top:6px">${tags}</div>`:''}
+    <div style="margin-top:8px">${chips}</div>
+    <div class="body">
+      <canvas></canvas>
+      <p class="hint">90 phiên khung ${item.tf}. Vạch cam là mức đang bị ép. Cây volume đọc từ khung ${item.trigTf}.</p>
+      ${item.events.map(e=>`<div class="evt"><b>${esc(e.title)}</b><br>${esc(e.note)}</div>`).join('')}
+      ${isNew?`<div class="warn">Coin này mới niêm yết ${item.ageDays} ngày. Lịch sử giá còn quá ngắn để các mức kháng cự/hỗ trợ có ý nghĩa thống kê, và biến động giai đoạn đầu thường do dòng tiền đầu cơ chứ không theo cấu trúc kỹ thuật.</div>`:''}
+    </div></div>`;
+}
+function attachNb(box){
+  box.querySelectorAll('.card').forEach(card=>{
+    card.querySelector('.chead').onclick=()=>{
+      const open=card.classList.toggle('open');
+      if(open&&!card.dataset.drawn){
+        const it=storeNb[+card.dataset.bi];
+        if(!it)return;
+        card.dataset.drawn='1';
+        requestAnimationFrame(()=>drawBk(card.querySelector('canvas'),it));
+      }
+    };
+  });
+}
+
+async function scanNear(){
+  if(SCANN.running)return;
+  const tf=$('#nbTf').value, trigSel=$('#nbTrig').value, volMin=+$('#nbVol').value;
+  const dirF=$('#nbDir').value, scope=$('#nbScope').value;
+  const trigTf=trigSel==='same'?tf:trigSel;
+  const btn=$('#goNb'),out=$('#outN'),st=$('#statN'),sb=$('#stopNb');
+  SCANN.stop=false;SCANN.running=true;
+  btn.disabled=true;sb.hidden=false;out.innerHTML='';storeNb.length=0;
+  $('#progN').classList.add('on');$('#barN').style.width='0';
+  const t0=Date.now();
+  try{
+    st.textContent='Đang lấy danh sách cặp...';
+    const list=await listSymbols(scope);
+    if(!list.length)throw new Error('Không có cặp nào khớp bộ lọc đã chọn');
+    const meta=new Map(list.map(x=>[x.id,x]));
+    const syms=list.map(x=>x.id);
+
+    const found=await pool(syms,async sym=>{
+      const kr=await candles(sym,tf,300);
+      if(kr.c.length<80)return null;
+      const k=enrich(kr);
+      let kt=k;
+      if(trigTf!==tf){
+        const tr=await candles(sym,trigTf,200);
+        if(tr.c.length<40)return null;
+        kt=enrich(tr);
+      }
+      let ev=nearBreakout(k,kt,{volMin});
+      if(dirF!=='both')ev=ev.filter(e=>e.dir===dirF);
+      if(!ev.length)return null;
+      const m=meta.get(sym)||{};
+      return{sym,price:k.c[k.c.length-1],tf,trigTf,k,events:ev,
+        vol24:m.vol!=null?m.vol:null,ageDays:m.ageDays!=null?m.ageDays:null,
+        topTier:ev.some(e=>e.tier==='broken')?'broken':'near',
+        topVr:Math.max(...ev.map(e=>e.vr))};
+    },trigTf!==tf?4:6,(d,t)=>{
+      $('#barN').style.width=(d/t*100)+'%';
+      if(d%4===0||d===t)st.textContent=`Đang quét ${d}/${t} cặp`;
+    },SCANN);
+
+    $('#progN').classList.remove('on');
+    const secs=((Date.now()-t0)/1000).toFixed(0);
+    const brk=found.filter(f=>f.topTier==='broken').sort((a,b)=>b.topVr-a.topVr);
+    const nr =found.filter(f=>f.topTier==='near').sort((a,b)=>b.topVr-a.topVr);
+
+    if(!found.length){
+      st.textContent='';
+      out.innerHTML=`<div class="empty"><div class="lg">Không có cặp nào đang nén sát mức</div>
+        Đã quét ${syms.length} cặp trong ${secs} giây.<br>
+        Điều kiện này khắt khe nên phần lớn phiên sẽ không ra gì. Thử hạ ngưỡng volume hoặc đổi khung.</div>`;
+    }else{
+      st.textContent=`${brk.length} đã phá · ${nr.length} sắp phá · trên ${syms.length} cặp · ${secs}s`
+        +(SCANN.stop?' · đã dừng giữa chừng':'');
+      let i=0,html='';
+      const sect=(title,sub,arr)=>{
+        if(!arr.length)return'';
+        let s=`<h3 style="margin-top:20px">${title}</h3><p class="note" style="margin:0 0 4px">${sub}</p>`;
+        s+=arr.map(f=>{storeNb.push(f);return renderNb(f,i++);}).join('');
+        return s;
+      };
+      html+=sect('Đã phá — có volume xác nhận',
+        'Cây volume mạnh đã đóng cửa hẳn bên kia mức. Vào muộn hơn nhưng cú phá đã được khối lượng chứng thực.',brk);
+      html+=sect('Sắp phá — chưa đóng cửa qua mức',
+        'Volume mạnh đang ép vào mức nhưng giá chưa qua. Đặt lệnh chờ thì hợp lý, vào thị trường ngay thì chưa — nén sát mức cũng hay kết thúc bằng cú quét ngược.',nr);
+      out.innerHTML=html;
+      attachNb(out);
+    }
+  }catch(e){
+    $('#progN').classList.remove('on');st.textContent='';
+    out.innerHTML=`<div class="err">Không lấy được dữ liệu từ OKX: ${esc(e.message)}<br><br>Nếu mạng của bạn chặn OKX, thử bật VPN.</div>`;
+  }
+  SCANN.running=false;btn.disabled=false;sb.hidden=true;
+}
+$('#goNb').onclick=scanNear;
+$('#stopNb').onclick=()=>{SCANN.stop=true;$('#statN').textContent='Đang dừng, chờ các luồng đang chạy kết thúc...';};
+
 document.querySelectorAll('nav button').forEach(b=>{
   b.onclick=()=>{
     document.querySelectorAll('nav button').forEach(x=>x.setAttribute('aria-selected',x===b));
-    ['scan','one','brk','chat','cfg'].forEach(id=>$('#'+id).hidden=(id!==b.dataset.t));
+    ['scan','one','brk','nbk','chat','cfg'].forEach(id=>$('#'+id).hidden=(id!==b.dataset.t));
   };
 });
 initChat();
