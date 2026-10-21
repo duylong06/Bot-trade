@@ -243,6 +243,11 @@ async function main() {
     const sample = found.sort((a, b) => b.t - a.t).slice(0, 40).map(e => ({ at: stamp(e.t), coin: e.coin, type: e.type, dir: e.dir, kind: e.line.kind, span: e.line.span, touches: e.line.touches, confirmed: e.confirmed, steep: e.line.steep, msg: buildMessage(e) }));
     writeJSON('dryrun.json', { at: Date.now(), host, target: stamp(target), hours: 48, byType, bySize, perDay: +(found.length / 2).toFixed(1), perDayAtLeast, perCoin, sample, timing: { prefetchMs: status.prefetchMs, analyzeMs: status.analyzeMs } });
     log(`Thử 48 giờ: ${JSON.stringify(byType)} → khoảng ${(found.length / 2).toFixed(0)} thông báo/ngày`);
+    if (process.env.DUMP_CANDLES) {
+      const dump = {};
+      for (const u of universe) if (data[u.instId]) dump[u.instId] = data[u.instId];
+      writeJSON('dryrun-candles.json', { at: Date.now(), target, data: dump });
+    }
     return finish({ result: 'dry-run' });
   }
 

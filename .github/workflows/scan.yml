@@ -64,6 +64,7 @@ jobs:
         env:
           MODE: ${{ github.event_name == 'push' && 'dry-run' || inputs.mode || 'scan' }}
           TRIGGER: ${{ github.event_name }}
+          DUMP_CANDLES: ${{ github.event_name == 'push' && '1' || '' }}
           PUSH_CONFIG: ${{ secrets.PUSH_CONFIG }}
         run: node bot/scan.mjs
 
