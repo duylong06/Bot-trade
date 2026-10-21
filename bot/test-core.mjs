@@ -1,0 +1,139 @@
+// Kiểm thử lõi phát hiện phá vỡ trên dữ liệu dựng sẵn.
+// Chạy: node bot/test-core.mjs
+import { analyze, CFG, HOUR } from '../core/breakout.js';
+
+let fails = 0;
+const ok = (cond, msg) => { console.log((cond ? '  ✓ ' : '  ✗ ') + msg); if (!cond) fails++; };
+
+function rng(s) { let a = s >>> 0; return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+// Dựng nến từ các điểm mốc (chỉ số, giá) + nhiễu; giá đóng bị "ghim" đúng mốc tại các điểm pin.
+function gen({ n, keys, seed = 1, amp = 0.6, wick = 0.4, pin = [] }) {
+  const r = rng(seed), base = [];
+  for (let i = 0; i < n; i++) {
+    let j = 0; while (j < keys.length - 2 && keys[j + 1][0] <= i) j++;
+    const a = keys[j], b = keys[j + 1];
+    const t = Math.max(0, Math.min(1, (i - a[0]) / ((b[0] - a[0]) || 1)));
+    base.push(a[1] + (b[1] - a[1]) * (t * t * (3 - 2 * t)));
+  }
+  const damp = i => { let m = 1; for (const p of pin) { const d = Math.abs(i - p); if (d < 5) m = Math.min(m, d / 5); } return m; };
+  let dv = 0; const c = [];
+  for (let i = 0; i < n; i++) { dv = dv * 0.8 + (r() * 2 - 1) * amp; c.push(base[i] + dv * damp(i)); }
+  const K = { t: [], o: [], h: [], l: [], c, v: [] };
+  const t0 = Date.UTC(2026, 8, 1);
+  for (let i = 0; i < n; i++) {
+    const o = i ? c[i - 1] : c[0];
+    K.t.push(t0 + i * HOUR); K.o.push(o);
+    K.h.push(Math.max(o, c[i]) + r() * wick); K.l.push(Math.min(o, c[i]) - r() * wick); K.v.push(100);
+  }
+  return K;
+}
+// ghi đè một cây nến
+function setBar(K, i, o, h, l, c) { K.o[i] = o; K.h[i] = h; K.l[i] = l; K.c[i] = c; if (i + 1 < K.c.length) K.o[i + 1] = c; }
+const show = ev => `${ev.type} ${ev.dir} @${ev.i} span=${ev.line.span} touches=${ev.line.touches} ${ev.line.kind}${ev.confirmed ? ' [đã gãy cấu trúc]' : ''}`;
+
+/* 1. Kháng cự giảm 200 nến, phá lên bằng nến thân dài */
+{
+  console.log('1. Kháng cự giảm — phá LÊN');
+  const K = gen({ n: 200, seed: 7, amp: 0.5, wick: 0.35,
+    keys: [[0, 125.5], [14, 130], [34, 118], [56, 124.14], [76, 112], [100, 118], [122, 107], [146, 111.58], [158, 105.5], [166, 107], [175, 114], [190, 118], [199, 119]],
+    pin: [14, 56, 100, 146] });
+  // nến 168 là nến phá dứt khoát
+  const y = 130 - (168 - 14) * (12 / 86);
+  setBar(K, 168, K.c[167], y + 2.4, K.c[167] - 0.1, y + 2.1);
+  const { events } = analyze(K);
+  events.slice(-6).forEach(e => console.log('    ' + show(e)));
+  const br = events.find(e => e.type === 'BREAK' && e.dir === 'LONG' && e.i >= 165 && e.i <= 172);
+  ok(!!br, 'có BREAK LONG quanh nến 168');
+  ok(br && br.line.span >= 100, 'đường dài ≥ 100 nến (span=' + (br && br.line.span) + ')');
+  ok(br && br.line.touches >= 3, 'đường ≥ 3 chạm');
+  ok(br && br.line.kind === 'kháng cự giảm', 'loại: kháng cự giảm');
+}
+
+/* 2. Hỗ trợ tăng, phá xuống */
+{
+  console.log('2. Hỗ trợ tăng — phá XUỐNG');
+  const K = gen({ n: 200, seed: 9, amp: 0.5, wick: 0.35,
+    keys: [[0, 110], [20, 106], [55, 116], [95, 112], [130, 125], [170, 118], [185, 124], [192, 121], [199, 116]],
+    pin: [20, 95, 170] });
+  const y = 106 + (192 - 20) * (6 / 75);
+  setBar(K, 192, K.c[191], K.c[191] + 0.1, y - 2.6, y - 2.2);
+  const { events } = analyze(K);
+  events.slice(-6).forEach(e => console.log('    ' + show(e)));
+  const br = events.find(e => e.type === 'BREAK' && e.dir === 'SHORT' && e.i >= 189 && e.i <= 195);
+  ok(!!br, 'có BREAK SHORT quanh nến 192');
+  ok(br && br.line.kind === 'hỗ trợ tăng', 'loại: hỗ trợ tăng');
+}
+
+/* 3. Đường đuổi kịp giá: hỗ trợ dốc, giá đi ngang bằng nến li ti → KHÔNG báo */
+{
+  console.log('3. Đường tự leo qua giá đi ngang — không được báo');
+  const K = { t: [], o: [], h: [], l: [], c: [], v: [] };
+  const t0 = Date.UTC(2026, 8, 1);
+  // 3 đáy đúng trên đường y = 100 + 0.3*i ở nến 10, 25, 40 rồi giá đi ngang 112.5
+  const path = i => {
+    if (i <= 44) { const ph = (i % 15) / 15; const yl = 100 + 0.3 * i; return yl + 3 * Math.sin(Math.PI * ph); }
+    return 112.5 + 0.05 * Math.sin(i);
+  };
+  for (let i = 0; i < 90; i++) {
+    const c = path(i), o = i ? K.c[i - 1] : c;
+    K.t.push(t0 + i * HOUR); K.o.push(o); K.c.push(c);
+    K.h.push(Math.max(o, c) + 0.25); K.l.push(Math.min(o, c) - 0.25); K.v.push(100);
+  }
+  // ATR ~ biên độ nến; giá cắt đường quanh nến 42 rồi đi ngang — đường tự leo lên trên giá
+  const { events } = analyze(K);
+  const bad = events.filter(e => e.type === 'BREAK' && e.dir === 'SHORT' && e.i > 42);
+  events.forEach(e => console.log('    ' + show(e)));
+  ok(bad.length === 0, 'không có BREAK SHORT nào sau khi giá đi ngang');
+}
+
+/* 4. Râu chọc qua nhưng thân đóng trong → KHÔNG báo; sau đó đóng cửa dứt khoát → báo */
+{
+  console.log('4. Râu không tính');
+  const K = gen({ n: 120, seed: 21, amp: 0.4, wick: 0.3,
+    keys: [[0, 112], [10, 116], [25, 108], [40, 114], [55, 106], [70, 112], [85, 104], [95, 106], [110, 108], [119, 109]],
+    pin: [10, 40, 70] });
+  const y = i => 116 - (i - 10) * (2 / 30);
+  setBar(K, 96, K.c[95], y(96) + 3, K.c[95] - 0.1, y(96) - 0.6);   // râu xuyên 3, thân đóng trong
+  setBar(K, 104, K.c[103], y(104) + 2.4, K.c[103] - 0.1, y(104) + 2.0); // đóng cửa vượt dứt khoát
+  const { events } = analyze(K);
+  events.slice(-5).forEach(e => console.log('    ' + show(e)));
+  ok(!events.some(e => e.type === 'BREAK' && e.i === 96), 'nến 96 (chỉ râu) không thành phá vỡ');
+  ok(events.some(e => e.type === 'BREAK' && e.dir === 'LONG' && e.i === 104), 'nến 104 (đóng cửa vượt) là phá vỡ');
+}
+
+/* 5. Retest sau khi phá */
+{
+  console.log('5. Retest');
+  const K = gen({ n: 150, seed: 33, amp: 0.35, wick: 0.25,
+    keys: [[0, 121], [6, 124], [20, 117], [36, 114], [48, 116], [57, 119.5], [66, 125], [74, 127], [84, 122], [94, 118], [104, 122], [149, 126]],
+    pin: [6] });
+  // Kháng cự nối 3 đỉnh ở 6, 30, 52: đặt râu đúng đường y = 124 - 0.074*(i-6)
+  const y = i => 124 - 0.074 * (i - 6);
+  for (const p of [30, 52]) { K.h[p] = y(p); for (const q of [p - 3, p - 2, p - 1, p + 1, p + 2, p + 3]) K.h[q] = Math.min(K.h[q], y(p) - 0.3); }
+  setBar(K, 58, K.c[57], y(58) + 2.3, K.c[57] - 0.1, y(58) + 2.0);
+  // Lấy đúng đường bot tìm được, rồi đặt nến 94: râu chạm lại đường đó, đóng cửa phía trên.
+  const first = analyze(K);
+  const L = first.all.filter(x => x.state === 'broken' && x.b === 58).sort((a, b) => b.span - a.span)[0];
+  const yl = L.y0 + L.m * 94, a94 = first.A[94];
+  setBar(K, 94, K.c[93], K.c[93] + 0.2, yl + 0.1 * a94, yl + 0.9 * a94);
+  const { events } = analyze(K);
+  events.forEach(e => console.log('    ' + show(e)));
+  const br = events.find(e => e.type === 'BREAK' && e.dir === 'LONG' && e.i === 58);
+  ok(!!br, 'BREAK LONG ở nến 58');
+  ok(events.some(e => e.type === 'RETEST' && e.dir === 'LONG' && e.i >= 88 && e.i <= 96), 'RETEST LONG quanh nến 94');
+}
+
+/* 6. Hiệu năng: 500 nến, nhiều nhiễu */
+{
+  console.log('6. Hiệu năng 520 nến');
+  const keys = []; for (let i = 0; i <= 520; i += 13) keys.push([i, 100 + 8 * Math.sin(i / 40) + 3 * Math.sin(i / 9)]);
+  const K = gen({ n: 520, seed: 77, amp: 0.8, wick: 0.5, keys });
+  const t0 = performance.now(); const r = analyze(K); const ms = performance.now() - t0;
+  console.log(`    ${r.all.length} đường hợp lệ, ${r.events.length} sự kiện, vẽ ${r.lines.length} đường — ${ms.toFixed(0)} ms`);
+  ok(r.W.c.length === CFG.WINDOW, 'chỉ xét đúng 500 nến cuối');
+  ok(ms < 1500, 'chạy dưới 1,5 giây một đồng');
+}
+
+console.log(fails ? `\n${fails} kiểm thử sai` : '\nTất cả đều đúng');
+process.exit(fails ? 1 : 0);

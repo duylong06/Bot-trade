@@ -1,0 +1,80 @@
+name: Quét phá vỡ
+
+on:
+  # Bấm chạy tay trong tab Actions, hoặc để cron-job.org gọi đúng phút 58 mỗi giờ (xem README).
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'scan = quét và báo · test-push = gửi thông báo thử · dry-run = quét thử 48 giờ, không báo'
+        type: choice
+        options: [scan, test-push, dry-run]
+        default: scan
+
+  # Lịch dự phòng. GitHub hay bỏ hoặc trễ lịch (repo này từng chỉ chạy ~5 lần/ngày dù đặt mỗi giờ),
+  # nên đừng trông vào đây để báo đúng giờ — dùng cron-job.org.
+  schedule:
+    - cron: '56 * * * *'
+    - cron: '16 * * * *'
+
+  # Sửa code bot/lõi → tự chạy kiểm thử + quét thử (không gửi thông báo).
+  push:
+    branches: [main, v2]
+    paths:
+      - 'core/**'
+      - 'bot/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/scan.yml'
+
+concurrency:
+  group: scan
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Cài thư viện
+        run: npm ci --no-audit --no-fund
+
+      - name: Kiểm thử lõi phát hiện phá vỡ
+        if: github.event_name == 'push'
+        run: node bot/test-core.mjs
+
+      - name: Lấy dữ liệu lần trước (nhánh data)
+        run: |
+          mkdir -p out
+          if git fetch -q --depth=1 origin data 2>/dev/null; then
+            git archive FETCH_HEAD | tar -x -C out
+          fi
+          ls -la out
+
+      - name: Quét
+        env:
+          MODE: ${{ github.event_name == 'push' && 'dry-run' || inputs.mode || 'scan' }}
+          TRIGGER: ${{ github.event_name }}
+          PUSH_CONFIG: ${{ secrets.PUSH_CONFIG }}
+        run: node bot/scan.mjs
+
+      - name: Lưu dữ liệu (nhánh data)
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd out
+          git init -q -b data
+          git add -A
+          git -c user.name="bot-trade" -c user.email="bot-trade@users.noreply.github.com" \
+            commit -qm "data $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" data
