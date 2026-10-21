@@ -21,8 +21,12 @@ const DEFAULTS = {
   WINDOW: 500,        // tối đa 500 nến H1
   WARMUP: 20,         // nến thêm phía trước chỉ để tính ATR cho chuẩn
   PIVOT: 3,           // đỉnh/đáy: cao/thấp nhất trong ±3 nến
+  SCALE: 12,          // đường dài S nến chỉ được neo vào đỉnh/đáy lớn: cao/thấp nhất trong ±S/12 nến
+  SCALE_MAX: 30,      //   (tối đa ±30 nến); lần chạm thứ ba trở đi chỉ cần một nửa độ lớn đó
   MIN_SPAN: 10,       // hai điểm neo cách nhau tối thiểu 10 nến
   MIN_TOUCH: 3,       // tối thiểu 3 lần chạm (tính cả 2 điểm neo)
+  REACT: 1.5,         // giữa hai lần chạm, giá phải bật ra xa đường ≥ 1,5 ATR thì lần sau mới tính là chạm mới
+  GAP: 0.08,          // hai lần chạm cách nhau ≥ 8% chiều dài đường (và ≥ 5 nến)
   ATR: 14,
   TOL: 0.15,          // sai số khi vẽ: đóng cửa vượt ≤ 0,15 ATR vẫn coi như còn trong đường
   BUF: 0.5,           // vùng đệm: nến phá phải đóng cửa ra ngoài ≥ 0,5 ATR
@@ -30,7 +34,7 @@ const DEFAULTS = {
   TOUCH: 0.35,        // râu cách đường ≤ 0,35 ATR coi là một lần chạm
   WICK_MAX: 1.0,      // giữa hai điểm neo, râu không được xuyên đường quá 1 ATR (đường vẽ sai)
   FOLLOW: 1,          // lần vượt đầu tiên chưa đạt chuẩn thì cho thêm 1 nến nữa
-  AWAY: 1.0,          // phải chạy ra xa ≥ 1 ATR rồi quay về mới tính là retest
+  AWAY: 2.0,          // phải chạy ra xa ≥ 2 ATR rồi quay về mới tính là retest
   RETEST_MAX: 120,    // tìm retest trong 120 nến sau khi phá
   FLAT: 0.02,         // |độ dốc| < 0,02 ATR/nến coi là đường ngang
   STEEP: 0.25,        // |độ dốc| ≥ 0,25 ATR/nến coi là đường dốc (thường không retest)
@@ -87,6 +91,24 @@ export function findPivots(K, k = CFG.PIVOT) {
   return { hi, lo };
 }
 
+/**
+ * Độ lớn của mỗi đỉnh/đáy: nó là cực trị trong bao nhiêu nến mỗi bên (lấy bên ngắn hơn).
+ * Chạm mép dữ liệu thì bên đó coi như không giới hạn — đỉnh mới hình thành không bị coi là nhỏ.
+ */
+export function pivotStrength(K, piv, side, kmax = 60) {
+  const X = side === 'R' ? K.h : K.l, s = side === 'R' ? 1 : -1, N = X.length;
+  const st = new Map();
+  for (const i of piv) {
+    let L = 0; while (L < kmax && i - L - 1 >= 0 && (X[i] - X[i - L - 1]) * s >= 0) L++;
+    let R = 0; while (R < kmax && i + R + 1 < N && (X[i] - X[i + R + 1]) * s > 0) R++;
+    const l = i - L - 1 < 0 ? kmax : L, r = i + R + 1 >= N ? kmax : R;
+    st.set(i, Math.min(l, r));
+  }
+  return st;
+}
+
+const needFor = span => Math.max(CFG.PIVOT, Math.min(CFG.SCALE_MAX, Math.round(span / CFG.SCALE)));
+
 /* ---------- dò đường ---------- */
 
 // side 'R' = kháng cự (nối đỉnh, phá LÊN → LONG); 'S' = hỗ trợ (nối đáy, phá XUỐNG → SHORT)
@@ -94,6 +116,7 @@ function candidates(K, A, piv, side) {
   const s = side === 'R' ? 1 : -1;
   const X = side === 'R' ? K.h : K.l;
   const C = K.c, N = C.length, out = [];
+  const st = pivotStrength(K, piv, side);
 
   for (let a = 0; a < piv.length; a++) {
     const ia = piv[a];
@@ -118,13 +141,30 @@ function candidates(K, A, piv, side) {
       }
       const end = v < 0 ? N : v;
 
-      // Đếm chạm: các đỉnh/đáy cùng phía từ neo đầu tới trước lần vượt.
-      let touches = 0, last = ia;
+      // Đường càng dài thì hai điểm neo càng phải là đỉnh/đáy lớn.
+      const need = needFor(end - ia);
+      if (st.get(ia) < need || st.get(ib) < need) continue;
+      const needTouch = Math.max(CFG.PIVOT, Math.ceil(need / 2));
+
+      // Đếm chạm: đỉnh/đáy đủ lớn, sát đường, cách lần chạm trước đủ xa, và giữa hai lần giá đã
+      // bật ra khỏi đường rõ ràng. Giá đi lình xình sát đường không tạo thêm lần chạm nào.
+      const Y = side === 'R' ? K.l : K.h;   // phía bật ra xa đường
+      const gap = Math.max(5, Math.round((end - ia) * CFG.GAP));
+      let touches = 0, last = -1, hasB = false;
       for (let q = a; q < piv.length && piv[q] < end; q++) {
         const p = piv[q];
-        if ((X[p] - (y0 + m * p)) * s >= -CFG.TOUCH * A[p]) { touches++; last = p; }
+        if (p !== ia && p !== ib && st.get(p) < needTouch) continue;
+        if ((X[p] - (y0 + m * p)) * s < -CFG.TOUCH * A[p]) continue;
+        if (last >= 0) {
+          if (p - last < gap) continue;
+          let away = 0;
+          for (let i = last + 1; i < p; i++) { const d = ((y0 + m * i) - Y[i]) * s; if (d > away) away = d; }
+          if (away < CFG.REACT * A[p]) continue;
+        }
+        touches++; last = p;
+        if (p === ib) hasB = true;
       }
-      if (touches < CFG.MIN_TOUCH) continue;
+      if (!hasB || touches < CFG.MIN_TOUCH) continue;
 
       out.push({ side, s, ia, ib, m, y0, v, touches, last });
     }

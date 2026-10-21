@@ -96,9 +96,12 @@ export async function swapTickers() {
     .sort((a, b) => b.volUsd - a.volUsd);
 }
 
+// Thông tin mọi hợp đồng SWAP (bước giá, ngày niêm yết, loại tài sản…).
+export const instruments = () => api('/api/v5/public/instruments', { instType: 'SWAP' });
+
 // Bước giá của từng hợp đồng (để hiển thị đúng số lẻ).
-export async function tickSizes() {
-  const d = await api('/api/v5/public/instruments', { instType: 'SWAP' });
+export async function tickSizes(list) {
+  const d = list || await instruments();
   const m = {};
   for (const x of d) m[x.instId] = x.tickSz;
   return m;

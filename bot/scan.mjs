@@ -18,7 +18,8 @@ import webpush from 'web-push';
 import { analyze, CFG, HOUR } from '../core/breakout.js';
 import * as okx from '../core/okx.js';
 import { PAGES_URL, TOP_N, ALERTS, MIN_SPAN_ALERT } from '../core/config.js';
-import { fmtPrice, hhmm, stamp } from '../core/format.js';
+import { hhmm, stamp } from '../core/format.js';
+import { buildMessage, plan } from './plan.mjs';
 
 const MODE = process.env.MODE || 'scan';
 const TRIGGER = process.env.TRIGGER || 'local';
@@ -26,7 +27,6 @@ const OUT = process.env.OUT_DIR || 'out';
 const WAIT_MAX = 9 * 60e3;     // chạy sớm tối đa 9 phút trước giờ đóng nến thì ở lại chờ
 const SETTLE = 1200;           // sau giờ đóng nến chờ thêm 1,2 giây cho OKX chốt nến
 const COOLDOWN = 3;            // không báo PHÁ cùng chiều cùng đồng 2 lần trong 3 nến (trừ đường lớn hơn hẳn)
-const MAX_PER_RUN = 30;
 const KEEP_SIGNALS = 500;
 const CONC = 6;
 
@@ -76,30 +76,6 @@ async function pushAll(msg) {
   const okN = res.filter(r => r.ok).length;
   log(`  → gửi ${okN}/${devices.length} máy`, res.filter(r => !r.ok).map(r => `lỗi ${r.status} ${r.error || ''}`).join(' '));
   return okN;
-}
-
-function buildMessage(e) {
-  const p = v => fmtPrice(v, e.tickSz);
-  const up = e.dir === 'LONG', L = e.line;
-  const arrow = up ? '▲' : '▼';
-  const lvl = up ? 'đỉnh' : 'đáy';
-  let title, body;
-  if (e.type === 'BREAK') {
-    title = `${arrow} ${e.dir} ${e.coin} · phá ${L.kind}`;
-    body = `Đóng cửa ${p(e.close)} ${up ? 'trên' : 'dưới'} đường ${p(e.linePrice)} · mô hình ${L.span} nến, ${L.touches} chạm.`;
-    body += e.confirmed ? `\nĐã ${up ? 'vượt' : 'thủng'} ${lvl} cũ ${p(e.level)} ✓` : `\nChưa ${up ? 'vượt' : 'thủng'} ${lvl} cũ ${p(e.level)}.`;
-    if (L.steep) body += ' Đường dốc — thường không có retest.';
-    if (e.others) body += ` Cùng lúc phá thêm ${e.others} đường.`;
-  } else if (e.type === 'CONFIRM') {
-    title = `✓ Xác nhận ${e.dir} ${e.coin}`;
-    body = `Đóng cửa ${p(e.close)} ${up ? 'vượt' : 'thủng'} ${lvl} cũ ${p(e.level)} — cấu trúc đã gãy. Phá ${L.kind} lúc ${hhmm(L.tBreak)}.`;
-  } else {
-    title = `↺ Retest ${e.dir} ${e.coin}`;
-    body = `Giá quay về chạm ${L.kind} vừa phá (${p(e.linePrice)}) và đóng cửa giữ được ở ${p(e.close)}.`;
-  }
-  body += `\nNến H1 ${hhmm(e.t)}`;
-  const q = new URLSearchParams({ s: e.instId, ev: e.type, t: String(e.t) });
-  return { title, body, url: PAGES_URL + '#' + q.toString(), tag: `${e.instId}|${e.type}|${e.t}` };
 }
 
 /* ---------------- tiện ích ---------------- */
@@ -176,7 +152,8 @@ async function main() {
   const { host, tried } = await okx.pickHost();
   status.host = host; if (tried.length) status.hostTried = tried;
   log('OKX:', host);
-  const [tickers, ticks] = await Promise.all([okx.swapTickers(), okx.tickSizes()]);
+  const [tickers, insts] = await Promise.all([okx.swapTickers(), okx.instruments()]);
+  const ticks = await okx.tickSizes(insts);
   const universe = tickers.slice(0, TOP_N);
   writeJSON('top50.json', { at: Date.now(), list: universe.map(u => ({ instId: u.instId, coin: u.coin, volUsd: Math.round(u.volUsd), last: u.last, chg: +u.chg.toFixed(5) })) });
   log(`Top ${universe.length}: ${universe.slice(0, 12).map(u => u.coin).join(' ')} …`);
@@ -244,6 +221,8 @@ async function main() {
     writeJSON('dryrun.json', { at: Date.now(), host, target: stamp(target), hours: 48, byType, bySize, perDay: +(found.length / 2).toFixed(1), perDayAtLeast, perCoin, sample, timing: { prefetchMs: status.prefetchMs, analyzeMs: status.analyzeMs } });
     log(`Thử 48 giờ: ${JSON.stringify(byType)} → khoảng ${(found.length / 2).toFixed(0)} thông báo/ngày`);
     if (process.env.DUMP_CANDLES) {
+      const ids = new Set(tickers.slice(0, 120).map(u => u.instId));
+      writeJSON('dryrun-instruments.json', insts.filter(x => ids.has(x.instId)));
       const dump = {};
       for (const u of universe) if (data[u.instId]) dump[u.instId] = data[u.instId];
       writeJSON('dryrun-candles.json', { at: Date.now(), target, data: dump });
@@ -266,25 +245,24 @@ async function main() {
     }
     fresh.push({ e, key });
   }
-  if (fresh.length > MAX_PER_RUN) log(`Có ${fresh.length} tín hiệu, chỉ gửi ${MAX_PER_RUN} cái lớn nhất`);
-  const toSend = fresh.sort((a, b) => b.e.line.span - a.e.line.span).slice(0, MAX_PER_RUN).sort((a, b) => a.e.t - b.e.t);
-
+  for (const f of fresh) { state.sent[f.key] = Date.now(); f.e._key = f.key; }
+  const batches = plan(fresh.map(f => f.e));
   let sentN = 0;
-  for (const { e, key } of toSend) {
-    const msg = buildMessage(e);
-    log(`${msg.title} — ${msg.body.replace(/\n/g, ' / ')}`);
-    const okN = devices.length ? await pushAll(msg) : 0;
-    sentN += okN ? 1 : 0;
-    state.sent[key] = Date.now();
-    signals.unshift({
-      id: key, instId: e.instId, coin: e.coin, type: e.type, dir: e.dir, side: e.side,
-      t: e.t, close: e.close, linePrice: e.linePrice, level: e.level, confirmed: e.confirmed,
-      others: e.others, tickSz: e.tickSz, line: e.line, title: msg.title, body: msg.body,
-      sentAt: Date.now(), pushed: okN,
-    });
+  for (const b of batches) {
+    log(`${b.msg.title} — ${b.msg.body.replace(/\n/g, ' / ')}`);
+    const okN = devices.length ? await pushAll(b.msg) : 0;
+    if (okN) sentN++;
+    for (const e of b.events) {
+      const m = buildMessage(e);
+      signals.unshift({
+        id: e._key, instId: e.instId, coin: e.coin, type: e.type, dir: e.dir, side: e.side,
+        t: e.t, close: e.close, linePrice: e.linePrice, level: e.level, confirmed: e.confirmed,
+        others: e.others, tickSz: e.tickSz, line: e.line, title: m.title, body: m.body,
+        sentAt: Date.now(), pushed: okN, via: b.summary ? 'summary' : 'single',
+      });
+    }
   }
-  for (const { key } of fresh.slice(MAX_PER_RUN)) state.sent[key] = Date.now();
-  if (!devices.length && toSend.length) log('Chưa có máy nào (PUSH_CONFIG trống) — tín hiệu chỉ được lưu, không gửi.');
+  if (!devices.length && fresh.length) log('Chưa có máy nào (PUSH_CONFIG trống) — tín hiệu chỉ được lưu, không gửi.');
 
   // dọn bộ nhớ chống trùng cũ hơn 20 ngày
   const old = Date.now() - 20 * 24 * HOUR;
@@ -293,9 +271,9 @@ async function main() {
 
   state.lastCandle = target;
   writeJSON('signals.json', signals.slice(0, KEEP_SIGNALS));
-  status.sent = sentN; status.signals = toSend.length;
+  status.sent = sentN; status.signals = fresh.length; status.pushes = batches.length;
   status.pushDoneAfterCloseMs = Date.now() - (target + HOUR);
-  log(`Xong: ${toSend.length} tín hiệu, gửi ${sentN}. Báo sau khi nến đóng ${(status.pushDoneAfterCloseMs / 1000).toFixed(1)} giây.`);
+  log(`Xong: ${fresh.length} tín hiệu, ${batches.length} thông báo, gửi được ${sentN}. Báo sau khi nến đóng ${(status.pushDoneAfterCloseMs / 1000).toFixed(1)} giây.`);
   finish({ result: 'ok' });
 }
 
