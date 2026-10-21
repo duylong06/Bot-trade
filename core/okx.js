@@ -1,6 +1,6 @@
 // core/okx.js — gọi API công khai của OKX. Chạy được cả trong Node 18+ và trình duyệt.
 import { fromRows } from './breakout.js';
-import { EXCLUDE } from './config.js';
+import { EXCLUDE, CATEGORIES } from './config.js';
 
 export const HOSTS = ['https://www.okx.com', 'https://aws.okx.com', 'https://my.okx.com'];
 let host = HOSTS[0];
@@ -79,11 +79,17 @@ export async function candles(instId, bar = '1H', count = 520) {
 export const latest = (instId, bar = '1H', n = 3) =>
   api('/api/v5/market/candles', { instId, bar, limit: String(n) });
 
+// Các hợp đồng được theo dõi: USDT-SWAP đang giao dịch, đúng loại tài sản trong CATEGORIES.
+export function allowedSet(insts) {
+  return new Set(insts.filter(x => x.state === 'live' && x.instId.endsWith('-USDT-SWAP')
+    && (!x.instCategory || CATEGORIES.includes(String(x.instCategory)))).map(x => x.instId));
+}
+
 // Toàn bộ hợp đồng USDT-SWAP, xếp theo khối lượng 24h (quy ra USDT) giảm dần.
-export async function swapTickers() {
+export async function swapTickers(allow) {
   const d = await api('/api/v5/market/tickers', { instType: 'SWAP' });
   return d
-    .filter(x => x.instId.endsWith('-USDT-SWAP') && !EXCLUDE.includes(x.instId.split('-')[0]))
+    .filter(x => x.instId.endsWith('-USDT-SWAP') && !EXCLUDE.includes(x.instId.split('-')[0]) && (!allow || allow.has(x.instId)))
     .map(x => {
       const last = +x.last, open = +x.open24h;
       return {

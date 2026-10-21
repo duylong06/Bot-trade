@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bot Trade">
+<meta name="description" content="Báo phá vỡ trendline H1 cho top 50 đồng trên OKX">
+<title>Bot Trade</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="app/icons/icon-192.png">
+<link rel="apple-touch-icon" href="app/icons/icon-180.png">
+<link rel="stylesheet" href="app/style.css?v=3">
+<script src="app/lib/lightweight-charts.standalone.production.js"></script>
+<script type="module" src="app/app.js?v=3"></script>
+</head>
+<body>
+<div id="app">
+
+  <header class="top">
+    <button class="sym" id="symBtn" aria-label="Chọn đồng">
+      <span class="sym-coin" id="symCoin">BTC</span>
+      <span class="sym-sub">USDT · Vĩnh cửu</span>
+      <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+    </button>
+    <div class="quote">
+      <div class="px" id="px">—</div>
+      <div class="chg" id="chg">—</div>
+    </div>
+    <span class="dot" id="wsDot" title="Kết nối giá trực tiếp"></span>
+  </header>
+
+  <main>
+    <!-- BIỂU ĐỒ -->
+    <section class="view" id="v-chart">
+      <div class="tfbar">
+        <div class="tfs" id="tfs" role="tablist"></div>
+        <button class="pill on" id="tgLines" aria-pressed="true">Trendline</button>
+      </div>
+      <div class="legend" id="legend"></div>
+      <div class="chartwrap">
+        <div id="chart"></div>
+        <div class="stochlbl" id="stochLbl"></div>
+        <div class="cstatus" id="chartStatus" hidden></div>
+      </div>
+      <div class="lines" id="lines"></div>
+    </section>
+
+    <!-- TÍN HIỆU -->
+    <section class="view scroll" id="v-signals" hidden>
+      <div class="vhead">
+        <h2>Tín hiệu</h2>
+        <span class="vmeta" id="sigMeta"></span>
+      </div>
+      <div class="chips" id="sigFilter">
+        <button class="chip on" data-f="all">Tất cả</button>
+        <button class="chip" data-f="LONG">Long</button>
+        <button class="chip" data-f="SHORT">Short</button>
+        <button class="chip" data-f="BREAK">Phá</button>
+        <button class="chip" data-f="RETEST">Retest</button>
+        <button class="chip" data-f="CONFIRM">Xác nhận</button>
+      </div>
+      <div class="list" id="sigList"></div>
+    </section>
+
+    <!-- TOP 50 -->
+    <section class="view scroll" id="v-markets" hidden>
+      <div class="vhead">
+        <h2>Top 50</h2>
+        <span class="vmeta">khối lượng 24h · OKX USDT vĩnh cửu</span>
+      </div>
+      <div class="search"><input id="search" type="search" placeholder="Tìm đồng…" autocomplete="off" autocapitalize="characters" spellcheck="false"></div>
+      <div class="mhead"><span>Đồng / KL 24h</span><span>Giá</span><span>24h</span></div>
+      <div class="list" id="mkList"></div>
+    </section>
+
+    <!-- CÀI ĐẶT -->
+    <section class="view scroll" id="v-settings" hidden>
+      <div class="vhead"><h2>Cài đặt</h2></div>
+
+      <div class="card" id="cardPush">
+        <h3>Thông báo trên điện thoại</h3>
+        <div id="pushBody"></div>
+      </div>
+
+      <div class="card" id="cardBot">
+        <h3>Tình trạng bot</h3>
+        <div id="botBody"><p class="muted">Đang tải…</p></div>
+      </div>
+
+      <div class="card">
+        <h3>Báo đúng giây khi nến đóng</h3>
+        <p>Lịch chạy của GitHub hay bị bỏ hoặc trễ tới cả giờ. Để bot chạy đúng phút 58 mỗi giờ, chờ nến đóng rồi báo ngay trong vài giây, hãy nhờ <b>cron-job.org</b> (miễn phí) gọi bot.</p>
+        <details>
+          <summary>Cách cài — làm một lần</summary>
+          <ol class="steps">
+            <li><b>Tạo khoá GitHub.</b> Mở <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">trang tạo token</a> → đặt tên “cron bot” → thời hạn dài nhất → <i>Repository access</i>: <b>Only select repositories</b> → chọn <b>bot-trade</b> → <i>Permissions</i> → <i>Repository permissions</i> → <b>Actions: Read and write</b> → Generate → sao chép token.</li>
+            <li><b>Tạo việc hẹn giờ.</b> Đăng ký <a href="https://console.cron-job.org/signup" target="_blank" rel="noopener">cron-job.org</a> → <i>Create cronjob</i>.</li>
+            <li>Ô <b>URL</b>:<div class="copy"><code id="cjUrl"></code><button data-copy="cjUrl">Chép</button></div></li>
+            <li><b>Execution schedule</b>: <i>Every hour</i>, phút <b>58</b>. Múi giờ để mặc định cũng được.</li>
+            <li>Tab <b>Advanced</b> → <i>Request method</i>: <b>POST</b>.</li>
+            <li><b>Headers</b> — thêm 3 dòng:
+              <div class="copy"><code>Authorization</code><code class="v">Bearer &lt;token vừa tạo&gt;</code></div>
+              <div class="copy"><code>Accept</code><code class="v" id="cjAccept">application/vnd.github+json</code><button data-copy="cjAccept">Chép</button></div>
+              <div class="copy"><code>X-GitHub-Api-Version</code><code class="v" id="cjVer">2022-11-28</code><button data-copy="cjVer">Chép</button></div>
+            </li>
+            <li><b>Request body</b>:<div class="copy"><code id="cjBody">{"ref":"main"}</code><button data-copy="cjBody">Chép</button></div></li>
+            <li>Lưu, rồi bấm <b>Test run</b>: thấy mã <b>204</b> là được. Sau đó ô “Tình trạng bot” ở trên sẽ ghi “kích hoạt bởi: hẹn giờ ngoài”.</li>
+          </ol>
+        </details>
+      </div>
+
+      <div class="card">
+        <h3>Luật bot đang dùng</h3>
+        <ul class="rules" id="rules"></ul>
+      </div>
+
+      <div class="card about">
+        <p>Dữ liệu giá: API công khai của OKX. Biểu đồ: <a href="https://www.tradingview.com/lightweight-charts/" target="_blank" rel="noopener">TradingView Lightweight Charts™</a>.</p>
+        <p>Mã nguồn: <a id="repoLink" target="_blank" rel="noopener"></a></p>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabs" id="tabs">
+    <button data-tab="chart" class="on">
+      <svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16M8 15l3-4 3 2 5-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Biểu đồ</span>
+    </button>
+    <button data-tab="signals">
+      <svg viewBox="0 0 24 24"><path d="M12 3a6 6 0 00-6 6v4l-2 3h16l-2-3V9a6 6 0 00-6-6zM10 19a2 2 0 004 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Tín hiệu</span><i class="badge" id="sigBadge" hidden></i>
+    </button>
+    <button data-tab="markets">
+      <svg viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <span>Top 50</span>
+    </button>
+    <button data-tab="settings">
+      <svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+      <span>Cài đặt</span><i class="badge warn" id="setBadge" hidden></i>
+    </button>
+  </nav>
+</div>
+</body>
+</html>

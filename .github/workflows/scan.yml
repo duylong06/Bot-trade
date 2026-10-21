@@ -18,7 +18,7 @@ on:
 
   # Sửa code bot/lõi → tự chạy kiểm thử + quét thử (không gửi thông báo).
   push:
-    branches: [main, v2]
+    branches: [main]
     paths:
       - 'core/**'
       - 'bot/**'

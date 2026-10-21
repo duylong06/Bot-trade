@@ -19,6 +19,10 @@ export const MIN_SPAN_ALERT = 0;
 // Ghi đè ngưỡng trong core/breakout.js (CFG). Ví dụ: { MIN_SPAN: 20, BUF: 0.6 }
 export const TUNE = {};
 
+// Loại tài sản (trường instCategory của OKX): '1' crypto · '3' cổ phiếu · '4' hàng hoá (vàng, bạc, dầu…).
+// Mặc định chỉ crypto. Muốn thêm vàng/dầu thì đổi thành ['1', '4'].
+export const CATEGORIES = ['1'];
+
 // Không theo dõi các đồng ổn định giá.
 export const EXCLUDE = ['USDC', 'FDUSD', 'DAI', 'TUSD', 'USDE', 'PYUSD', 'USDG', 'USD1'];
 

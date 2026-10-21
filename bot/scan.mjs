@@ -40,6 +40,7 @@ const writeJSON = (f, v) => fs.writeFileSync(path.join(OUT, f), JSON.stringify(v
 const sha = s => crypto.createHash('sha256').update(s).digest('hex').slice(0, 12);
 
 const state = readJSON('state.json', {});
+const prevStatus = readJSON('status.json', {});
 state.sent ||= {}; state.lastBreak ||= {}; state.devices ||= {};
 const status = { version: 2, mode: MODE, trigger: TRIGGER, startedAt: t0, cfg: { window: CFG.WINDOW, top: TOP_N, alerts: ALERTS } };
 
@@ -108,7 +109,16 @@ function finish(extra = {}) {
   for (const id of Object.keys(state.devices)) if (!live.has(id)) delete state.devices[id];
   status.devices = Object.entries(state.devices).map(([id, r]) => ({ id, ...r }));
   status.push = { configured: devices.length, ids: devices.map(d => d.id) };
-  writeJSON('status.json', status);
+  // giữ lại thông tin lần quét thật gần nhất để app hiển thị
+  if (MODE === 'scan' && status.result === 'ok') status.lastScan = {
+    at: status.finishedAt, target: status.target, closeAt: status.closeAt, trigger: TRIGGER, host: status.host,
+    readyAfterCloseMs: status.readyAfterCloseMs, pushDoneAfterCloseMs: status.pushDoneAfterCloseMs,
+    counts: status.counts, signals: status.signals, pushes: status.pushes, sent: status.sent,
+  };
+  else if (prevStatus.lastScan) status.lastScan = prevStatus.lastScan;
+  writeJSON(MODE === 'dry-run' ? 'dryrun-status.json' : 'status.json', status);
+  // nến thô của lần chạy thử chỉ dùng để chỉnh ngưỡng tại máy — không mang theo mỗi giờ
+  if (MODE !== 'dry-run') for (const f of ['dryrun-candles.json', 'dryrun-instruments.json']) fs.rmSync(path.join(OUT, f), { force: true });
   if (MODE !== 'dry-run') writeJSON('state.json', state);
   fs.writeFileSync(path.join(OUT, MODE === 'dry-run' ? 'dryrun.log' : 'last.log'), LOG.join('\n') + '\n');
 }
@@ -152,8 +162,9 @@ async function main() {
   const { host, tried } = await okx.pickHost();
   status.host = host; if (tried.length) status.hostTried = tried;
   log('OKX:', host);
-  const [tickers, insts] = await Promise.all([okx.swapTickers(), okx.instruments()]);
+  const insts = await okx.instruments();
   const ticks = await okx.tickSizes(insts);
+  const tickers = await okx.swapTickers(okx.allowedSet(insts));
   const universe = tickers.slice(0, TOP_N);
   writeJSON('top50.json', { at: Date.now(), list: universe.map(u => ({ instId: u.instId, coin: u.coin, volUsd: Math.round(u.volUsd), last: u.last, chg: +u.chg.toFixed(5) })) });
   log(`Top ${universe.length}: ${universe.slice(0, 12).map(u => u.coin).join(' ')} …`);
@@ -221,8 +232,6 @@ async function main() {
     writeJSON('dryrun.json', { at: Date.now(), host, target: stamp(target), hours: 48, byType, bySize, perDay: +(found.length / 2).toFixed(1), perDayAtLeast, perCoin, sample, timing: { prefetchMs: status.prefetchMs, analyzeMs: status.analyzeMs } });
     log(`Thử 48 giờ: ${JSON.stringify(byType)} → khoảng ${(found.length / 2).toFixed(0)} thông báo/ngày`);
     if (process.env.DUMP_CANDLES) {
-      const ids = new Set(tickers.slice(0, 120).map(u => u.instId));
-      writeJSON('dryrun-instruments.json', insts.filter(x => ids.has(x.instId)));
       const dump = {};
       for (const u of universe) if (data[u.instId]) dump[u.instId] = data[u.instId];
       writeJSON('dryrun-candles.json', { at: Date.now(), target, data: dump });
