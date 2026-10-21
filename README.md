@@ -69,7 +69,7 @@ Toàn bộ nằm trong `core/breakout.js` (bot và app dùng chung một file, n
 | Retest | sau khi phá, chạy xa ≥ 2 ATR rồi quay về chạm đường, đóng cửa giữ được |
 | Chống ồn | cùng đồng cùng chiều gộp một tin; giờ nào > 3 tín hiệu thì gửi 2 tin lớn nhất + 1 tin tóm tắt; không báo phá cùng chiều 2 lần trong 3 nến |
 
-Đo trên giá thật 48 giờ (ngày 21/10/2026): khoảng **70–80 tín hiệu/ngày**, điện thoại rung khoảng **40 lần/ngày**, tối đa 3 lần mỗi giờ.
+Đo trên giá thật 48 giờ (ngày 21/10/2026, top 50 crypto): khoảng **80 tín hiệu/ngày**, điện thoại rung khoảng **40 lần/ngày**, tối đa 3 lần mỗi giờ.
 
 ## Chỉnh nhanh — `core/config.js`
 
@@ -78,7 +78,7 @@ Toàn bộ nằm trong `core/breakout.js` (bot và app dùng chung một file, n
 | `TOP_N` | số đồng theo dõi (mặc định 50) |
 | `CATEGORIES` | `['1']` chỉ crypto · thêm `'4'` để có vàng, bạc, dầu · `'3'` cổ phiếu |
 | `ALERTS` | bỏ loại nào khỏi `['BREAK','CONFIRM','RETEST']` là thôi báo loại đó |
-| `MIN_SPAN_ALERT` | chỉ báo mô hình từ N nến trở lên (0 = mọi cỡ). Ví dụ 60 → còn khoảng 45 tín hiệu/ngày, 100 → khoảng 28 |
+| `MIN_SPAN_ALERT` | chỉ báo mô hình từ N nến trở lên (0 = mọi cỡ). Ví dụ 60 → còn khoảng 55 tín hiệu/ngày, 100 → khoảng 30 |
 | `TUNE` | ghi đè ngưỡng trong `core/breakout.js`, ví dụ `{ MIN_SPAN: 20, BUF: 0.6 }` |
 
 ## Thư mục
