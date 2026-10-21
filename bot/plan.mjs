@@ -1,5 +1,4 @@
 // bot/plan.mjs — soạn nội dung thông báo và quyết định gửi gì trong một lượt quét.
-import { PAGES_URL } from '../core/config.js';
 import { fmtPrice, hhmm } from '../core/format.js';
 
 export const BUNDLE_AT = 3;     // lượt quét có hơn 3 tín hiệu → gửi 2 cái lớn nhất + 1 thông báo tóm tắt
@@ -29,7 +28,7 @@ export function buildMessage(e) {
   if (e.also && e.also.length) body += `\nKèm: ${e.also.map(a => `${NAME[a.type].toLowerCase()} đường ${a.line.span} nến`).join(', ')}.`;
   body += `\nNến H1 ${hhmm(e.t)}`;
   const q = new URLSearchParams({ s: e.instId, ev: e.type, t: String(e.t) });
-  return { title, body, url: PAGES_URL + '#' + q.toString(), tag: `${e.instId}|${e.type}|${e.t}` };
+  return { title, body, url: './#' + q.toString(), tag: `${e.instId}|${e.type}|${e.t}` };
 }
 
 function buildSummary(rest, t) {
@@ -45,7 +44,7 @@ function buildSummary(rest, t) {
   return {
     title: `${head} cùng lúc`,
     body: parts.join('\n') + `\nMở app để xem từng đồng · Nến H1 ${hhmm(t)}`,
-    url: PAGES_URL + '#tab=signals',
+    url: './#tab=signals',
     tag: `summary|${t}`,
   };
 }

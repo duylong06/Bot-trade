@@ -10,7 +10,7 @@ tìm các **đường xu hướng trong 500 nến H1 gần nhất** và báo v�
 Kèm app xem chart kiểu OKX/TradingView: nến cập nhật trực tiếp, EMA200, Stoch 32/13/5 và 10/5/5,
 các đường bot đang theo dõi, danh sách tín hiệu. Bấm vào thông báo là mở đúng chart, đúng đường vừa phá.
 
-**App:** https://duylong06.github.io/bot-trade/
+**App:** https://duylong06.github.io/Bot-trade/
 
 Không cần máy tính bật 24/7: bot chạy trên GitHub Actions, app chạy trên GitHub Pages, thông báo đi thẳng qua Apple.
 
@@ -19,7 +19,7 @@ Không cần máy tính bật 24/7: bot chạy trên GitHub Actions, app chạy 
 ## Cài đặt (làm một lần)
 
 ### 1. Cài app lên iPhone
-Mở **Safari** → vào https://duylong06.github.io/bot-trade/ → nút **Chia sẻ** → **Thêm vào MH chính**.
+Mở **Safari** → vào https://duylong06.github.io/Bot-trade/ → nút **Chia sẻ** → **Thêm vào MH chính**.
 Từ giờ mở app bằng biểu tượng **Bot Trade** trên màn hình chính (iPhone chỉ cho nhận thông báo theo cách này, iOS 16.4+).
 
 ### 2. Bật thông báo
@@ -41,10 +41,10 @@ Lịch chạy có sẵn của GitHub **rất thất thường** — repo này t�
 lệch tới cả tiếng. Để bot chạy ở phút 58, chờ nến H1 đóng rồi báo trong vài giây:
 
 1. Tạo token GitHub: https://github.com/settings/personal-access-tokens/new
-   - Repository access: **Only select repositories** → `bot-trade`
+   - Repository access: **Only select repositories** → `Bot-trade`
    - Repository permissions → **Actions: Read and write**
 2. Tạo tài khoản https://cron-job.org → **Create cronjob**:
-   - URL: `https://api.github.com/repos/duylong06/bot-trade/actions/workflows/scan.yml/dispatches`
+   - URL: `https://api.github.com/repos/duylong06/Bot-trade/actions/workflows/scan.yml/dispatches`
    - Lịch: mỗi giờ, phút **58**
    - Advanced → Method **POST**
    - Headers: `Authorization: Bearer <token>` · `Accept: application/vnd.github+json` · `X-GitHub-Api-Version: 2022-11-28`

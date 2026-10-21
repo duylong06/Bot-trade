@@ -1,7 +1,7 @@
 // core/config.js — cấu hình chung cho bot và app. Sửa ở đây là cả hai cùng đổi.
 
-export const REPO = 'duylong06/bot-trade';
-export const PAGES_URL = 'https://duylong06.github.io/bot-trade/';
+export const REPO = 'duylong06/Bot-trade';
+export const PAGES_URL = 'https://duylong06.github.io/Bot-trade/';
 
 // Số đồng theo dõi: top N hợp đồng USDT-SWAP trên OKX có khối lượng 24h lớn nhất, cập nhật mỗi lần quét.
 export const TOP_N = 50;

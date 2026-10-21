@@ -130,7 +130,7 @@ async function main() {
 
   if (MODE === 'test-push') {
     if (!devices.length) { log('Chưa có PUSH_CONFIG — chưa có máy nào để gửi.'); return finish({ result: 'no-devices' }); }
-    const n = await pushAll({ title: 'Bot Trade đã kết nối ✓', body: 'Thông báo thử. Thấy dòng này là bot đã gửi được tới máy bạn.', url: PAGES_URL + '#tab=settings', tag: 'test' });
+    const n = await pushAll({ title: 'Bot Trade đã kết nối ✓', body: 'Thông báo thử. Thấy dòng này là bot đã gửi được tới máy bạn.', url: './#tab=settings', tag: 'test' });
     return finish({ result: n ? 'test-sent' : 'test-failed' });
   }
 
@@ -138,7 +138,7 @@ async function main() {
   const devHash = sha(devices.map(d => d.id).sort().join(','));
   if (MODE === 'scan' && devices.length && devHash !== state.devHash) {
     log('Phát hiện thay đổi danh sách máy — gửi lời chào');
-    const n = await pushAll({ title: 'Bot Trade đã nhận máy này ✓', body: `Từ giờ bot sẽ báo phá vỡ trendline H1 cho top ${TOP_N} đồng.`, url: PAGES_URL + '#tab=settings', tag: 'hello' });
+    const n = await pushAll({ title: 'Bot Trade đã nhận máy này ✓', body: `Từ giờ bot sẽ báo phá vỡ trendline H1 cho top ${TOP_N} đồng.`, url: './#tab=settings', tag: 'hello' });
     if (n) state.devHash = devHash;
   }
 
