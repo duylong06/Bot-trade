@@ -70,7 +70,8 @@ Toàn bộ nằm trong `core/breakout.js` (bot và app dùng chung một file, n
 | Retest | sau khi phá, chạy xa ≥ 2 ATR rồi quay về chạm đường, đóng cửa giữ được |
 | Chống ồn | cùng đồng cùng chiều gộp một tin; giờ nào > 3 tín hiệu thì gửi 2 tin lớn nhất + 1 tin tóm tắt; không báo phá cùng chiều 2 lần trong 3 nến |
 
-Đo trên giá thật 48 giờ (ngày 20–22/10/2026, top 50 crypto): khoảng **120 tín hiệu/ngày**, điện thoại rung khoảng **50 lần/ngày**, tối đa 3 lần mỗi giờ.
+Đo trên giá thật 48 giờ (ngày 20–22/10/2026, top 60 crypto + vàng + dầu): khoảng **150 tín hiệu/ngày**, điện thoại rung khoảng **57 lần/ngày** (sau khi gộp), tối đa 3 lần mỗi giờ.
+Muốn bớt: đặt `MIN_SPAN_ALERT` (ví dụ 60 → còn khoảng 100 tín hiệu/ngày, 100 → khoảng 55).
 
 ## Chỉnh nhanh — `core/config.js`
 
