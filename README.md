@@ -8,7 +8,11 @@ tìm các **đường xu hướng trong 500 nến H1 gần nhất** và báo v�
 - **Retest** — giá chạy ra xa rồi quay về chạm lại đường vừa phá và giữ được.
 
 Kèm app xem chart kiểu OKX/TradingView: nến cập nhật trực tiếp, EMA200, Stoch 32/13/5 và 10/5/5,
-các đường bot đang theo dõi, danh sách tín hiệu. Bấm vào thông báo là mở đúng chart, đúng đường vừa phá.
+các đường bot đang theo dõi, danh sách tín hiệu. Bấm vào thông báo là mở đúng chart, đúng đường vừa phá,
+kèm giá vào / mục tiêu / dừng lỗ bot dùng để chấm điểm.
+
+Bot **ghi nhớ kết quả từng tín hiệu** và tự học kiểu phá nào hay chạy tiếp (tab **Ghi nhớ** trong app) —
+xem mục [Bộ nhớ của bot](#bộ-nhớ-của-bot).
 
 **App:** https://duylong06.github.io/Bot-trade/
 
@@ -71,6 +75,24 @@ Toàn bộ nằm trong `core/breakout.js` (bot và app dùng chung một file, n
 
 Đo trên giá thật 48 giờ (ngày 21/10/2026, top 50 crypto): khoảng **80 tín hiệu/ngày**, điện thoại rung khoảng **40 lần/ngày**, tối đa 3 lần mỗi giờ.
 
+## Bộ nhớ của bot
+
+Toàn bộ trong `core/learn.js` và `bot/journal.mjs`. **Luật phát hiện ở trên không đổi** — bot chỉ học xem trong
+các cú phá đúng luật, kiểu nào thường chạy tiếp, kiểu nào hay quay đầu.
+
+- **Ghi nhật ký**: mọi tín hiệu (kể cả cái không đẩy về máy) được ghi vào `journal.json` ở nhánh `data`, giữ 120 ngày.
+- **Chấm điểm**: mỗi tín hiệu tính như một lệnh giả định — vào ở giá đóng cửa nến báo, mục tiêu **+2 ATR**,
+  dừng lỗ **−1 ATR**, tối đa 72 nến H1; cùng một nến chạm cả hai thì tính thua. Hoà vốn ở tỉ lệ thắng 33%.
+- **Học từ ngày đầu**: lần chạy đầu bot tự chạy lại 480 giờ quá khứ, từng giờ một, chỉ dùng nến có tới giờ đó
+  (không nhìn trước tương lai). Có thể chạy lại tay: Actions → Run workflow → `bootstrap`.
+- **Mô hình**: hồi quy logistic trên 17 đặc trưng (loại tín hiệu, chiều, cỡ mô hình, số lần chạm, gãy cấu trúc,
+  độ dốc, kiểu đường, khối lượng nến, vị trí so với EMA200, khoảng cách đóng cửa tới đường), học lại mỗi giờ.
+- **Chỉ tự lọc khi chứng minh được**: kiểm tra theo thời gian 3 đoạn (học trên dữ liệu cũ, thử trên dữ liệu mới),
+  lọc phải giúp tăng ≥ +0,05R/lệnh ở **cả 3 đoạn**, độ tin cậy t ≥ 2. Chưa đạt thì bot vẫn báo hết như cũ.
+  Khi đạt, bot chỉ đẩy tín hiệu có kỳ vọng ≥ 0R và thông báo kèm dòng “Bot chấm: thắng ~X% · kỳ vọng ±YR”.
+  Tín hiệu bị bỏ vẫn hiện trong tab Tín hiệu, kèm lý do.
+- `node bot/test-learn.mjs`: kiểm tra trên dữ liệu ngẫu nhiên — bộ lọc bật nhầm 0/40 lần.
+
 ## Chỉnh nhanh — `core/config.js`
 
 | Biến | Ý nghĩa |
@@ -87,15 +109,17 @@ Toàn bộ nằm trong `core/breakout.js` (bot và app dùng chung một file, n
 index.html, manifest.webmanifest, sw.js   app (GitHub Pages)
 app/                                       giao diện, chart, WebSocket OKX, bật thông báo
 core/breakout.js                           lõi phát hiện phá vỡ — dùng chung
+core/learn.js                              chấm điểm, học, thống kê — dùng chung
 core/okx.js, core/format.js, core/config.js
 bot/scan.mjs                               bot quét + gửi thông báo (GitHub Actions)
 bot/plan.mjs                               soạn nội dung và gộp thông báo
-bot/test-core.mjs                          kiểm thử lõi:  npm test
+bot/journal.mjs                            nhật ký tín hiệu + chạy lại quá khứ
+bot/test-core.mjs, bot/test-learn.mjs      kiểm thử:  npm test
 bot/replay.mjs                             phát lại bot trên nến thật để đếm số thông báo
 .github/workflows/scan.yml                 lịch chạy
 ```
 
-Bot lưu tín hiệu, trạng thái và bộ nhớ chống trùng ở nhánh `data` (app đọc từ đây).
+Bot lưu tín hiệu, trạng thái, nhật ký, mô hình và thống kê ở nhánh `data` (app đọc từ đây).
 Bản cũ (`quet-tin-hieu.html` + bot Telegram) vẫn còn nguyên ở nhánh `legacy`.
 
 ## Thêm mô hình mới

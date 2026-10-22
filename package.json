@@ -4,7 +4,7 @@
   "type": "module",
   "description": "Bot báo phá vỡ trendline H1 cho top 50 đồng trên OKX, kèm app xem chart trên iPhone",
   "scripts": {
-    "test": "node bot/test-core.mjs",
+    "test": "node bot/test-core.mjs && node bot/test-learn.mjs",
     "scan": "node bot/scan.mjs"
   },
   "engines": { "node": ">=20" },

@@ -304,10 +304,17 @@ export function analyze(Kfull) {
   };
   const live = all.filter(L => (L.state === 'active' || L.state === 'pending')
     && Math.abs(L.y0 + L.m * last - price) <= CFG.NEAR_ATR * A[last]);
+  // Đường đã phá: lấy đúng đường của các tín hiệu (đường chính mỗi cú phá), cái nào vừa có động tĩnh
+  // (phá / xác nhận / retest) gần nhất thì vẽ trước — để mũi tên nào cũng có đường đi kèm.
+  const lastAct = L => Math.max(L.b, L.confirm, L.retest);
+  const brokenShown = kept.map(k => k.L)
+    .filter(L => last - lastAct(L) <= CFG.SHOW_BROKEN_WITHIN)
+    .sort((x, y) => lastAct(y) - lastAct(x))
+    .slice(0, CFG.SHOW_BROKEN);
   const lines = [
     ...pick(live.filter(L => L.side === 'R'), CFG.SHOW_PER_SIDE),
     ...pick(live.filter(L => L.side === 'S'), CFG.SHOW_PER_SIDE),
-    ...pick(all.filter(L => L.state === 'broken' && last - L.b <= CFG.SHOW_BROKEN_WITHIN), CFG.SHOW_BROKEN),
+    ...brokenShown,
   ].map(L => lineInfo(W, A, L));
 
   return { W, A, lines, events, all };

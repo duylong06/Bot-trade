@@ -3,6 +3,7 @@
 import { analyze, lineAt, HOUR, fromRows } from '../core/breakout.js';
 import * as okx from '../core/okx.js';
 import { fmtPrice, hhmm, stamp, decimalsOf } from '../core/format.js';
+import { outcome } from '../core/learn.js';
 import { ema, stoch } from './indicators.js';
 
 const L = window.LightweightCharts;
@@ -77,9 +78,9 @@ export class ChartView {
   async open(inst, tickSz, tf = this.tf, focus = null) {
     const seq = ++this.seq;
     const changedSym = inst !== this.inst;
-    this.inst = inst; this.tickSz = tickSz; this.tf = tf; this.focus = focus;
-    const d = tickSz ? Math.min(10, decimalsOf(tickSz)) : 4;
-    this.candles.applyOptions({ priceFormat: { type: 'custom', minMove: tickSz ? +tickSz : 0.0001, formatter: p => fmtPrice(p, tickSz || null) } });
+    if (changedSym || tf !== this.tf) this.clear();
+    this.inst = inst; this.tf = tf; this.focus = focus; this.zoomed = false;
+    this.setTick(tickSz);
     this.hooks.onStatus && this.hooks.onStatus('loading');
 
     try {
@@ -100,6 +101,14 @@ export class ChartView {
       this.hooks.onStatus && this.hooks.onStatus('error', e.message);
     }
     if (changedSym) this.hooks.onSymbol && this.hooks.onSymbol(inst);
+  }
+
+  // Bước giá (số lẻ) của đồng — đổi được bất cứ lúc nào, không phải tải lại nến.
+  setTick(tickSz) {
+    tickSz = tickSz || null;
+    if (this._tickSet && tickSz === this.tickSz) return;
+    this.tickSz = tickSz; this._tickSet = true;
+    this.candles.applyOptions({ priceFormat: { type: 'custom', minMove: tickSz ? +tickSz : 0.0001, formatter: p => fmtPrice(p, tickSz) } });
   }
 
   async fetchRows(inst, bar, count) {
@@ -128,14 +137,41 @@ export class ChartView {
     });
   }
 
-  // Sau khi mất kết nối: lấy lại vài nến gần nhất để vá chỗ hổng.
+  // Quay lại app / có mạng lại: vá chỗ hổng. Hổng quá dài (app ngủ lâu) thì tải lại toàn bộ cho sạch.
   async resync() {
-    if (!this.inst) return;
+    if (!this.inst || !this.bars || this.syncing) return;
+    const tf = TFS.find(x => x.id === this.tf);
+    const last = this.bars.all[this.bars.all.length - 1];
+    if (!last || this.now() - +last[0] > 90 * tf.ms) return this.open(this.inst, this.tickSz, this.tf, this.focus);
+    this.syncing = true;
+    const inst = this.inst, tfId = this.tf;
     try {
-      const d = await okx.api('/api/v5/market/candles', { instId: this.inst, bar: this.tf, limit: '100' });
-      d.sort((a, b) => a[0] - b[0]).forEach(r => this.onRow(r));
-    } catch {}
+      const d = await okx.api('/api/v5/market/candles', { instId: inst, bar: tfId, limit: '100' });
+      if (inst === this.inst && tfId === this.tf && this.bars) this.merge(d);
+    } catch {} finally { this.syncing = false; }
+    // đường xu hướng cũ hơn nến H1 vừa đóng → tính lại
+    const h1Last = this.h1 && this.h1.t[this.h1.t.length - 1];
+    if (h1Last && h1Last < Math.floor(this.now() / HOUR) * HOUR - HOUR) this.onH1Close();
   }
+
+  // Gộp một loạt nến (thô OKX) vào dữ liệu đang vẽ rồi vẽ lại đúng một lần.
+  // Thường chỉ là vài cây cuối → cập nhật từng cây (không đụng tới vùng đang xem);
+  // có cây cũ bị sửa thì mới vẽ lại toàn bộ.
+  merge(rows) {
+    if (!rows || !rows.length) return;
+    const all = this.bars.all, n = all.length;
+    const m = new Map(all.map(r => [r[0], r]));
+    const diff = rows.filter(r => { const o = m.get(r[0]); return !o || o.join() !== r.join(); }).sort((a, b) => a[0] - b[0]);
+    if (!diff.length) return;
+    const lastT = n ? +all[n - 1][0] : 0;
+    if (diff.every(r => +r[0] >= lastT)) { for (const r of diff) this.onRow(r); return; }
+    for (const r of diff) m.set(r[0], r);
+    this.bars.all = [...m.values()].sort((a, b) => a[0] - b[0]).slice(-Math.max(n, 1));
+    this.render(true);
+    if (this.tf === '1H') this.onH1Close();
+  }
+
+  now() { return Date.now() + (this.clockOffset || 0); }
 
   onRow(r) {
     if (!this.bars) return;
@@ -197,7 +233,7 @@ export class ChartView {
     if (!r) r = this.bars.all[this.bars.all.length - 1];
     if (!r) return;
     const tf = TFS.find(x => x.id === this.tf);
-    const closeIn = +r[0] + tf.ms - Date.now();
+    const closeIn = +r[0] + tf.ms - this.now();
     this.hooks.onLegend({ o: +r[1], h: +r[2], l: +r[3], c: +r[4], t: +r[0], live: r[8] === '0', closeIn, ...this.last });
   }
 
@@ -258,29 +294,66 @@ export class ChartView {
       this.lineSeries.push(s);
     }
 
-    // điểm phá / xác nhận / retest
+    // Mũi tên cho MỌI tín hiệu trong vùng đang xem — không phụ thuộc đường của nó có được vẽ hay không.
+    //   đậm  = bot đã đẩy về máy · mờ = không đẩy / xảy ra trước khi bot chạy
+    //   ✓ / ✗ = đã chạm mục tiêu / dừng lỗ · tín hiệu cũ hơn 3 ngày chỉ hiện dấu nhỏ, không chữ
     const firstT = times[0];
     const tf = TFS.find(x => x.id === this.tf);
     const mk = [];
-    const shown = new Set(lines.map(x => x.ta + '|' + x.tb));
+    const info = this.hooks.eventInfo || (() => null);
     for (const e of this.res.events) {
       if (e.t < firstT) continue;
       const isFocus = this.focusMatch && this.focusMatch.ev === e;
-      if (!isFocus && !shown.has(e.line.ta + '|' + e.line.tb)) continue;
       const at = this.snap(tf.ms < HOUR ? e.t + HOUR - 1 : e.t, times);
       const up = e.dir === 'LONG';
-      const color = isFocus ? COLORS.focus : e.type === 'RETEST' ? COLORS.blue : up ? COLORS.up : COLORS.down;
+      const rec = info(`${this.inst}|${e.type}|${e.side}|${e.line.tBreak}`);
+      const pushed = rec && rec.pu > 0;
+      const recent = lastT - e.t <= 72 * HOUR;
+      const base = e.type === 'RETEST' ? [COLORS.blue, 'rgba(47,125,255,0.4)'] : up ? [COLORS.up, 'rgba(195,242,63,0.38)'] : [COLORS.down, 'rgba(242,57,139,0.38)'];
+      const color = isFocus ? COLORS.focus : pushed ? base[0] : base[1];
+      const word = e.type === 'BREAK' ? 'Phá' : e.type === 'RETEST' ? 'RT' : 'XN';
+      let o = rec && rec.o;
+      if ((!o || o === 'P') && this.h1) { const r = outcome(this.h1, e.t, up ? 1 : -1, e.close, e.atr); if (r) o = r.o; }
+      const mark = o === 'W' ? ' ✓' : o === 'L' ? ' ✗' : '';
       mk.push({
         time: T(at), position: up ? 'belowBar' : 'aboveBar', color,
         shape: e.type === 'BREAK' ? (up ? 'arrowUp' : 'arrowDown') : e.type === 'RETEST' ? 'circle' : 'square',
-        text: e.type === 'BREAK' ? 'Phá' : e.type === 'RETEST' ? 'RT' : 'XN',
-        size: isFocus ? 2 : 1,
+        text: isFocus || recent ? word + mark : '',
+        size: isFocus ? 2 : recent ? 1 : 0.6,
       });
     }
     mk.sort((a, b) => a.time - b.time);
     this.markers.setMarkers(mk);
 
-    if (this.focusMatch) this.zoomTo(this.focusMatch.line);
+    this.drawFocusLevels();
+    if (this.focusMatch && !this.zoomed) { this.zoomed = true; this.zoomTo(this.focusMatch.line); }
+  }
+
+  // Tín hiệu đang mở: vẽ giá vào, mục tiêu (+2 ATR) và dừng lỗ (−1 ATR) như lệnh bot dùng để chấm điểm.
+  drawFocusLevels() {
+    for (const pl of this.focusLevels || []) { try { this.candles.removePriceLine(pl); } catch {} }
+    this.focusLevels = [];
+    const f = this.focus, ev = this.focusMatch && this.focusMatch.ev;
+    const close = ev ? ev.close : f && f.close, atr = ev ? ev.atr : f && f.atr, dir = ev ? ev.dir : f && f.dir;
+    if (!f || !close || !atr || !dir) return;
+    const d = dir === 'LONG' ? 1 : -1;
+    const add = (price, color, title, style) => this.focusLevels.push(this.candles.createPriceLine({
+      price, color, title, lineWidth: 1, lineStyle: style, axisLabelVisible: true,
+    }));
+    add(close, COLORS.focus, 'Vào', L.LineStyle.Dotted);
+    add(close + d * 2 * atr, COLORS.up, 'TP', L.LineStyle.Dashed);
+    add(close - d * atr, COLORS.down, 'SL', L.LineStyle.Dashed);
+  }
+
+  // Xoá sạch hình của đồng cũ trước khi tải đồng mới — không để nến/đường của đồng trước lóe lên.
+  clear() {
+    for (const s of this.lineSeries) this.chart.removeSeries(s);
+    this.lineSeries = [];
+    for (const pl of this.focusLevels || []) { try { this.candles.removePriceLine(pl); } catch {} }
+    this.focusLevels = [];
+    for (const s of [this.candles, this.vol, this.ema, this.kY, this.dY, this.kR, this.dR]) s.setData([]);
+    this.markers.setMarkers([]);
+    this.bars = null; this.res = null; this.h1 = null;
   }
 
   zoomTo(ln) {
@@ -303,9 +376,9 @@ export class ChartView {
   /* ---------- mỗi giờ: cập nhật lại đường khi nến H1 đóng ---------- */
 
   scheduleHourly() {
-    const next = Math.ceil(Date.now() / HOUR) * HOUR + 4000;
+    const now = this.now(), next = Math.ceil(now / HOUR) * HOUR + 4000;
     clearTimeout(this.hourTimer);
-    this.hourTimer = setTimeout(() => { this.onH1Close(); this.scheduleHourly(); }, next - Date.now());
+    this.hourTimer = setTimeout(() => { this.onH1Close(); this.scheduleHourly(); }, next - now);
   }
 
   async onH1Close() {

@@ -13,9 +13,20 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="app/icons/icon-192.png">
 <link rel="apple-touch-icon" href="app/icons/icon-180.png">
-<link rel="stylesheet" href="app/style.css?v=4">
-<script src="app/lib/lightweight-charts.standalone.production.js"></script>
-<script type="module" src="app/app.js?v=4"></script>
+<link rel="preconnect" href="https://www.okx.com" crossorigin>
+<link rel="preconnect" href="https://api.github.com" crossorigin>
+<link rel="stylesheet" href="app/style.css?v=5">
+<script defer src="app/lib/lightweight-charts.standalone.production.js"></script>
+<script type="module" src="app/app.js?v=5"></script>
+<link rel="modulepreload" href="app/chart.js">
+<link rel="modulepreload" href="core/breakout.js">
+<link rel="modulepreload" href="core/learn.js">
+<link rel="modulepreload" href="core/okx.js">
+<link rel="modulepreload" href="core/config.js">
+<link rel="modulepreload" href="core/format.js">
+<link rel="modulepreload" href="app/indicators.js">
+<link rel="modulepreload" href="app/ws.js">
+<link rel="modulepreload" href="app/push.js">
 </head>
 <body>
 <div id="app">
@@ -57,6 +68,7 @@
       </div>
       <div class="chips" id="sigFilter">
         <button class="chip on" data-f="all">Tất cả</button>
+        <button class="chip" data-f="pushed">Đã báo</button>
         <button class="chip" data-f="LONG">Long</button>
         <button class="chip" data-f="SHORT">Short</button>
         <button class="chip" data-f="BREAK">Phá</button>
@@ -75,6 +87,15 @@
       <div class="search"><input id="search" type="search" placeholder="Tìm đồng…" autocomplete="off" autocapitalize="characters" spellcheck="false"></div>
       <div class="mhead"><span>Đồng / KL 24h</span><span>Giá</span><span>24h</span></div>
       <div class="list" id="mkList"></div>
+    </section>
+
+    <!-- GHI NHỚ -->
+    <section class="view scroll" id="v-stats" hidden>
+      <div class="vhead">
+        <h2>Ghi nhớ</h2>
+        <span class="vmeta" id="statMeta"></span>
+      </div>
+      <div id="statBody"><div class="empty">Đang tải…</div></div>
     </section>
 
     <!-- CÀI ĐẶT -->
@@ -137,6 +158,10 @@
     <button data-tab="markets">
       <svg viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
       <span>Top 50</span>
+    </button>
+    <button data-tab="stats">
+      <svg viewBox="0 0 24 24"><path d="M4 20h16M7 16.5v-4M12 16.5V7M17 16.5v-6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="17" cy="6" r="1.6" fill="currentColor"/></svg>
+      <span>Ghi nhớ</span>
     </button>
     <button data-tab="settings">
       <svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>

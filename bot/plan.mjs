@@ -5,6 +5,10 @@ export const BUNDLE_AT = 3;     // lượt quét có hơn 3 tín hiệu → gử
 const SINGLES_WHEN_BUNDLED = 2;
 const RANK = { BREAK: 0, RETEST: 1, CONFIRM: 2 };
 const NAME = { BREAK: 'Phá', RETEST: 'Retest', CONFIRM: 'Xác nhận' };
+const fmtR = x => (x >= 0 ? '+' : '') + x.toFixed(2).replace('.', ',') + 'R';
+// Thứ tự ưu tiên khi phải chọn: bot đã chấm điểm thì theo kỳ vọng, chưa thì PHÁ > RETEST > XÁC NHẬN rồi đường dài hơn.
+const better = (a, b) => (a.ev != null && b.ev != null && a.ev !== b.ev ? b.ev - a.ev : 0)
+  || (RANK[a.type] - RANK[b.type]) || (b.line.span - a.line.span);
 
 export function buildMessage(e) {
   const p = v => fmtPrice(v, e.tickSz);
@@ -26,6 +30,7 @@ export function buildMessage(e) {
     body = `Giá quay về chạm ${L.kind} ${L.span} nến vừa phá (${p(e.linePrice)}) và đóng cửa giữ được ở ${p(e.close)}.`;
   }
   if (e.also && e.also.length) body += `\nKèm: ${e.also.map(a => `${NAME[a.type].toLowerCase()} đường ${a.line.span} nến`).join(', ')}.`;
+  if (e.p != null && e.showScore) body += `\nBot chấm: thắng ~${Math.round(e.p * 100)}% · kỳ vọng ${fmtR(e.ev)}`;
   body += `\nNến H1 ${hhmm(e.t)}`;
   const q = new URLSearchParams({ s: e.instId, ev: e.type, t: String(e.t) });
   return { title, body, url: './#' + q.toString(), tag: `${e.instId}|${e.type}|${e.t}` };
@@ -52,7 +57,7 @@ function buildSummary(rest, t) {
 /**
  * Gộp tín hiệu của một lượt quét thành danh sách thông báo cần gửi.
  * - Cùng đồng, cùng chiều → một thông báo (ưu tiên PHÁ > RETEST > XÁC NHẬN, rồi mô hình lớn hơn).
- * - Nhiều hơn BUNDLE_AT thông báo → gửi 2 cái lớn nhất riêng + 1 thông báo tóm tắt phần còn lại.
+ * - Nhiều hơn BUNDLE_AT thông báo → gửi riêng 2 cái tốt nhất (kỳ vọng cao nhất khi bot đã học) + 1 tin tóm tắt.
  * Trả về [{ msg, events }] — events là các tín hiệu mà thông báo đó đại diện.
  */
 export function plan(events) {
@@ -65,7 +70,7 @@ export function plan(events) {
   const heads = [...groups.values()].map(g => {
     g.sort((a, b) => (RANK[a.type] - RANK[b.type]) || (b.line.span - a.line.span));
     return { ...g[0], also: g.slice(1), group: g };
-  }).sort((a, b) => (RANK[a.type] - RANK[b.type]) || (b.line.span - a.line.span));
+  }).sort(better);
 
   if (heads.length <= BUNDLE_AT) return heads.map(h => ({ msg: buildMessage(h), events: h.group }));
   const singles = heads.slice(0, SINGLES_WHEN_BUNDLED);
