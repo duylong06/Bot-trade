@@ -1,5 +1,6 @@
 // Kiểm thử lõi phát hiện phá vỡ trên dữ liệu dựng sẵn.
 // Chạy: node bot/test-core.mjs
+import fs from 'node:fs';
 import { analyze, CFG, HOUR } from '../core/breakout.js';
 
 let fails = 0;
@@ -65,26 +66,24 @@ const show = ev => `${ev.type} ${ev.dir} @${ev.i} span=${ev.line.span} touches=$
   ok(br && br.line.kind === 'hỗ trợ tăng', 'loại: hỗ trợ tăng');
 }
 
-/* 3. Đường đuổi kịp giá: hỗ trợ dốc, giá đi ngang bằng nến li ti → KHÔNG báo */
+/* 3. Nến thật OKX 22/10/2026 — các ca chủ repo chỉ ra */
 {
-  console.log('3. Đường tự leo qua giá đi ngang — không được báo');
-  const K = { t: [], o: [], h: [], l: [], c: [], v: [] };
-  const t0 = Date.UTC(2026, 8, 1);
-  // 3 đáy đúng trên đường y = 100 + 0.3*i ở nến 10, 25, 40 rồi giá đi ngang 112.5
-  const path = i => {
-    if (i <= 44) { const ph = (i % 15) / 15; const yl = 100 + 0.3 * i; return yl + 3 * Math.sin(Math.PI * ph); }
-    return 112.5 + 0.05 * Math.sin(i);
-  };
-  for (let i = 0; i < 90; i++) {
-    const c = path(i), o = i ? K.c[i - 1] : c;
-    K.t.push(t0 + i * HOUR); K.o.push(o); K.c.push(c);
-    K.h.push(Math.max(o, c) + 0.25); K.l.push(Math.min(o, c) - 0.25); K.v.push(100);
+  console.log('3. Nến thật: báo ngay cây đầu tiên đóng ngoài đường; neo ở đáy thật');
+  const fx = JSON.parse(fs.readFileSync(new URL('./fixtures/okx-h1-2026-10-22.json', import.meta.url), 'utf8'));
+  const load = c => { const { t0, rows } = fx[c]; return { t: rows.map((_, i) => t0 + i * HOUR), o: rows.map(r => r[0]), h: rows.map(r => r[1]), l: rows.map(r => r[2]), c: rows.map(r => r[3]), v: rows.map(() => 100) }; };
+  const VN = (d, h) => Date.UTC(2026, 9, d, h - 7);       // giờ Việt Nam → mili giây
+  const breakAt = (coin, t) => analyze(load(coin)).events.find(e => e.type === 'BREAK' && e.dir === 'SHORT' && e.t === t && e.line.kind === 'hỗ trợ tăng');
+  for (const [coin, h, was] of [['DASH', 9, 15], ['ETH', 12, 15], ['AAVE', 14, 15]]) {
+    const br = breakAt(coin, VN(22, h));
+    if (br) console.log(`    ${coin}: ${show(br)}`);
+    ok(!!br, `${coin}: báo phá hỗ trợ tăng ngay nến ${h}:00 22/10 (trước đây ${was}:00)`);
   }
-  // ATR ~ biên độ nến; giá cắt đường quanh nến 42 rồi đi ngang — đường tự leo lên trên giá
-  const { events } = analyze(K);
-  const bad = events.filter(e => e.type === 'BREAK' && e.dir === 'SHORT' && e.i > 42);
-  events.forEach(e => console.log('    ' + show(e)));
-  ok(bad.length === 0, 'không có BREAK SHORT nào sau khi giá đi ngang');
+  for (const [coin, mid, bottom] of [['APT', VN(20, 1), VN(19, 3)], ['ONDO', VN(20, 2), VN(19, 3)]]) {
+    const r = analyze(load(coin));
+    const used = [...r.events.map(e => e.line), ...r.lines].filter(L => L.ta === mid);
+    ok(!used.length, `${coin}: không kẻ đường neo ở đáy nhỏ giữa vùng (${used.length} đường)`);
+    if (coin === 'ONDO') ok(r.events.some(e => e.type === 'BREAK' && e.dir === 'SHORT' && e.line.ta === bottom), 'ONDO: đường neo ở đáy thật 19/10 03:00 bị phá xuống được báo');
+  }
 }
 
 /* 4. Râu chọc qua nhưng thân đóng trong → KHÔNG báo; sau đó đóng cửa dứt khoát → báo */
@@ -135,9 +134,9 @@ const show = ev => `${ev.type} ${ev.dir} @${ev.i} span=${ev.line.span} touches=$
   ok(ms < 1500, 'chạy dưới 1,5 giây một đồng');
 }
 
-/* 7. Hỗ trợ tăng dốc bị giá trôi qua bằng nến nhỏ rồi mới sập (NEAR 20–22/10/2026, nến thật) */
+/* 7. Hỗ trợ tăng dốc, giá trôi qua bằng nến nhỏ rồi mới sập (NEAR 20–22/10/2026, nến thật): báo ngay cây đầu */
 {
-  console.log('7. Đường dốc: trôi qua bằng nến nhỏ, 2 nến sau sập — vẫn phải báo');
+  console.log('7. Đường dốc NEAR: báo ngay cây đầu tiên đóng dưới đường (06:00 22/10)');
   const rows = [
   [4.869,5.004,4.861,4.934], [4.935,5.011,4.921,4.994], [4.994,5.061,4.986,5.038], [5.039,5.049,4.966,4.977], [4.977,4.982,4.921,4.938],
   [4.937,5.022,4.93,4.999], [4.999,5.02,4.932,4.965], [4.964,4.995,4.937,4.958], [4.959,5.019,4.949,5.004], [5.004,5.011,4.951,4.968],
@@ -163,9 +162,9 @@ const show = ev => `${ev.type} ${ev.dir} @${ev.i} span=${ev.line.span} touches=$
   const t0 = 1792285200000;
   const K = { t: rows.map((_, i) => t0 + i * HOUR), o: rows.map(r => r[0]), h: rows.map(r => r[1]), l: rows.map(r => r[2]), c: rows.map(r => r[3]), v: rows.map(() => 100) };
   const { events } = analyze(K);
-  const br = events.find(e => e.type === 'BREAK' && e.dir === 'SHORT' && e.i >= 93 && e.i <= 97);
+  const br = events.find(e => e.type === 'BREAK' && e.dir === 'SHORT' && e.i === 94);
   if (br) console.log('    ' + show(br));
-  ok(!!br, 'có BREAK SHORT khi giá sập khỏi hỗ trợ tăng (nến 08:00 22/10)');
+  ok(!!br, 'có BREAK SHORT ở nến 06:00 22/10 (trước đây 08:00)');
   ok(br && br.line.kind === 'hỗ trợ tăng' && br.line.span >= 30, 'đúng đường hỗ trợ tăng ~38 nến');
 }
 

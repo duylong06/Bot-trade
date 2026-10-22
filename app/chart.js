@@ -318,7 +318,7 @@ export class ChartView {
         time: T(at), position: up ? 'belowBar' : 'aboveBar', color,
         shape: e.type === 'BREAK' ? (up ? 'arrowUp' : 'arrowDown') : e.type === 'RETEST' ? 'circle' : 'square',
         text: isFocus || recent ? word : '',
-        size: isFocus ? 2 : recent ? 1 : 0.6,
+        size: recent || isFocus ? 1 : 0.6,     // mũi tên đang xem: cùng cỡ, chỉ khác màu vàng
       });
     }
     mk.sort((a, b) => a.time - b.time);

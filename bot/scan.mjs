@@ -27,7 +27,6 @@ const TRIGGER = process.env.TRIGGER || 'local';
 const OUT = process.env.OUT_DIR || 'out';
 const WAIT_MAX = 9 * 60e3;     // chạy sớm tối đa 9 phút trước giờ đóng nến thì ở lại chờ
 const SETTLE = 1200;           // sau giờ đóng nến chờ thêm 1,2 giây cho OKX chốt nến
-const COOLDOWN = 3;            // không báo PHÁ cùng chiều cùng đồng 2 lần trong 3 nến (trừ đường lớn hơn hẳn)
 const SIGNAL_DAYS = 7;         // danh sách tín hiệu trong app giữ 7 ngày
 const MARK_DAYS = 23;          // dấu trên biểu đồ: phủ hết 500 nến H1
 const CONC = 6;
@@ -44,7 +43,7 @@ const eventId = (instId, e) => `${instId}|${e.type}|${e.side}|${e.line.tBreak}`;
 
 const state = readJSON('state.json', {});
 const prevStatus = readJSON('status.json', {});
-state.sent ||= {}; state.lastBreak ||= {}; state.devices ||= {};
+state.sent ||= {}; state.devices ||= {};
 const status = { version: 4, mode: MODE, trigger: TRIGGER, startedAt: t0, cfg: { window: CFG.WINDOW, top: TOP_N, pinned: PINNED, alerts: ALERTS } };
 
 /* ---------------- thông báo ---------------- */
@@ -297,24 +296,20 @@ async function main() {
     let why = null;
     if (!ALERTS.includes(e.type)) why = 'loại thông báo đang tắt';
     else if (e.line.span < MIN_SPAN_ALERT) why = `mô hình nhỏ hơn ${MIN_SPAN_ALERT} nến`;
-    else if (e.type === 'BREAK') {
-      const lb = state.lastBreak[e.instId + '|' + e.side];
-      if (lb && e.t - lb.t <= COOLDOWN * HOUR && e.line.span < 2 * lb.span) why = 'vừa báo phá cùng chiều';
-    }
     state.sent[key] = Date.now();
     if (why) { e.why = why; skipped.push(e); log(`  không đẩy ${e.coin} ${e.type} ${e.dir}: ${why}`); continue; }
-    if (e.type === 'BREAK') state.lastBreak[e.instId + '|' + e.side] = { t: e.t, span: e.line.span };
     fresh.push(e);
   }
 
+  // mỗi cú phá một thông báo, gửi song song (6 cái một lúc) để cái cuối cũng tới nhanh
   const batches = plan(fresh);
   let sentN = 0;
-  for (const b of batches) {
-    log(`${b.msg.title} — ${b.msg.body.replace(/\n/g, ' / ')}`);
+  for (const b of batches) log(`${b.msg.title} — ${b.msg.body.replace(/\n/g, ' / ')}`);
+  await pool(batches, async b => {
     const okN = devices.length ? await pushAll(b.msg) : 0;
     if (okN) sentN++;
-    for (const e of b.events) { e._pu = devices.length ? (b.summary ? 2 : 1) : 0; e._okN = okN; }
-  }
+    for (const e of b.events) { e._pu = devices.length ? 1 : 0; e._okN = okN; }
+  });
   if (!devices.length && fresh.length) log('Chưa có máy nào (PUSH_CONFIG trống) — tín hiệu chỉ được lưu, không gửi.');
   state.lastCandle = target;
   status.sent = sentN; status.signals = fresh.length; status.skipped = skipped.length; status.pushes = batches.length;
@@ -338,7 +333,7 @@ async function main() {
   // dọn bộ nhớ chống trùng cũ hơn 20 ngày
   const old = Date.now() - 20 * 24 * HOUR;
   for (const [k, v] of Object.entries(state.sent)) if (v < old) delete state.sent[k];
-  for (const [k, v] of Object.entries(state.lastBreak)) if (v.t < old) delete state.lastBreak[k];
+  delete state.lastBreak;   // bản cũ có giãn cách 3 nến — đã bỏ
 
   saveSignals(signals, added);
   finish({ result: 'ok' });

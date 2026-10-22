@@ -63,15 +63,16 @@ Toàn bộ nằm trong `core/breakout.js` (bot và app dùng chung một file, n
 |---|---|
 | Cửa sổ | 500 nến H1 gần nhất; mô hình nhỏ hay lớn đều xét |
 | Điểm neo | râu nến (đỉnh/đáy); đường càng dài càng phải nối đỉnh/đáy lớn |
+| Neo đầu | phải là **đáy thật** (hỗ trợ) / **đỉnh thật** (kháng cự): phía trước nó, trong khoảng dài bằng nửa đường, không có đáy thấp hơn / đỉnh cao hơn — không neo vào đáy/đỉnh nhỏ ở khoảng giữa |
 | Chạm | ≥ 3 lần; giữa hai lần chạm giá phải bật ra ≥ 1,5 ATR |
-| Phá | nến H1 **đóng cửa** ngoài đường ≥ 0,5 ATR, thân nến ≥ 0,5 ATR |
-| Trôi qua rồi mới sập | nến đầu đóng ra ngoài còn yếu (hay gặp ở đường dốc) thì đường chưa bị bỏ: giá còn nằm ngoài, bot theo dõi thêm tối đa 4 nến — nến nào đạt chuẩn trên, hoặc đóng cách đường ≥ 1 ATR, là báo. Đóng quay lại trong đường thì thôi |
+| Phá | cây nến H1 **đầu tiên đóng cửa** ra ngoài đường — báo ngay ở cây đó, râu không tính |
 | Xác nhận | đóng cửa vượt đỉnh/đáy cuối cùng nằm trên đường |
 | Retest | sau khi phá, chạy xa ≥ 2 ATR rồi quay về chạm đường, đóng cửa giữ được |
-| Chống ồn | cùng đồng cùng chiều gộp một tin; giờ nào > 3 tín hiệu thì gửi 2 tin lớn nhất + 1 tin tóm tắt; không báo phá cùng chiều 2 lần trong 3 nến |
+| Thông báo | mỗi cú phá một tin, không giới hạn; chỉ gộp khi cùng đồng, cùng chiều, cùng cây nến |
 
-Đo trên giá thật 48 giờ (ngày 20–22/10/2026, top 60 crypto + vàng + dầu): khoảng **150 tín hiệu/ngày**, điện thoại rung khoảng **57 lần/ngày** (sau khi gộp), tối đa 3 lần mỗi giờ.
-Muốn bớt: đặt `MIN_SPAN_ALERT` (ví dụ 60 → còn khoảng 100 tín hiệu/ngày, 100 → khoảng 55).
+Đo trên giá thật 48 giờ (20–22/10/2026, top 60 crypto + vàng + dầu): khoảng **120 tín hiệu/ngày**, **115 thông báo/ngày**;
+giờ thị trường biến động mạnh có thể tới 20–25 thông báo trong một giờ.
+Muốn bớt: đặt `MIN_SPAN_ALERT` (ví dụ 60 → còn khoảng 50 tín hiệu/ngày, 100 → khoảng 25).
 
 ## Chỉnh nhanh — `core/config.js`
 
@@ -82,7 +83,7 @@ Muốn bớt: đặt `MIN_SPAN_ALERT` (ví dụ 60 → còn khoảng 100 tín hi
 | `CATEGORIES` | loại được xếp hạng vào top: `['1']` chỉ crypto · `'3'` cổ phiếu |
 | `ALERTS` | bỏ loại nào khỏi `['BREAK','CONFIRM','RETEST']` là thôi báo loại đó |
 | `MIN_SPAN_ALERT` | chỉ báo mô hình từ N nến trở lên (0 = mọi cỡ). Ví dụ 60 → còn khoảng 55 tín hiệu/ngày, 100 → khoảng 30 |
-| `TUNE` | ghi đè ngưỡng trong `core/breakout.js`, ví dụ `{ MIN_SPAN: 20, BUF: 0.6 }` |
+| `TUNE` | ghi đè ngưỡng trong `core/breakout.js`, ví dụ `{ MIN_SPAN: 20, LEFT: 0.4 }` |
 
 ## Thư mục
 
@@ -93,7 +94,7 @@ core/breakout.js                           lõi phát hiện phá vỡ — dùng
 core/okx.js, core/format.js, core/config.js
 bot/scan.mjs                               bot quét + gửi thông báo (GitHub Actions)
 bot/plan.mjs                               soạn nội dung và gộp thông báo
-bot/test-core.mjs                          kiểm thử lõi:  npm test
+bot/test-core.mjs, bot/fixtures/           kiểm thử lõi (có nến thật OKX các ca đã gặp):  npm test
 bot/replay.mjs                             phát lại bot trên nến thật để đếm số thông báo
 .github/workflows/scan.yml                 lịch chạy
 ```

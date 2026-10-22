@@ -1,8 +1,6 @@
 // bot/plan.mjs — soạn nội dung thông báo và quyết định gửi gì trong một lượt quét.
 import { fmtPrice, hhmm, labelOf } from '../core/format.js';
 
-export const BUNDLE_AT = 3;     // lượt quét có hơn 3 tín hiệu → gửi 2 cái lớn nhất + 1 thông báo tóm tắt
-const SINGLES_WHEN_BUNDLED = 2;
 const RANK = { BREAK: 0, RETEST: 1, CONFIRM: 2 };
 const NAME = { BREAK: 'Phá', RETEST: 'Retest', CONFIRM: 'Xác nhận' };
 // Thứ tự ưu tiên khi phải chọn: PHÁ > RETEST > XÁC NHẬN, rồi mô hình dài hơn.
@@ -33,34 +31,16 @@ export function buildMessage(e) {
   return { title, body, url: './#' + q.toString(), tag: `${e.instId}|${e.type}|${e.t}` };
 }
 
-function buildSummary(rest, t) {
-  const L = rest.filter(e => e.dir === 'LONG'), S = rest.filter(e => e.dir === 'SHORT');
-  const head = [L.length ? `▲ ${L.length} LONG` : '', S.length ? `▼ ${S.length} SHORT` : ''].filter(Boolean).join(' · ');
-  const list = (arr, type) => arr.filter(e => e.type === type).map(e => labelOf(e.coin));
-  const parts = [];
-  for (const type of ['BREAK', 'RETEST', 'CONFIRM']) {
-    const l = list(L, type), s = list(S, type);
-    if (l.length) parts.push(`${NAME[type]} ▲ ${l.slice(0, 8).join(', ')}${l.length > 8 ? '…' : ''}`);
-    if (s.length) parts.push(`${NAME[type]} ▼ ${s.slice(0, 8).join(', ')}${s.length > 8 ? '…' : ''}`);
-  }
-  return {
-    title: `${head} cùng lúc`,
-    body: parts.join('\n') + `\nMở app để xem từng đồng · Nến H1 ${hhmm(t)}`,
-    url: './#tab=signals',
-    tag: `summary|${t}`,
-  };
-}
-
 /**
- * Gộp tín hiệu của một lượt quét thành danh sách thông báo cần gửi.
- * - Cùng đồng, cùng chiều → một thông báo (ưu tiên PHÁ > RETEST > XÁC NHẬN, rồi mô hình lớn hơn).
- * - Nhiều hơn BUNDLE_AT thông báo → gửi riêng 2 cái tốt nhất + 1 tin tóm tắt.
+ * Mỗi cú phá một thông báo, không giới hạn số lượng.
+ * Chỉ gộp khi CÙNG một đồng, CÙNG chiều, CÙNG cây nến (vd. vừa phá đường này vừa xác nhận đường kia):
+ * một thông báo ghi đủ cả hai. Thứ tự gửi: PHÁ > RETEST > XÁC NHẬN, rồi mô hình lớn hơn.
  * Trả về [{ msg, events }] — events là các tín hiệu mà thông báo đó đại diện.
  */
 export function plan(events) {
   const groups = new Map();
   for (const e of events) {
-    const k = e.instId + '|' + e.dir;
+    const k = e.instId + '|' + e.dir + '|' + e.t;
     if (!groups.has(k)) groups.set(k, []);
     groups.get(k).push(e);
   }
@@ -68,12 +48,5 @@ export function plan(events) {
     g.sort((a, b) => (RANK[a.type] - RANK[b.type]) || (b.line.span - a.line.span));
     return { ...g[0], also: g.slice(1), group: g };
   }).sort(better);
-
-  if (heads.length <= BUNDLE_AT) return heads.map(h => ({ msg: buildMessage(h), events: h.group }));
-  const singles = heads.slice(0, SINGLES_WHEN_BUNDLED);
-  const rest = heads.slice(SINGLES_WHEN_BUNDLED);
-  return [
-    ...singles.map(h => ({ msg: buildMessage(h), events: h.group })),
-    { msg: buildSummary(rest, rest[0].t), events: rest.flatMap(h => h.group), summary: true },
-  ];
+  return heads.map(h => ({ msg: buildMessage(h), events: h.group }));
 }

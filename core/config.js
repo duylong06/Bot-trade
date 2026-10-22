@@ -23,7 +23,7 @@ export const ALERTS = ['BREAK', 'CONFIRM', 'RETEST'];
 // App vẫn vẽ mọi đường; số này chỉ lọc thông báo đẩy về điện thoại.
 export const MIN_SPAN_ALERT = 0;
 
-// Ghi đè ngưỡng trong core/breakout.js (CFG). Ví dụ: { MIN_SPAN: 20, BUF: 0.6 }
+// Ghi đè ngưỡng trong core/breakout.js (CFG). Ví dụ: { MIN_SPAN: 20, LEFT: 0.4 }
 export const TUNE = {};
 
 // Loại tài sản được xếp hạng vào top N (trường instCategory của OKX): '1' crypto · '3' cổ phiếu · '4' hàng hoá.

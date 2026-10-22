@@ -9,12 +9,11 @@
  * Luật:
  *   - Cửa sổ tối đa 500 nến H1. Đường to hay nhỏ đều xét.
  *   - Đường neo vào RÂU (đỉnh/đáy), nhưng phá vỡ tính bằng GIÁ ĐÓNG CỬA — râu không tính.
- *   - Một cú phá đạt chuẩn khi nến đóng cửa ra ngoài vùng đệm 0,5 ATR và thân nến ≥ 0,5 ATR.
- *     Nếu nến đầu tiên đóng ra ngoài còn yếu (giá trôi qua đường bằng nến nhỏ — hay gặp ở đường dốc),
- *     đường CHƯA bị bỏ: chừng nào giá còn nằm ngoài, bot theo dõi thêm tối đa 4 nến; nến nào đạt chuẩn,
- *     hoặc giá đã cách đường ≥ 1 ATR, thì đó là cú phá. Đóng cửa quay lại trong đường thì đường hết hiệu lực.
+ *   - Điểm neo đầu phải là ĐÁY THẬT (hỗ trợ) / ĐỈNH THẬT (kháng cự) của vùng: không có đáy thấp hơn
+ *     (đỉnh cao hơn) trong một khoảng phía trước dài bằng nửa đường. Không neo vào đáy/đỉnh nhỏ ở giữa.
+ *   - Phá vỡ = cây nến H1 ĐẦU TIÊN đóng cửa ra ngoài đường. Báo ngay ở cây đó, không chờ thêm.
  *   - Xác nhận: đóng cửa vượt đỉnh/đáy cuối cùng nằm trên đường (gãy cấu trúc).
- *   - Retest: giá chạy ra xa ít nhất 1 ATR rồi quay về chạm đường và đóng cửa giữ được.
+ *   - Retest: giá chạy ra xa ít nhất 2 ATR rồi quay về chạm đường và đóng cửa giữ được.
  */
 
 import { TUNE } from './config.js';
@@ -30,13 +29,13 @@ const DEFAULTS = {
   REACT: 1.5,         // giữa hai lần chạm, giá phải bật ra xa đường ≥ 1,5 ATR thì lần sau mới tính là chạm mới
   GAP: 0.08,          // hai lần chạm cách nhau ≥ 8% chiều dài đường (và ≥ 5 nến)
   ATR: 14,
-  TOL: 0.15,          // sai số khi vẽ: đóng cửa vượt ≤ 0,15 ATR vẫn coi như còn trong đường
-  BUF: 0.5,           // vùng đệm: nến phá phải đóng cửa ra ngoài ≥ 0,5 ATR
-  BODY: 0.5,          // thân nến phá ≥ 0,5 ATR và cùng chiều phá
+  TOL: 0.15,          // sai số khi vẽ: GIỮA hai điểm neo, đóng cửa vượt ≤ 0,15 ATR vẫn coi như còn trong đường
+  BREAK: 0,           // sau điểm neo thứ hai: nến đầu tiên đóng cửa ra ngoài đường (> 0) là PHÁ
+  FAIL: 0.5,          // sau khi phá, đóng cửa quay vào sâu ≥ 0,5 ATR → phá hụt (thôi tìm retest)
   TOUCH: 0.35,        // râu cách đường ≤ 0,35 ATR coi là một lần chạm
   WICK_MAX: 1.0,      // giữa hai điểm neo, râu không được xuyên đường quá 1 ATR (đường vẽ sai)
-  FOLLOW: 4,          // lần vượt đầu tiên chưa đạt chuẩn: giá còn nằm ngoài thì theo dõi thêm tối đa 4 nến
-  FAR: 1.0,           //   trong lúc đó, nến đóng cách đường ≥ 1 ATR cũng tính là phá (giá trôi dần ra xa)
+  LEFT: 0.5,          // điểm neo đầu là đáy/đỉnh thấp/cao nhất trong khoảng phía trước dài bằng 0,5 × chiều dài đường
+  LEFT_MAX: 120,      //   (tối đa 120 nến)
   AWAY: 2.0,          // phải chạy ra xa ≥ 2 ATR rồi quay về mới tính là retest
   RETEST_MAX: 120,    // tìm retest trong 120 nến sau khi phá
   FLAT: 0.02,         // |độ dốc| < 0,02 ATR/nến coi là đường ngang
@@ -112,6 +111,16 @@ export function pivotStrength(K, piv, side, kmax = 60) {
 
 const needFor = span => Math.max(CFG.PIVOT, Math.min(CFG.SCALE_MAX, Math.round(span / CFG.SCALE)));
 
+// Bao nhiêu nến phía TRƯỚC đáy (đỉnh) này không có đáy thấp hơn (đỉnh cao hơn). Chạm đầu dữ liệu → vô hạn.
+function leftStrength(X, piv, s) {
+  const m = new Map();
+  for (const i of piv) {
+    let L = 0; while (i - L - 1 >= 0 && (X[i] - X[i - L - 1]) * s >= 0) L++;
+    m.set(i, i - L - 1 < 0 ? Infinity : L);
+  }
+  return m;
+}
+
 /* ---------- dò đường ---------- */
 
 // side 'R' = kháng cự (nối đỉnh, phá LÊN → LONG); 'S' = hỗ trợ (nối đáy, phá XUỐNG → SHORT)
@@ -120,6 +129,7 @@ function candidates(K, A, piv, side) {
   const X = side === 'R' ? K.h : K.l;
   const C = K.c, N = C.length, out = [];
   const st = pivotStrength(K, piv, side);
+  const left = leftStrength(X, piv, s);
 
   for (let a = 0; a < piv.length; a++) {
     const ia = piv[a];
@@ -137,16 +147,18 @@ function candidates(K, A, piv, side) {
       }
       if (!ok) continue;
 
-      // Sau điểm neo thứ hai: nến đầu tiên đóng cửa vượt đường.
+      // Sau điểm neo thứ hai: nến đầu tiên đóng cửa ra ngoài đường = phá.
       let v = -1;
       for (let i = ib + 1; i < N; i++) {
-        if ((C[i] - (y0 + m * i)) * s > CFG.TOL * A[i]) { v = i; break; }
+        if ((C[i] - (y0 + m * i)) * s > CFG.BREAK * A[i]) { v = i; break; }
       }
       const end = v < 0 ? N : v;
 
       // Đường càng dài thì hai điểm neo càng phải là đỉnh/đáy lớn.
       const need = needFor(end - ia);
       if (st.get(ia) < need || st.get(ib) < need) continue;
+      // Điểm neo đầu phải là đáy (đỉnh) thật của vùng, không phải đáy (đỉnh) nhỏ ở khoảng giữa.
+      if (left.get(ia) < Math.min(CFG.LEFT_MAX, Math.ceil(CFG.LEFT * (end - ia)))) continue;
       const needTouch = Math.max(CFG.PIVOT, Math.ceil(need / 2));
 
       // Đếm chạm: đỉnh/đáy đủ lớn, sát đường, cách lần chạm trước đủ xa, và giữa hai lần giá đã
@@ -181,16 +193,7 @@ function classify(K, A, L) {
   L.b = L.confirm = L.retest = L.fail = -1;
   L.state = 'active';
 
-  if (L.v >= 0) {
-    L.state = 'dead';
-    for (let i = L.v; i <= L.v + CFG.FOLLOW; i++) {
-      if (i >= N) { L.state = 'pending'; break; }          // chờ thêm nến để kết luận
-      const d = (K.c[i] - y(i)) * s;
-      if (i > L.v && d <= CFG.TOL * A[i]) break;           // đã quay lại trong đường
-      const body = (K.c[i] - K.o[i]) * s;
-      if ((d >= CFG.BUF * A[i] && body >= CFG.BODY * A[i]) || (i > L.v && d >= CFG.FAR * A[i])) { L.state = 'broken'; L.b = i; break; }
-    }
-  }
+  if (L.v >= 0) { L.state = 'broken'; L.b = L.v; }      // cây đầu tiên đóng cửa ra ngoài = phá, báo ngay
 
   // Mốc cấu trúc: đỉnh (kháng cự) / đáy (hỗ trợ) cuối cùng nằm trên đường.
   L.level = (s > 0 ? K.h : K.l)[L.last];
@@ -203,7 +206,7 @@ function classify(K, A, L) {
     let away = 0;
     for (let i = L.b; i < N && i <= L.b + CFG.RETEST_MAX; i++) {
       const yi = y(i), ci = K.c[i];
-      if (i > L.b && (ci - yi) * s < -CFG.BUF * A[i]) { L.fail = i; break; }   // đóng ngược vào sâu → phá hụt
+      if (i > L.b && (ci - yi) * s < -CFG.FAIL * A[i]) { L.fail = i; break; }  // đóng ngược vào sâu → phá hụt
       if (L.confirm < 0 && (ci - L.level) * s > 0) L.confirm = i;
       if (i >= L.b + 2 && L.retest < 0 && away >= CFG.AWAY * A[i]
           && (near[i] - yi) * s <= CFG.TOUCH * A[i]
@@ -305,7 +308,7 @@ export function analyze(Kfull) {
     }
     return kept;
   };
-  const live = all.filter(L => (L.state === 'active' || L.state === 'pending')
+  const live = all.filter(L => L.state === 'active'
     && Math.abs(L.y0 + L.m * last - price) <= CFG.NEAR_ATR * A[last]);
   // Đường đã phá: lấy đúng đường của các tín hiệu (đường chính mỗi cú phá), cái nào vừa có động tĩnh
   // (phá / xác nhận / retest) gần nhất thì vẽ trước — để mũi tên nào cũng có đường đi kèm.

@@ -17,7 +17,6 @@ const HOURS = +(process.argv.find(a => /^\d+$/.test(a)) || 48);
 const VERBOSE = process.argv.includes('-v');
 const file = process.env.CANDLES || 'out/dryrun-candles.json';
 const { data } = JSON.parse(fs.readFileSync(file, 'utf8'));
-const COOLDOWN = 3;
 const coins = Object.keys(data);
 const tier = s => s < 40 ? 'nhỏ <40' : s < 100 ? 'vừa 40-99' : s < 250 ? 'lớn 100-249' : 'rất lớn 250+';
 
@@ -44,11 +43,6 @@ for (let h = HOURS - 1; h >= 0; h--) {
       const key = `${e.type}|${e.side}|${e.line.tBreak}`;
       if (s.sent.has(key)) continue;
       s.sent.add(key);
-      if (e.type === 'BREAK') {
-        const lb = s.lastBreak[e.side];
-        if (lb && e.t - lb.t <= COOLDOWN * HOUR && e.line.span < 2 * lb.span) continue;
-        s.lastBreak[e.side] = { t: e.t, span: e.line.span };
-      }
       fresh.push({ ...e, instId: inst, coin: inst.split('-')[0], tickSz: null });
     }
   }
@@ -63,7 +57,7 @@ const perDay = x => (x * 24 / HOURS).toFixed(0);
 console.log(`Phát lại ${HOURS} giờ × ${coins.length} đồng (${((performance.now() - t0) / 1000).toFixed(1)} s)`);
 console.log(`Đường hợp lệ trung bình mỗi đồng: ${(lines / coins.length).toFixed(1)}`);
 console.log(`Tín hiệu: ${signals} → ${perDay(signals)}/ngày`, byType);
-console.log(`Điện thoại rung: ${pushes} → ${perDay(pushes)}/ngày (sau khi gộp)`);
+console.log(`Thông báo: ${pushes} → ${perDay(pushes)}/ngày (mỗi cú phá một tin; chỉ gộp cùng đồng, cùng chiều, cùng nến)`);
 console.log('Theo cỡ mô hình:', sizes);
 console.log('Tín hiệu/ngày nếu chỉ báo mô hình ≥ X nến:', Object.fromEntries(Object.entries(spanAtLeast).map(([k, v]) => [k, +perDay(v)])));
 console.log('Tín hiệu mỗi giờ :', perHourSig.join(' '));

@@ -468,11 +468,11 @@ function renderRules() {
     `Theo dõi top ${TOP_N} đồng crypto USDT vĩnh cửu trên OKX theo khối lượng 24h (cập nhật mỗi giờ)${pins.length ? `, cộng ${pins.join(', ')} luôn được theo dõi` : ''}.`,
     `Nến H1, xét tối đa ${CFG.WINDOW} nến gần nhất — mô hình nhỏ hay lớn đều tính.`,
     `Đường neo vào râu nến, cần ít nhất ${CFG.MIN_TOUCH} lần chạm; giữa hai lần chạm giá phải bật ra ≥ ${CFG.REACT} ATR. Đường càng dài càng phải nối các đỉnh/đáy lớn.`,
-    `Phá vỡ = nến H1 <b>đóng cửa</b> ra ngoài đường ≥ ${CFG.BUF} ATR, thân nến ≥ ${CFG.BODY} ATR. Râu chọc qua không tính.`,
-    `Nến đầu tiên đóng ra ngoài còn yếu (giá trôi qua đường, hay gặp ở đường dốc) thì đường chưa bị bỏ: giá còn nằm ngoài, bot theo dõi thêm tối đa ${CFG.FOLLOW} nến — nến nào đạt chuẩn trên, hoặc đóng cách đường ≥ ${CFG.FAR} ATR, là báo.`,
+    `Điểm neo đầu phải là đáy thật (hỗ trợ) / đỉnh thật (kháng cự): phía trước nó, trong khoảng dài bằng nửa đường, không có đáy thấp hơn / đỉnh cao hơn. Không neo vào đáy/đỉnh nhỏ ở khoảng giữa.`,
+    `Phá vỡ = cây nến H1 <b>đầu tiên đóng cửa</b> ra ngoài đường — báo ngay ở cây đó. Râu chọc qua không tính.`,
     `Xác nhận = đóng cửa vượt đỉnh/đáy cuối cùng nằm trên đường (gãy cấu trúc).`,
     `Retest = sau khi phá, giá chạy xa ≥ ${CFG.AWAY} ATR rồi quay về chạm đường và đóng cửa giữ được.`,
-    `Thông báo: ${ALERTS.map(a => TYPE[a]).join(', ')}${MIN_SPAN_ALERT ? `, chỉ mô hình từ ${MIN_SPAN_ALERT} nến` : ''}. Cùng đồng cùng chiều gộp một tin; giờ nào nhiều hơn 3 tín hiệu thì gửi 2 tin lớn nhất + 1 tin tóm tắt.`,
+    `Thông báo: ${ALERTS.map(a => TYPE[a]).join(', ')}${MIN_SPAN_ALERT ? `, chỉ mô hình từ ${MIN_SPAN_ALERT} nến` : ''}. Mỗi cú phá một tin, không giới hạn; chỉ gộp khi cùng đồng, cùng chiều, cùng cây nến.`,
   ];
   $('#rules').innerHTML = items.map(x => `<li>${x}</li>`).join('');
 }
