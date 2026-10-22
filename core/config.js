@@ -3,8 +3,15 @@
 export const REPO = 'duylong06/Bot-trade';
 export const PAGES_URL = 'https://duylong06.github.io/Bot-trade/';
 
-// Số đồng theo dõi: top N hợp đồng USDT-SWAP trên OKX có khối lượng 24h lớn nhất, cập nhật mỗi lần quét.
-export const TOP_N = 50;
+// Số đồng theo dõi: top N hợp đồng crypto USDT-SWAP trên OKX có khối lượng 24h lớn nhất, cập nhật mỗi lần quét.
+export const TOP_N = 60;
+
+// Luôn theo dõi thêm các mã này, khối lượng bao nhiêu cũng được: vàng, dầu WTI.
+// Thêm 'BZ-USDT-SWAP' (dầu Brent) hoặc 'XAG-USDT-SWAP' (bạc) nếu muốn.
+export const PINNED = ['XAU-USDT-SWAP', 'CL-USDT-SWAP'];
+
+// Tên tiếng Việt hiện trong app và thông báo.
+export const NAMES = { XAU: 'Vàng', XAG: 'Bạc', CL: 'Dầu WTI', BZ: 'Dầu Brent' };
 
 // Loại thông báo được gửi. Xoá loại nào khỏi danh sách là bot thôi báo loại đó.
 //   BREAK   — nến H1 đóng cửa phá đường (báo sớm)
@@ -19,8 +26,8 @@ export const MIN_SPAN_ALERT = 0;
 // Ghi đè ngưỡng trong core/breakout.js (CFG). Ví dụ: { MIN_SPAN: 20, BUF: 0.6 }
 export const TUNE = {};
 
-// Loại tài sản (trường instCategory của OKX): '1' crypto · '3' cổ phiếu · '4' hàng hoá (vàng, bạc, dầu…).
-// Mặc định chỉ crypto. Muốn thêm vàng/dầu thì đổi thành ['1', '4'].
+// Loại tài sản được xếp hạng vào top N (trường instCategory của OKX): '1' crypto · '3' cổ phiếu · '4' hàng hoá.
+// Vàng, dầu không cần xếp hạng vì đã nằm trong PINNED.
 export const CATEGORIES = ['1'];
 
 // Không theo dõi các đồng ổn định giá.

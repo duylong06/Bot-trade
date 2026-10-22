@@ -1,6 +1,11 @@
 // core/format.js — định dạng số và giờ, dùng chung cho bot và app.
 
+import { NAMES } from './config.js';
+
 export const coinOf = instId => String(instId).split('-')[0];
+// "XAU" → "Vàng XAU", "BTC" → "BTC"
+export const labelOf = coin => (NAMES[coin] ? `${NAMES[coin]} ${coin}` : coin);
+export const nameOf = coin => NAMES[coin] || null;
 
 export function decimalsOf(tickSz) {
   const s = String(tickSz);

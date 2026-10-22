@@ -1,12 +1,11 @@
 // app/app.js — điều khiển giao diện: tab, biểu đồ, tín hiệu, top 50, thông báo, tình trạng bot.
 import * as okx from '../core/okx.js';
 import { CFG, HOUR, lineAt } from '../core/breakout.js';
-import { REPO, TOP_N, DATA_API, DATA_RAW, ALERTS, MIN_SPAN_ALERT, CATEGORIES } from '../core/config.js';
-import { fmtPrice, fmtVol, fmtPct, hhmm, ddmm, coinOf } from '../core/format.js';
+import { REPO, TOP_N, PINNED, DATA_API, DATA_RAW, ALERTS, MIN_SPAN_ALERT } from '../core/config.js';
+import { fmtPrice, fmtVol, fmtPct, hhmm, ddmm, coinOf, labelOf, nameOf } from '../core/format.js';
 import { ChartView, TFS } from './chart.js';
 import { businessWS, publicWS } from './ws.js';
 import * as push from './push.js';
-import { LEARN, BREAKEVEN } from '../core/learn.js';
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -16,9 +15,6 @@ const LS = {
 };
 const TYPE = { BREAK: 'Phá', RETEST: 'Retest', CONFIRM: 'Xác nhận' };
 const cap = s => (s ? s[0].toUpperCase() + s.slice(1) : '');
-const r2 = x => Math.round(x * 100) / 100 || 0;   // làm tròn 2 số lẻ, không có "−0"
-const fmtR = x => (x == null || !isFinite(x) ? '—' : (r2(x) > 0 ? '+' : r2(x) < 0 ? '−' : '') + Math.abs(r2(x)).toFixed(2).replace('.', ',') + 'R');
-const pct = x => (x == null || !isFinite(x) ? '—' : Math.round(x * 100) + '%');
 const pushedOf = s => (s.pu ?? (s.pushed > 0 ? 1 : 0)) > 0;
 const ago = ms => { const m = Math.round((Date.now() - ms) / 60000); return m < 1 ? 'vừa xong' : m < 60 ? `${m} phút trước` : m < 1440 ? `${Math.floor(m / 60)} giờ ${m % 60} phút trước` : `${Math.floor(m / 1440)} ngày trước`; };
 
@@ -28,7 +24,7 @@ const S = {
   tf: LS.get('tf', '1H'),
   ticks: {}, allow: null, all: [], markets: [], mkMap: new Map(), tickSubs: new Set(),
   signals: [], status: null, sigFilter: 'all', seen: LS.get('seen', 0),
-  sigMap: new Map(), markMap: new Map(), stats: null, dataAt: 0,
+  sigMap: new Map(), markMap: new Map(), dataAt: 0,
   config: null, devId: null,
 };
 let chart, bws, pws;
@@ -53,14 +49,15 @@ function showTab(tab) {
   for (const b of document.querySelectorAll('#tabs button')) b.classList.toggle('on', b.dataset.tab === tab);
   if (tab === 'signals') { renderSignals(); markSeen(); loadData(); }
   if (tab === 'markets') renderMarkets();
-  if (tab === 'stats') { renderStats(); loadData(); }
   if (tab === 'settings') { renderPush(); renderBot(); loadData(); }
 }
 
 /* ======================= GIÁ ======================= */
 
 function setHeader() {
-  $('#symCoin').textContent = coinOf(S.inst);
+  const c = coinOf(S.inst);
+  $('#symCoin').textContent = c;
+  $('#symSub').textContent = nameOf(c) ? `${nameOf(c)} · USDT vĩnh cửu` : 'USDT · Vĩnh cửu';
   const m = S.mkMap.get(S.inst);
   if (m && isFinite(m.last)) {
     $('#px').textContent = fmtPrice(m.last, S.ticks[S.inst]);
@@ -93,7 +90,9 @@ async function loadMarkets() {
   try {
     const list = await okx.swapTickers(S.allow);
     S.all = list;
-    S.markets = list.slice(0, TOP_N);
+    S.markets = okx.pickUniverse(list);
+    // vàng, dầu lên đầu danh sách
+    S.markets.sort((a, b) => PINNED.includes(b.instId) - PINNED.includes(a.instId));
     for (const m of list) S.mkMap.set(m.instId, { ...(S.mkMap.get(m.instId) || {}), ...m });
     subscribeTickers();
     setHeader();
@@ -133,7 +132,13 @@ function initChart() {
       else el.hidden = true;
     },
   });
-  setInterval(() => chart && chart.legend(null), 1000);   // đếm ngược tới lúc nến đóng
+  setInterval(() => {   // đếm ngược tới lúc nến đóng + nút "Tự căn" khi trục giá bị kéo tay
+    if (!chart) return;
+    chart.legend(null);
+    const b = $('#autoBtn'), off = !chart.isAuto();
+    if (b.hidden === off) b.hidden = !off;
+  }, 1000);
+  $('#autoBtn').addEventListener('click', () => { chart.autoFit(); $('#autoBtn').hidden = true; });
 }
 
 function openSymbol(inst, focus = null) {
@@ -240,7 +245,7 @@ async function fetchData(name) {
   return (cache[name] = await r.json());
 }
 
-// Đọc status.json trước (nhỏ); chỉ khi bot vừa chạy xong lần mới thì mới tải tín hiệu, ghi nhớ, dấu biểu đồ.
+// Đọc status.json trước (nhỏ); chỉ khi bot vừa chạy xong lần mới thì mới tải tín hiệu và dấu biểu đồ.
 let loading = null;
 function loadData(force = false) {
   if (loading) return loading;
@@ -250,17 +255,15 @@ function loadData(force = false) {
       if (st) S.status = st;
       const key = st ? st.finishedAt || 1 : 0;
       if (force || !S.dataAt || key !== S.dataAt) {
-        const [sig, stats, marks] = await Promise.all(['signals.json', 'stats.json', 'marks.json'].map(f => fetchData(f).catch(() => null)));
+        const [sig, marks] = await Promise.all(['signals.json', 'marks.json'].map(f => fetchData(f).catch(() => null)));
         if (Array.isArray(sig)) { S.signals = sig; S.sigMap = new Map(sig.map(x => [x.id, x])); S.dataAt = key; }
-        if (stats && stats.all) S.stats = stats;
         if (marks && marks.m) {
           const m = new Map();
-          for (const [inst, arr] of Object.entries(marks.m)) for (const [suf, pu, o] of arr) m.set(inst + '|' + suf, { pu, o });
+          for (const [inst, arr] of Object.entries(marks.m)) for (const [suf, pu] of arr) m.set(inst + '|' + suf, { pu });
           S.markMap = m;
         }
         if (chart && chart.res) chart.drawLines();
         if (S.tab === 'signals') { renderSignals(); markSeen(); }
-        if (S.tab === 'stats') renderStats();
         if (S.tab === 'markets') renderMarkets();
       }
       if (S.tab === 'settings') { renderBot(); renderPushStatus(); }
@@ -286,22 +289,9 @@ function markSeen() {
 
 /* ======================= TÍN HIỆU ======================= */
 
-const learnState = () => (S.stats && S.stats.model) || (S.status && S.status.learn) || {};
-
-function outChip(s) {
-  switch (s.o) {
-    case 'W': return `<span class="oc w">✓ chạm mục tiêu +${LEARN.TP}R${s.h ? ` · ${s.h} nến` : ''}</span>`;
-    case 'L': return `<span class="oc l">✗ dừng lỗ −${LEARN.SL}R${s.h ? ` · ${s.h} nến` : ''}</span>`;
-    case 'T': return `<span class="oc t">hết ${LEARN.HORIZON} nến · ${fmtR(s.r72)}</span>`;
-    case 'P': return `<span class="oc p">đang chạy${s.now ? ' · ' + fmtR(s.now) : ''}</span>`;
-    default: return '';
-  }
-}
-
 function renderSignals() {
   const f = S.sigFilter;
   const list = S.signals.filter(s => f === 'all' || (f === 'pushed' ? pushedOf(s) : s.dir === f || s.type === f));
-  const scored = !!learnState().filtering;
   const ls = S.status && S.status.lastScan;
   $('#sigMeta').textContent = ls ? `bot quét lúc ${hhmm(ls.at)} · ${ls.counts ? ls.counts.coins : '?'} đồng` : '';
   if (!list.length) {
@@ -315,12 +305,10 @@ function renderSignals() {
     const up = s.dir === 'LONG', ln = s.line || {};
     const ds = `${esc(cap(ln.kind || ''))} · ${ln.span || '?'} nến · ${ln.touches || '?'} chạm` + (s.type === 'BREAK' ? (s.confirmed ? ' · đã gãy cấu trúc' : '') : '') + (ln.steep ? ' · dốc' : '');
     const pushed = pushedOf(s);
-    let ex = outChip(s);
-    if (scored && s.p != null) ex += `<span class="sc ${s.ev >= 0 ? 'pos' : 'neg'}">bot chấm ${pct(s.p)} · ${fmtR(s.ev)}</span>`;
-    if (!pushed) ex += `<span class="why">không đẩy: ${esc(s.why || (s.pu == null ? 'trước khi bot chạy' : 'không rõ'))}</span>`;
+    const ex = pushed ? '' : `<span class="why">không đẩy: ${esc(s.why || (s.pu == null ? 'trước khi bot chạy' : 'chưa có máy nhận'))}</span>`;
     html += `<button class="srow${pushed ? '' : ' skip'}" data-id="${esc(s.id)}">
       <span class="tm">${hhmm(s.t)}</span>
-      <span class="ti"><span class="co">${esc(s.coin)}</span><span class="dir ${up ? 'up' : 'down'}">${up ? '▲ LONG' : '▼ SHORT'}</span><span class="ty ${s.type}">${TYPE[s.type] || s.type}</span></span>
+      <span class="ti"><span class="co">${esc(labelOf(s.coin))}</span><span class="dir ${up ? 'up' : 'down'}">${up ? '▲ LONG' : '▼ SHORT'}</span><span class="ty ${s.type}">${TYPE[s.type] || s.type}</span></span>
       <span class="pr">${fmtPrice(s.close, s.tickSz)}</span>
       <span class="ds">${ds}</span>
       <span class="ex">${ex}</span>
@@ -329,82 +317,12 @@ function renderSignals() {
   $('#sigList').innerHTML = html;
 }
 
-/* ======================= GHI NHỚ ======================= */
-
-function renderStats() {
-  const el = $('#statBody'), st = S.stats;
-  const at = st && st.at;
-  $('#statMeta').textContent = at ? `cập nhật ${hhmm(at)} ${ddmm(at)}` : '';
-  if (!st) {
-    el.innerHTML = `<div class="empty">Bot chưa có dữ liệu ghi nhớ.<br>Ở lần quét kế tiếp bot sẽ tự chạy lại 20 ngày qua, chấm từng tín hiệu và hiện kết quả ở đây.</div>`;
-    return;
-  }
-  const m = st.model || {}, v = m.validation || {}, a = st.all || {}, w = st.week || {};
-  const tone = x => (x == null ? '' : r2(x) > 0 ? 'up' : r2(x) < 0 ? 'down' : '');
-  let h = '';
-
-  // 1) trạng thái bộ nhớ
-  let pill, txt;
-  const oos = v.nTest ? `<p class="oos">Thử trên <b>${v.nTest}</b> tín hiệu bot chưa từng học: báo hết thì <b class="${tone(v.allR)}">${fmtR(v.allR)}</b>/lệnh · bot chọn thì <b class="${tone(v.selR)}">${fmtR(v.selR)}</b>/lệnh (giữ ${pct(v.keep)}) · độ tin cậy t = ${v.t == null ? '—' : String(v.t).replace('.', ',')} <span class="muted">(cần ≥ 2)</span></p>` : '';
-  if (!m.ready) {
-    const n = m.nWL || 0, k = Math.min(1, n / LEARN.MIN_TRAIN);
-    pill = '<b class="state learn">Đang học</b>';
-    txt = `<p>Đã có kết quả của <b>${n}</b>/${LEARN.MIN_TRAIN} tín hiệu. Đủ ${LEARN.MIN_TRAIN} bot mới bắt đầu tự chấm điểm.</p><div class="prog"><i style="width:${(k * 100).toFixed(1)}%"></i></div>`;
-  } else if (m.filtering) {
-    pill = '<b class="state on">Đang tự lọc</b>';
-    txt = `<p>Bot chỉ đẩy về máy tín hiệu nó chấm kỳ vọng ≥ 0R; mỗi thông báo kèm điểm bot chấm. Tín hiệu bị bỏ vẫn nằm trong tab Tín hiệu kèm lý do.</p>${oos}`;
-  } else {
-    pill = '<b class="state off">Chưa lọc</b>';
-    txt = `<p>Bot đã chấm điểm nhưng <b>vẫn báo mọi tín hiệu</b>: ${esc(v.reason || 'chưa đủ bằng chứng')}.</p>${oos}`;
-  }
-  h += `<div class="card"><div class="mh"><h3>Bộ nhớ của bot</h3>${pill}</div>${txt}
-    <p class="muted sm">Luật vẽ trendline và phá vỡ giữ nguyên như bạn dạy. Bot ghi nhớ kết quả từng tín hiệu để học kiểu phá nào hay chạy tiếp; chỉ khi chứng minh được trên dữ liệu chưa thấy mới được bỏ bớt tín hiệu.</p></div>`;
-
-  // 2) kết quả tổng
-  h += `<div class="tiles">
-    <div class="tile"><span class="k">Chạm mục tiêu</span><b class="${a.win == null ? '' : a.win > BREAKEVEN ? 'up' : 'down'}">${pct(a.win)}</b><small>hoà vốn ${pct(BREAKEVEN)}</small></div>
-    <div class="tile"><span class="k">Lãi TB / lệnh</span><b class="${tone(a.avgR)}">${fmtR(a.avgR)}</b><small>${a.n || 0} lệnh đã xong</small></div>
-    <div class="tile"><span class="k">Đúng hướng 24h</span><b>${pct(a.dir24)}</b><small>${a.pending || 0} lệnh đang chạy</small></div>
-  </div>`;
-  h += `<p class="wk">7 ngày qua: <b>${w.n || 0}</b> lệnh · chạm mục tiêu <b>${pct(w.win)}</b> · <b class="${tone(w.avgR)}">${fmtR(w.avgR)}</b>/lệnh${a.from ? ` <span class="muted">· dữ liệu từ ${ddmm(a.from)}</span>` : ''}</p>`;
-  h += `<details class="how"><summary>Bot chấm điểm thế nào?</summary><p>Mỗi tín hiệu được tính như một lệnh giả định: vào ở giá đóng cửa của nến báo, mục tiêu <b>+${LEARN.TP} ATR</b>, dừng lỗ <b>−${LEARN.SL} ATR</b>, giữ tối đa ${LEARN.HORIZON} nến H1. Chạm cái nào trước tính cái đó; cùng một nến chạm cả hai thì tính thua. 1R = khoảng dừng lỗ. Thắng ${pct(BREAKEVEN)} số lệnh là hoà vốn.</p></details>`;
-
-  // 3) yếu tố bot học được
-  const fx = (m.factors || []).filter(f => Math.abs(f.delta) >= 0.005)
-    .sort((x, y) => Math.abs(y.delta) - Math.abs(x.delta)).slice(0, 12).sort((x, y) => y.delta - x.delta);
-  if (m.ready && fx.length) {
-    const mx = Math.max(...fx.map(f => Math.abs(f.delta)), 0.01);
-    h += `<div class="card"><h3>Bot học được gì</h3>
-      <p class="muted sm">${m.filtering ? '' : '<b class="warnc">Chưa kiểm chứng</b> — có thể chỉ là may rủi, đừng dựa vào. '}Có yếu tố này thì tỉ lệ chạm mục tiêu cao/thấp hơn bao nhiêu so với mức chung ${pct(m.base)}.</p>
-      <div class="fx">${fx.map(f => {
-        const wpc = (Math.abs(f.delta) / mx) * 50;
-        return `<div class="fr"><span class="fl">${esc(f.label)}</span><span class="fb"><i class="${f.delta >= 0 ? 'pos' : 'neg'}" style="${f.delta >= 0 ? 'left:50%' : `left:${50 - wpc}%`};width:${wpc.toFixed(1)}%"></i></span><span class="fv ${f.delta >= 0 ? 'up' : 'down'}">${f.delta >= 0 ? '+' : '−'}${Math.abs(f.delta * 100).toFixed(1).replace('.', ',')}%</span></div>`;
-      }).join('')}</div></div>`;
-  }
-
-  // 4) theo từng kiểu
-  const be = (BREAKEVEN * 100).toFixed(1);
-  h += `<div class="card"><h3>Theo từng kiểu</h3><div class="gt">
-    <div class="gh"><span></span><span>lệnh</span><span>chạm mục tiêu</span><span>R/lệnh</span></div>`;
-  for (const g of st.groups || []) {
-    if (!g.rows.length) continue;
-    h += `<div class="gn">${esc(g.name)}</div>`;
-    for (const r of g.rows) {
-      h += `<div class="gr${r.n < 20 ? ' few' : ''}"><span>${esc(r.label)}</span><span class="n">${r.n}</span>
-        <span class="wb"><span class="bar"><i class="${r2(r.avgR) > 0 ? 'pos' : 'neg'}" style="width:${((r.win || 0) * 100).toFixed(1)}%"></i><s style="left:${be}%"></s></span><em>${pct(r.win)}</em></span>
-        <span class="${tone(r.avgR)}">${fmtR(r.avgR)}</span></div>`;
-    }
-  }
-  h += `</div><p class="muted sm">Vạch trắng = mức hoà vốn ${pct(BREAKEVEN)}. Dòng mờ: dưới 20 lệnh, chưa đủ để kết luận.</p></div>`;
-  el.innerHTML = h;
-}
-
-/* ======================= TOP 50 ======================= */
+/* ======================= TOP 60 + VÀNG, DẦU ======================= */
 
 function marketRow(m, sigDir) {
   const tick = S.ticks[m.instId];
   return `<button class="mrow" data-inst="${m.instId}">
-    <span class="nm"><b>${esc(m.coin)}</b>${sigDir ? `<i class="${sigDir}">${sigDir === 'LONG' ? '▲' : '▼'} 24h</i>` : ''}<small>KL ${fmtVol(m.volUsd)}</small></span>
+    <span class="nm"><b>${esc(m.coin)}</b>${nameOf(m.coin) ? `<em>${esc(nameOf(m.coin))}</em>` : ''}${sigDir ? `<i class="${sigDir}">${sigDir === 'LONG' ? '▲' : '▼'} 24h</i>` : ''}<small>KL ${fmtVol(m.volUsd)}</small></span>
     <span class="p">${fmtPrice(m.last, tick)}</span>
     <span class="c ${m.chg >= 0 ? 'up' : 'down'}">${fmtPct(m.chg || 0)}</span>
   </button>`;
@@ -417,7 +335,7 @@ function recentDir(inst) {
 
 function renderMarkets() {
   const q = ($('#search').value || '').trim().toUpperCase();
-  const src = q ? S.all.filter(m => m.coin.includes(q)).slice(0, 60) : S.markets;
+  const src = q ? S.all.filter(m => m.coin.includes(q) || (nameOf(m.coin) || '').toUpperCase().includes(q)).slice(0, 60) : S.markets;
   if (!src.length) { $('#mkList').innerHTML = `<div class="empty">${S.all.length ? 'Không tìm thấy.' : 'Đang tải danh sách…'}</div>`; return; }
   $('#mkList').innerHTML = src.map(m => marketRow(S.mkMap.get(m.instId) || m, recentDir(m.instId))).join('');
 }
@@ -516,7 +434,7 @@ function renderPushStatus() {
 /* ======================= TÌNH TRẠNG BOT ======================= */
 
 const TRIG = { schedule: 'lịch GitHub (hay trễ)', workflow_dispatch: 'hẹn giờ ngoài / bấm tay', push: 'sửa code', local: 'máy tính' };
-const RESULT = { bootstrap: 'đã học lại quá khứ', ok: 'đã quét', 'nothing-to-do': 'nến này đã quét rồi', 'test-sent': 'gửi thử thành công', 'test-failed': 'gửi thử thất bại', 'no-devices': 'chưa có máy nhận', error: 'LỖI', 'dry-run': 'chạy thử' };
+const RESULT = { ok: 'đã quét', 'nothing-to-do': 'nến này đã quét rồi', 'test-sent': 'gửi thử thành công', 'test-failed': 'gửi thử thất bại', 'no-devices': 'chưa có máy nhận', error: 'LỖI', 'dry-run': 'chạy thử' };
 
 function renderBot() {
   const st = S.status, el = $('#botBody');
@@ -537,8 +455,6 @@ function renderBot() {
     if (ls.counts) html += row('Đang theo dõi', `${ls.counts.coins} đồng · ${ls.counts.lines} đường`);
     html += row('Tín hiệu lần đó', `${ls.signals || 0} · gửi ${ls.pushes || 0} thông báo`);
   }
-  const lr = st.learn;
-  if (lr) html += row('Bộ nhớ', lr.filtering ? 'đang tự lọc' : lr.ready ? 'đã chấm điểm, chưa lọc' : `đang học ${lr.nWL || 0}/${LEARN.MIN_TRAIN}`);
   html += row('Máy nhận thông báo', String(st.push ? st.push.configured : 0));
   html += row('Nguồn giá', esc((st.host || (ls && ls.host) || '').replace('https://', '')));
   html += '</dl>';
@@ -547,12 +463,13 @@ function renderBot() {
 }
 
 function renderRules() {
-  const cat = CATEGORIES.length === 1 && CATEGORIES[0] === '1' ? 'đồng crypto' : 'hợp đồng (' + CATEGORIES.map(c => ({ 1: 'crypto', 3: 'cổ phiếu', 4: 'hàng hoá' }[c] || c)).join(', ') + ')';
+  const pins = PINNED.map(id => nameOf(coinOf(id)) || coinOf(id));
   const items = [
-    `Theo dõi top ${TOP_N} ${cat} USDT vĩnh cửu trên OKX theo khối lượng 24h, cập nhật mỗi giờ.`,
+    `Theo dõi top ${TOP_N} đồng crypto USDT vĩnh cửu trên OKX theo khối lượng 24h (cập nhật mỗi giờ)${pins.length ? `, cộng ${pins.join(', ')} luôn được theo dõi` : ''}.`,
     `Nến H1, xét tối đa ${CFG.WINDOW} nến gần nhất — mô hình nhỏ hay lớn đều tính.`,
     `Đường neo vào râu nến, cần ít nhất ${CFG.MIN_TOUCH} lần chạm; giữa hai lần chạm giá phải bật ra ≥ ${CFG.REACT} ATR. Đường càng dài càng phải nối các đỉnh/đáy lớn.`,
     `Phá vỡ = nến H1 <b>đóng cửa</b> ra ngoài đường ≥ ${CFG.BUF} ATR, thân nến ≥ ${CFG.BODY} ATR. Râu chọc qua không tính.`,
+    `Nến đầu tiên đóng ra ngoài còn yếu (giá trôi qua đường, hay gặp ở đường dốc) thì đường chưa bị bỏ: giá còn nằm ngoài, bot theo dõi thêm tối đa ${CFG.FOLLOW} nến — nến nào đạt chuẩn trên, hoặc đóng cách đường ≥ ${CFG.FAR} ATR, là báo.`,
     `Xác nhận = đóng cửa vượt đỉnh/đáy cuối cùng nằm trên đường (gãy cấu trúc).`,
     `Retest = sau khi phá, giá chạy xa ≥ ${CFG.AWAY} ATR rồi quay về chạm đường và đóng cửa giữ được.`,
     `Thông báo: ${ALERTS.map(a => TYPE[a]).join(', ')}${MIN_SPAN_ALERT ? `, chỉ mô hình từ ${MIN_SPAN_ALERT} nến` : ''}. Cùng đồng cùng chiều gộp một tin; giờ nào nhiều hơn 3 tín hiệu thì gửi 2 tin lớn nhất + 1 tin tóm tắt.`,
@@ -562,7 +479,7 @@ function renderRules() {
 
 /* ======================= ĐIỀU HƯỚNG ======================= */
 
-const focusOf = s => ({ ev: s.type, t: s.t, line: s.line, close: s.close, atr: s.atr, dir: s.dir });
+const focusOf = s => ({ ev: s.type, t: s.t, line: s.line });
 
 async function openFromSignal(inst, ev, t) {
   showTab('chart');
@@ -581,7 +498,7 @@ function route(hash) {
     return true;
   }
   const tab = q.get('tab');
-  if (tab && ['chart', 'signals', 'markets', 'stats', 'settings'].includes(tab)) { showTab(tab); try { history.replaceState(null, '', location.pathname); } catch {} }
+  if (tab && ['chart', 'signals', 'markets', 'settings'].includes(tab)) { showTab(tab); try { history.replaceState(null, '', location.pathname); } catch {} }
   return false;
 }
 

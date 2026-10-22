@@ -3,7 +3,6 @@
 import { analyze, lineAt, HOUR, fromRows } from '../core/breakout.js';
 import * as okx from '../core/okx.js';
 import { fmtPrice, hhmm, stamp, decimalsOf } from '../core/format.js';
-import { outcome } from '../core/learn.js';
 import { ema, stoch } from './indicators.js';
 
 const L = window.LightweightCharts;
@@ -47,6 +46,8 @@ export class ChartView {
       grid: { vertLines: { color: COLORS.grid }, horzLines: { color: COLORS.grid } },
       rightPriceScale: { borderColor: COLORS.line, scaleMargins: { top: 0.08, bottom: 0.12 } },
       timeScale: { borderColor: COLORS.line, timeVisible: true, secondsVisible: false, rightOffset: 6, barSpacing: 4.5, minBarSpacing: 1 },
+      // vuốt dọc trên vùng nến không kéo trục giá (dễ vô tình làm mất tự căn giá); muốn kéo thì kéo ở trục giá
+      handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false },
       crosshair: { mode: L.CrosshairMode.Normal, vertLine: { color: '#5d6067', labelBackgroundColor: '#2a2c31' }, horzLine: { color: '#5d6067', labelBackgroundColor: '#2a2c31' } },
       localization: { locale: 'en-US' },
     });
@@ -79,6 +80,7 @@ export class ChartView {
     const seq = ++this.seq;
     const changedSym = inst !== this.inst;
     if (changedSym || tf !== this.tf) this.clear();
+    this.autoFit();      // đổi đồng / khung / mở tín hiệu: luôn tự căn lại trục giá
     this.inst = inst; this.tf = tf; this.focus = focus; this.zoomed = false;
     this.setTick(tickSz);
     this.hooks.onStatus && this.hooks.onStatus('loading');
@@ -295,8 +297,8 @@ export class ChartView {
     }
 
     // Mũi tên cho MỌI tín hiệu trong vùng đang xem — không phụ thuộc đường của nó có được vẽ hay không.
-    //   đậm  = bot đã đẩy về máy · mờ = không đẩy / xảy ra trước khi bot chạy
-    //   ✓ / ✗ = đã chạm mục tiêu / dừng lỗ · tín hiệu cũ hơn 3 ngày chỉ hiện dấu nhỏ, không chữ
+    //   đậm = bot đã đẩy về máy · mờ = không đẩy / xảy ra trước khi bot chạy
+    //   tín hiệu cũ hơn 3 ngày chỉ hiện dấu nhỏ, không chữ
     const firstT = times[0];
     const tf = TFS.find(x => x.id === this.tf);
     const mk = [];
@@ -312,45 +314,29 @@ export class ChartView {
       const base = e.type === 'RETEST' ? [COLORS.blue, 'rgba(47,125,255,0.4)'] : up ? [COLORS.up, 'rgba(195,242,63,0.38)'] : [COLORS.down, 'rgba(242,57,139,0.38)'];
       const color = isFocus ? COLORS.focus : pushed ? base[0] : base[1];
       const word = e.type === 'BREAK' ? 'Phá' : e.type === 'RETEST' ? 'RT' : 'XN';
-      let o = rec && rec.o;
-      if ((!o || o === 'P') && this.h1) { const r = outcome(this.h1, e.t, up ? 1 : -1, e.close, e.atr); if (r) o = r.o; }
-      const mark = o === 'W' ? ' ✓' : o === 'L' ? ' ✗' : '';
       mk.push({
         time: T(at), position: up ? 'belowBar' : 'aboveBar', color,
         shape: e.type === 'BREAK' ? (up ? 'arrowUp' : 'arrowDown') : e.type === 'RETEST' ? 'circle' : 'square',
-        text: isFocus || recent ? word + mark : '',
+        text: isFocus || recent ? word : '',
         size: isFocus ? 2 : recent ? 1 : 0.6,
       });
     }
     mk.sort((a, b) => a.time - b.time);
     this.markers.setMarkers(mk);
 
-    this.drawFocusLevels();
     if (this.focusMatch && !this.zoomed) { this.zoomed = true; this.zoomTo(this.focusMatch.line); }
   }
 
-  // Tín hiệu đang mở: vẽ giá vào, mục tiêu (+2 ATR) và dừng lỗ (−1 ATR) như lệnh bot dùng để chấm điểm.
-  drawFocusLevels() {
-    for (const pl of this.focusLevels || []) { try { this.candles.removePriceLine(pl); } catch {} }
-    this.focusLevels = [];
-    const f = this.focus, ev = this.focusMatch && this.focusMatch.ev;
-    const close = ev ? ev.close : f && f.close, atr = ev ? ev.atr : f && f.atr, dir = ev ? ev.dir : f && f.dir;
-    if (!f || !close || !atr || !dir) return;
-    const d = dir === 'LONG' ? 1 : -1;
-    const add = (price, color, title, style) => this.focusLevels.push(this.candles.createPriceLine({
-      price, color, title, lineWidth: 1, lineStyle: style, axisLabelVisible: true,
-    }));
-    add(close, COLORS.focus, 'Vào', L.LineStyle.Dotted);
-    add(close + d * 2 * atr, COLORS.up, 'TP', L.LineStyle.Dashed);
-    add(close - d * atr, COLORS.down, 'SL', L.LineStyle.Dashed);
+  // Trục giá: bật lại tự căn (cả khung nến lẫn khung Stoch).
+  autoFit() {
+    for (const i of [0, 1]) { try { this.chart.priceScale('right', i).applyOptions({ autoScale: true }); } catch {} }
   }
+  isAuto() { try { return this.chart.priceScale('right', 0).options().autoScale !== false; } catch { return true; } }
 
   // Xoá sạch hình của đồng cũ trước khi tải đồng mới — không để nến/đường của đồng trước lóe lên.
   clear() {
     for (const s of this.lineSeries) this.chart.removeSeries(s);
     this.lineSeries = [];
-    for (const pl of this.focusLevels || []) { try { this.candles.removePriceLine(pl); } catch {} }
-    this.focusLevels = [];
     for (const s of [this.candles, this.vol, this.ema, this.kY, this.dY, this.kR, this.dR]) s.setData([]);
     this.markers.setMarkers([]);
     this.bars = null; this.res = null; this.h1 = null;

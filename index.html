@@ -8,19 +8,18 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Bot Trade">
-<meta name="description" content="Báo phá vỡ trendline H1 cho top 50 đồng trên OKX">
+<meta name="description" content="Báo phá vỡ trendline H1 cho top 60 đồng crypto, vàng và dầu trên OKX">
 <title>Bot Trade</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="app/icons/icon-192.png">
 <link rel="apple-touch-icon" href="app/icons/icon-180.png">
 <link rel="preconnect" href="https://www.okx.com" crossorigin>
 <link rel="preconnect" href="https://api.github.com" crossorigin>
-<link rel="stylesheet" href="app/style.css?v=6">
+<link rel="stylesheet" href="app/style.css?v=7">
 <script defer src="app/lib/lightweight-charts.standalone.production.js"></script>
-<script type="module" src="app/app.js?v=6"></script>
+<script type="module" src="app/app.js?v=7"></script>
 <link rel="modulepreload" href="app/chart.js">
 <link rel="modulepreload" href="core/breakout.js">
-<link rel="modulepreload" href="core/learn.js">
 <link rel="modulepreload" href="core/okx.js">
 <link rel="modulepreload" href="core/config.js">
 <link rel="modulepreload" href="core/format.js">
@@ -34,7 +33,7 @@
   <header class="top">
     <button class="sym" id="symBtn" aria-label="Chọn đồng">
       <span class="sym-coin" id="symCoin">BTC</span>
-      <span class="sym-sub">USDT · Vĩnh cửu</span>
+      <span class="sym-sub" id="symSub">USDT · Vĩnh cửu</span>
       <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
     </button>
     <div class="quote">
@@ -55,6 +54,7 @@
       <div class="chartwrap">
         <div id="chart"></div>
         <div class="stochlbl" id="stochLbl"></div>
+        <button class="autobtn" id="autoBtn" hidden aria-label="Tự căn trục giá">Tự căn</button>
         <div class="cstatus" id="chartStatus" hidden></div>
       </div>
       <div class="lines" id="lines"></div>
@@ -78,24 +78,15 @@
       <div class="list" id="sigList"></div>
     </section>
 
-    <!-- TOP 50 -->
+    <!-- TOP 60 + VÀNG, DẦU -->
     <section class="view scroll" id="v-markets" hidden>
       <div class="vhead">
-        <h2>Top 50</h2>
-        <span class="vmeta">khối lượng 24h · OKX USDT vĩnh cửu</span>
+        <h2>Top 60</h2>
+        <span class="vmeta">+ vàng, dầu · khối lượng 24h · OKX</span>
       </div>
       <div class="search"><input id="search" type="search" placeholder="Tìm đồng…" autocomplete="off" autocapitalize="characters" spellcheck="false"></div>
       <div class="mhead"><span>Đồng / KL 24h</span><span>Giá</span><span>24h</span></div>
       <div class="list" id="mkList"></div>
-    </section>
-
-    <!-- GHI NHỚ -->
-    <section class="view scroll" id="v-stats" hidden>
-      <div class="vhead">
-        <h2>Ghi nhớ</h2>
-        <span class="vmeta" id="statMeta"></span>
-      </div>
-      <div id="statBody"><div class="empty">Đang tải…</div></div>
     </section>
 
     <!-- CÀI ĐẶT -->
@@ -157,11 +148,7 @@
     </button>
     <button data-tab="markets">
       <svg viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-      <span>Top 50</span>
-    </button>
-    <button data-tab="stats">
-      <svg viewBox="0 0 24 24"><path d="M4 20h16M7 16.5v-4M12 16.5V7M17 16.5v-6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="17" cy="6" r="1.6" fill="currentColor"/></svg>
-      <span>Ghi nhớ</span>
+      <span>Top 60</span>
     </button>
     <button data-tab="settings">
       <svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>

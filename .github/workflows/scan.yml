@@ -5,9 +5,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'scan = quét và báo · test-push = gửi thông báo thử · dry-run = quét thử 48 giờ, không báo · bootstrap = chạy lại 20 ngày quá khứ để học'
+        description: 'scan = quét và báo · test-push = gửi thông báo thử · dry-run = quét thử 48 giờ, không báo'
         type: choice
-        options: [scan, test-push, dry-run, bootstrap]
+        options: [scan, test-push, dry-run]
         default: scan
 
   # Lịch dự phòng. GitHub hay bỏ hoặc trễ lịch (repo này từng chỉ chạy ~5 lần/ngày dù đặt mỗi giờ),
@@ -48,9 +48,9 @@ jobs:
       - name: Cài thư viện
         run: npm ci --no-audit --no-fund
 
-      - name: Kiểm thử lõi phát hiện phá vỡ và phần tự học
+      - name: Kiểm thử lõi phát hiện phá vỡ
         if: github.event_name == 'push'
-        run: node bot/test-core.mjs && node bot/test-learn.mjs
+        run: node bot/test-core.mjs
 
       - name: Lấy dữ liệu lần trước (nhánh data)
         run: |

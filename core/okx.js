@@ -1,6 +1,6 @@
 // core/okx.js — gọi API công khai của OKX. Chạy được cả trong Node 18+ và trình duyệt.
 import { fromRows } from './breakout.js';
-import { EXCLUDE, CATEGORIES } from './config.js';
+import { EXCLUDE, CATEGORIES, TOP_N, PINNED } from './config.js';
 
 export const HOSTS = ['https://www.okx.com', 'https://aws.okx.com', 'https://my.okx.com'];
 let host = HOSTS[0];
@@ -79,10 +79,17 @@ export async function candles(instId, bar = '1H', count = 520) {
 export const latest = (instId, bar = '1H', n = 3) =>
   api('/api/v5/market/candles', { instId, bar, limit: String(n) });
 
-// Các hợp đồng được theo dõi: USDT-SWAP đang giao dịch, đúng loại tài sản trong CATEGORIES.
+// Các hợp đồng được theo dõi: USDT-SWAP đang giao dịch, đúng loại tài sản trong CATEGORIES, cộng các mã PINNED.
 export function allowedSet(insts) {
   return new Set(insts.filter(x => x.state === 'live' && x.instId.endsWith('-USDT-SWAP')
-    && (!x.instCategory || CATEGORIES.includes(String(x.instCategory)))).map(x => x.instId));
+    && (PINNED.includes(x.instId) || !x.instCategory || CATEGORIES.includes(String(x.instCategory)))).map(x => x.instId));
+}
+
+// Danh sách bot quét: top N theo khối lượng (không tính mã cố định) + các mã cố định (vàng, dầu…).
+export function pickUniverse(tickers) {
+  const top = tickers.filter(x => !PINNED.includes(x.instId)).slice(0, TOP_N);
+  const pins = PINNED.map(id => tickers.find(x => x.instId === id)).filter(Boolean);
+  return [...top, ...pins];
 }
 
 // Toàn bộ hợp đồng USDT-SWAP, xếp theo khối lượng 24h (quy ra USDT) giảm dần.

@@ -10,7 +10,9 @@
  *   - Cửa sổ tối đa 500 nến H1. Đường to hay nhỏ đều xét.
  *   - Đường neo vào RÂU (đỉnh/đáy), nhưng phá vỡ tính bằng GIÁ ĐÓNG CỬA — râu không tính.
  *   - Một cú phá đạt chuẩn khi nến đóng cửa ra ngoài vùng đệm 0,5 ATR và thân nến ≥ 0,5 ATR.
- *     Giá trôi ngang qua đường bằng nến nhỏ (đường tự "đuổi kịp" giá) không tính.
+ *     Nếu nến đầu tiên đóng ra ngoài còn yếu (giá trôi qua đường bằng nến nhỏ — hay gặp ở đường dốc),
+ *     đường CHƯA bị bỏ: chừng nào giá còn nằm ngoài, bot theo dõi thêm tối đa 4 nến; nến nào đạt chuẩn,
+ *     hoặc giá đã cách đường ≥ 1 ATR, thì đó là cú phá. Đóng cửa quay lại trong đường thì đường hết hiệu lực.
  *   - Xác nhận: đóng cửa vượt đỉnh/đáy cuối cùng nằm trên đường (gãy cấu trúc).
  *   - Retest: giá chạy ra xa ít nhất 1 ATR rồi quay về chạm đường và đóng cửa giữ được.
  */
@@ -33,7 +35,8 @@ const DEFAULTS = {
   BODY: 0.5,          // thân nến phá ≥ 0,5 ATR và cùng chiều phá
   TOUCH: 0.35,        // râu cách đường ≤ 0,35 ATR coi là một lần chạm
   WICK_MAX: 1.0,      // giữa hai điểm neo, râu không được xuyên đường quá 1 ATR (đường vẽ sai)
-  FOLLOW: 1,          // lần vượt đầu tiên chưa đạt chuẩn thì cho thêm 1 nến nữa
+  FOLLOW: 4,          // lần vượt đầu tiên chưa đạt chuẩn: giá còn nằm ngoài thì theo dõi thêm tối đa 4 nến
+  FAR: 1.0,           //   trong lúc đó, nến đóng cách đường ≥ 1 ATR cũng tính là phá (giá trôi dần ra xa)
   AWAY: 2.0,          // phải chạy ra xa ≥ 2 ATR rồi quay về mới tính là retest
   RETEST_MAX: 120,    // tìm retest trong 120 nến sau khi phá
   FLAT: 0.02,         // |độ dốc| < 0,02 ATR/nến coi là đường ngang
@@ -185,7 +188,7 @@ function classify(K, A, L) {
       const d = (K.c[i] - y(i)) * s;
       if (i > L.v && d <= CFG.TOL * A[i]) break;           // đã quay lại trong đường
       const body = (K.c[i] - K.o[i]) * s;
-      if (d >= CFG.BUF * A[i] && body >= CFG.BODY * A[i]) { L.state = 'broken'; L.b = i; break; }
+      if ((d >= CFG.BUF * A[i] && body >= CFG.BODY * A[i]) || (i > L.v && d >= CFG.FAR * A[i])) { L.state = 'broken'; L.b = i; break; }
     }
   }
 

@@ -1,5 +1,5 @@
-// bot/scan.mjs — quét top 50 đồng, phát hiện phá vỡ trendline trên nến H1, gửi thông báo về iPhone,
-// ghi nhớ kết quả từng tín hiệu và tự học loại nào hay ăn.
+// bot/scan.mjs — quét top 60 đồng crypto + vàng + dầu, phát hiện phá vỡ trendline trên nến H1,
+// gửi thông báo về iPhone.
 //
 // Chạy trên GitHub Actions (.github/workflows/scan.yml). Dữ liệu giữa các lần chạy nằm ở thư mục
 // OUT_DIR (mặc định "out"), được workflow lấy từ / đẩy lên nhánh "data" của repo.
@@ -8,10 +8,6 @@
 //   scan       quét và gửi thông báo (mặc định)
 //   dry-run    quét thử 48 giờ gần nhất, KHÔNG gửi, KHÔNG ghi nhớ — chỉ ghi báo cáo dryrun.json
 //   test-push  chỉ gửi một thông báo thử tới mọi thiết bị
-//   bootstrap  chạy lại 20 ngày quá khứ từng giờ một để có dữ liệu học (không gửi gì)
-//
-// Thứ tự trong một lượt quét: phát hiện → chấm điểm → GỬI → rồi mới chấm kết quả cũ và học lại.
-// Phần học chạy sau khi thông báo đã đi, nên không làm chậm thông báo.
 //
 // Bí mật (GitHub Secrets):
 //   PUSH_CONFIG  đoạn mã app tạo ra khi bấm "Bật thông báo" (một hoặc nhiều đoạn, mỗi đoạn một dòng)
@@ -22,11 +18,9 @@ import crypto from 'node:crypto';
 import webpush from 'web-push';
 import { analyze, CFG, HOUR } from '../core/breakout.js';
 import * as okx from '../core/okx.js';
-import { PAGES_URL, TOP_N, ALERTS, MIN_SPAN_ALERT } from '../core/config.js';
-import { hhmm, stamp } from '../core/format.js';
-import { featuresAt, predict, evOf, trainAll, buildStats, eventId, LEARN } from '../core/learn.js';
+import { PAGES_URL, TOP_N, PINNED, ALERTS, MIN_SPAN_ALERT } from '../core/config.js';
+import { hhmm, stamp, labelOf } from '../core/format.js';
 import { buildMessage, plan } from './plan.mjs';
-import { Journal, makeRow, replay } from './journal.mjs';
 
 const MODE = process.env.MODE || 'scan';
 const TRIGGER = process.env.TRIGGER || 'local';
@@ -34,7 +28,6 @@ const OUT = process.env.OUT_DIR || 'out';
 const WAIT_MAX = 9 * 60e3;     // chạy sớm tối đa 9 phút trước giờ đóng nến thì ở lại chờ
 const SETTLE = 1200;           // sau giờ đóng nến chờ thêm 1,2 giây cho OKX chốt nến
 const COOLDOWN = 3;            // không báo PHÁ cùng chiều cùng đồng 2 lần trong 3 nến (trừ đường lớn hơn hẳn)
-const BOOT_HOURS = 480;        // chạy lại 20 ngày quá khứ
 const SIGNAL_DAYS = 7;         // danh sách tín hiệu trong app giữ 7 ngày
 const MARK_DAYS = 23;          // dấu trên biểu đồ: phủ hết 500 nến H1
 const CONC = 6;
@@ -47,15 +40,12 @@ fs.mkdirSync(OUT, { recursive: true });
 const readJSON = (f, d) => { try { return JSON.parse(fs.readFileSync(path.join(OUT, f), 'utf8')); } catch { return d; } };
 const writeJSON = (f, v, pretty = true) => fs.writeFileSync(path.join(OUT, f), pretty ? JSON.stringify(v, null, 1) : JSON.stringify(v));
 const sha = s => crypto.createHash('sha256').update(s).digest('hex').slice(0, 12);
-const r3 = x => (x == null || !isFinite(x) ? null : Math.round(x * 1000) / 1000);
-const fmtR = x => (x >= 0 ? '+' : '') + x.toFixed(2).replace('.', ',') + 'R';
+const eventId = (instId, e) => `${instId}|${e.type}|${e.side}|${e.line.tBreak}`;
 
 const state = readJSON('state.json', {});
 const prevStatus = readJSON('status.json', {});
 state.sent ||= {}; state.lastBreak ||= {}; state.devices ||= {};
-const status = { version: 3, mode: MODE, trigger: TRIGGER, startedAt: t0, cfg: { window: CFG.WINDOW, top: TOP_N, alerts: ALERTS } };
-const journal = new Journal(readJSON('journal.json', null));
-let model = readJSON('model.json', null);
+const status = { version: 4, mode: MODE, trigger: TRIGGER, startedAt: t0, cfg: { window: CFG.WINDOW, top: TOP_N, pinned: PINNED, alerts: ALERTS } };
 
 /* ---------------- thông báo ---------------- */
 
@@ -124,88 +114,48 @@ async function connectOkx() {
   const insts = await okx.instruments();
   const ticks = await okx.tickSizes(insts);
   const tickers = await okx.swapTickers(okx.allowedSet(insts));
-  const universe = tickers.slice(0, TOP_N);
-  writeJSON('top50.json', { at: Date.now(), list: universe.map(u => ({ instId: u.instId, coin: u.coin, volUsd: Math.round(u.volUsd), last: u.last, chg: +u.chg.toFixed(5) })) });
-  log(`Top ${universe.length}: ${universe.slice(0, 12).map(u => u.coin).join(' ')} …`);
+  const universe = okx.pickUniverse(tickers);
+  writeJSON('top.json', { at: Date.now(), list: universe.map(u => ({ instId: u.instId, coin: u.coin, volUsd: Math.round(u.volUsd), last: u.last, chg: +u.chg.toFixed(5) })) });
+  const pins = universe.filter(u => PINNED.includes(u.instId));
+  log(`Theo dõi ${universe.length}: top ${universe.length - pins.length} crypto (${universe.filter(u => !PINNED.includes(u.instId)).slice(0, 10).map(u => u.coin).join(' ')} …)` +
+    (pins.length ? ` + ${pins.map(u => labelOf(u.coin)).join(', ')}` : '') + (pins.length < PINNED.length ? ` · thiếu ${PINNED.length - pins.length} mã cố định trên OKX` : ''));
   return { ticks, universe };
 }
 
-/* ---------------- ghi nhớ & học ---------------- */
-
-// Mốc bot bắt đầu chạy thật: tín hiệu trước mốc này chưa từng được xét để gửi.
-function botStart(signals) {
-  if (!state.firstScanAt) {
-    const ts = signals.map(s => s.t).filter(Boolean);
-    state.firstScanAt = ts.length ? Math.min(...ts) : Date.now();
-  }
-  return state.firstScanAt;
-}
+/* ---------------- lưu tín hiệu cho app ---------------- */
 
 const puOf = s => s.pu ?? (s.pushed > 0 ? (s.via === 'summary' ? 2 : 1) : 0);
 
-async function bootstrap(universe, signals) {
-  const t1 = Date.now();
-  log(`Chạy lại ${BOOT_HOURS} giờ quá khứ để có dữ liệu học…`);
-  const hist = {};
-  await pool(universe, async u => { hist[u.instId] = (await okx.candles(u.instId, '1H', CFG.WINDOW + CFG.WARMUP + BOOT_HOURS)).K; });
-  const sig = new Map(signals.map(s => [s.id, s]));
-  const start = botStart(signals);
-  let added = 0;
-  const calls = replay(hist, BOOT_HOURS, (instId, e, f) => {
-    const id = eventId(instId, e);
-    if (journal.has(id)) return;
-    const s = sig.get(id);
-    const pu = s ? puOf(s) : e.t >= start ? 0 : null;
-    journal.add(makeRow(instId, instId.split('-')[0], e, f, { src: 'boot', pu }));
-    added++;
-  });
-  const resolved = journal.evaluate(hist);
-  state.bootAt = Date.now();
-  log(`  ${calls} lần phân tích trên ${Object.keys(hist).length} đồng: thêm ${added} tín hiệu, ${resolved} đã có kết quả — ${((Date.now() - t1) / 1000).toFixed(1)} giây`);
-  return hist;
-}
-
-// Gọn file cho app tải nhanh trên điện thoại: bỏ đặc trưng (đã có trong nhật ký), giá giữ 8 chữ số có nghĩa.
+// Gọn file cho app tải nhanh trên điện thoại: giá giữ 8 chữ số có nghĩa.
 const P8 = x => (typeof x === 'number' && isFinite(x) ? +x.toPrecision(8) : x);
 function slim(s) {
-  const { f, ...o } = s;
-  for (const k of ['close', 'linePrice', 'level']) o[k] = P8(o[k]);
-  if (o.line) { o.line = { ...o.line }; for (const k of ['pa', 'pb', 'mPerH', 'level']) o.line[k] = P8(o.line[k]); }
-  return o;
+  const { f, p, ev, o, h, r24, r72, now, mfe, mae, ...x } = s;   // bỏ các trường của bản "ghi nhớ" cũ
+  for (const k of ['close', 'linePrice', 'level']) x[k] = P8(x[k]);
+  if (x.line) { x.line = { ...x.line }; for (const k of ['pa', 'pb', 'mPerH', 'level']) x.line[k] = P8(x.line[k]); }
+  if (x.pu == null) x.pu = puOf(x);
+  return x;
 }
 
-function learn(signals) {
-  journal.prune();
-  model = trainAll(journal.rows);
-  const stats = buildStats(journal.rows, model);
-  writeJSON('journal.json', journal.toJSON(), false);
-  writeJSON('model.json', model);
-  writeJSON('stats.json', stats);
-  const v = model.validation || {};
-  status.learn = {
-    rows: journal.rows.length, resolved: stats.all.n, pending: stats.all.pending, nWL: model.nWL,
-    ready: model.ready, filtering: model.filtering, reason: v.reason, lift: v.lift, keep: v.keep,
-    win: stats.all.win, avgR: stats.all.avgR,
-  };
-  log(`Học: ${journal.rows.length} tín hiệu trong nhật ký, ${stats.all.n} đã có kết quả (thắng ${stats.all.win == null ? '—' : (stats.all.win * 100).toFixed(0) + '%'}, kỳ vọng ${stats.all.avgR == null ? '—' : fmtR(stats.all.avgR)})` +
-    ` · ${!model.ready ? `đang học (${model.nWL}/${LEARN.MIN_TRAIN})` : model.filtering ? `ĐANG TỰ LỌC (lọc giúp ${fmtR(v.lift)}/lệnh, giữ ${(v.keep * 100).toFixed(0)}%)` : `chưa lọc — ${v.reason}`}`);
-
-  // đồng bộ kết quả vào danh sách tín hiệu của app, giữ 7 ngày
-  for (const s of signals) {
-    const r = journal.get(s.id);
-    if (s.pu == null) s.pu = puOf(s);
-    if (!r) continue;
-    Object.assign(s, { o: r.o, h: r.h, r24: r.r24, r72: r.r72, now: r.now, mfe: r.mfe, mae: r.mae });
-    if (s.p == null && r.p != null) { s.p = r.p; s.ev = r.ev; }
-  }
+/**
+ * signals.json: danh sách tín hiệu 7 ngày cho tab Tín hiệu.
+ * marks.json:   dấu trên biểu đồ (500 nến ≈ 21 ngày) — tín hiệu nào bot đã đẩy về máy (mũi tên đậm)
+ *               hay không (mờ). Gọn theo từng đồng: { instId: [[loại|cạnh|giờ phá, đã đẩy], …] }
+ */
+function saveSignals(signals, added) {
   const keepFrom = Date.now() - SIGNAL_DAYS * 24 * HOUR;
   writeJSON('signals.json', signals.filter(s => s.t >= keepFrom).sort((a, b) => b.t - a.t).slice(0, 1500).map(slim), false);
 
-  // Dấu trên biểu đồ (500 nến ≈ 21 ngày): tín hiệu nào đã đẩy về máy, kết quả ra sao.
-  // Gọn theo từng đồng: { instId: [[loại|cạnh|giờ phá, đã đẩy, kết quả], …] }
-  const markFrom = Date.now() - MARK_DAYS * 24 * HOUR, m = {};
-  for (const r of journal.rows) if (r.t >= markFrom) (m[r.s] ||= []).push([r.id.slice(r.s.length + 1), r.pu, r.o]);
-  writeJSON('marks.json', { v: 1, from: markFrom, m }, false);
+  const old = readJSON('marks.json', { m: {} });
+  const m = new Map();
+  for (const [inst, arr] of Object.entries(old.m || {})) for (const [suf, pu] of arr) m.set(inst + '|' + suf, pu);
+  for (const s of added) m.set(s.id, s.pu);
+  const from = Date.now() - (MARK_DAYS + 5) * 24 * HOUR, out = {};
+  for (const [id, pu] of m) {
+    const parts = id.split('|'), tBreak = +parts[3];
+    if (!(tBreak >= from)) continue;
+    (out[parts[0]] ||= []).push([parts.slice(1).join('|'), pu]);
+  }
+  writeJSON('marks.json', { v: 2, from, m: out }, false);
 }
 
 function finish(extra = {}) {
@@ -214,7 +164,6 @@ function finish(extra = {}) {
   for (const id of Object.keys(state.devices)) if (!live.has(id)) delete state.devices[id];
   status.devices = Object.entries(state.devices).map(([id, r]) => ({ id, ...r }));
   status.push = { configured: devices.length, ids: devices.map(d => d.id) };
-  if (!status.learn && prevStatus.learn) status.learn = prevStatus.learn;
   // giữ lại thông tin lần quét thật gần nhất để app hiển thị
   if (MODE === 'scan' && status.result === 'ok') status.lastScan = {
     at: status.finishedAt, target: status.target, closeAt: status.closeAt, trigger: TRIGGER, host: status.host,
@@ -224,7 +173,10 @@ function finish(extra = {}) {
   else if (prevStatus.lastScan) status.lastScan = prevStatus.lastScan;
   writeJSON(MODE === 'dry-run' ? 'dryrun-status.json' : 'status.json', status);
   // nến thô của lần chạy thử chỉ dùng để chỉnh ngưỡng tại máy — không mang theo mỗi giờ
-  if (MODE !== 'dry-run') for (const f of ['dryrun-candles.json', 'dryrun-instruments.json']) fs.rmSync(path.join(OUT, f), { force: true });
+  // nến thô của lần chạy thử + file của bản "ghi nhớ" đã bỏ
+  const drop = ['journal.json', 'model.json', 'stats.json', 'top50.json'];
+  if (MODE !== 'dry-run') drop.push('dryrun-candles.json', 'dryrun-instruments.json');
+  for (const f of drop) fs.rmSync(path.join(OUT, f), { force: true });
   if (MODE !== 'dry-run') writeJSON('state.json', state);
   fs.writeFileSync(path.join(OUT, MODE === 'dry-run' ? 'dryrun.log' : 'last.log'), LOG.join('\n') + '\n');
 }
@@ -232,7 +184,7 @@ function finish(extra = {}) {
 /* ---------------- chạy ---------------- */
 
 async function main() {
-  log(`Chế độ ${MODE} · kích hoạt bởi ${TRIGGER} · ${devices.length} máy nhận thông báo · nhật ký ${journal.rows.length} tín hiệu`);
+  log(`Chế độ ${MODE} · kích hoạt bởi ${TRIGGER} · ${devices.length} máy nhận thông báo`);
 
   if (MODE === 'test-push') {
     if (!devices.length) { log('Chưa có PUSH_CONFIG — chưa có máy nào để gửi.'); return finish({ result: 'no-devices' }); }
@@ -240,19 +192,11 @@ async function main() {
     return finish({ result: n ? 'test-sent' : 'test-failed' });
   }
 
-  if (MODE === 'bootstrap') {
-    const { universe } = await connectOkx();
-    const signals = readJSON('signals.json', []);
-    await bootstrap(universe, signals);
-    learn(signals);
-    return finish({ result: 'bootstrap' });
-  }
-
   // Máy mới được thêm → gửi lời chào để biết đã thông.
   const devHash = sha(devices.map(d => d.id).sort().join(','));
   if (MODE === 'scan' && devices.length && devHash !== state.devHash) {
     log('Phát hiện thay đổi danh sách máy — gửi lời chào');
-    const n = await pushAll({ title: 'Bot Trade đã nhận máy này ✓', body: `Từ giờ bot sẽ báo phá vỡ trendline H1 cho top ${TOP_N} đồng.`, url: './#tab=settings', tag: 'hello' });
+    const n = await pushAll({ title: 'Bot Trade đã nhận máy này ✓', body: `Từ giờ bot sẽ báo phá vỡ trendline H1 cho top ${TOP_N} đồng crypto${PINNED.length ? ' + ' + PINNED.map(id => labelOf(id.split('-')[0])).join(', ') : ''}.`, url: './#tab=settings', tag: 'hello' });
     if (n) state.devHash = devHash;
   }
 
@@ -316,7 +260,7 @@ async function main() {
     nLines += r.all.length;
     const ev = r.events.filter(e => e.t > since && e.t <= target);
     perCoin.push({ coin: u.coin, lines: r.all.length, shown: r.lines.length, events: ev.length });
-    for (const e of ev) found.push({ ...e, f: featuresAt(r.W, r.A, e), instId: u.instId, coin: u.coin, tickSz: ticks[u.instId] });
+    for (const e of ev) found.push({ ...e, instId: u.instId, coin: u.coin, tickSz: ticks[u.instId] });
   }
   status.analyzeMs = Date.now() - readyAt;
   status.counts = { coins: perCoin.length, lines: nLines, events: found.length };
@@ -343,16 +287,13 @@ async function main() {
     return finish({ result: 'dry-run' });
   }
 
-  // ----- chấm điểm, lọc, gửi -----
+  // ----- lọc trùng, gửi -----
   const signals = readJSON('signals.json', []);
-  const start = botStart(signals);
   const fresh = [], skipped = [];
-  const learned = model && model.ready;
   for (const e of found.sort((a, b) => a.t - b.t)) {
     const key = eventId(e.instId, e);
-    if (state.sent[key] || journal.has(key)) continue;     // đã xử lý ở lượt trước
+    if (state.sent[key]) continue;     // đã xử lý ở lượt trước
     e._key = key;
-    if (learned) { e.p = predict(model, e.f); e.ev = evOf(e.p); e.showScore = !!model.filtering; }
     let why = null;
     if (!ALERTS.includes(e.type)) why = 'loại thông báo đang tắt';
     else if (e.line.span < MIN_SPAN_ALERT) why = `mô hình nhỏ hơn ${MIN_SPAN_ALERT} nến`;
@@ -360,9 +301,8 @@ async function main() {
       const lb = state.lastBreak[e.instId + '|' + e.side];
       if (lb && e.t - lb.t <= COOLDOWN * HOUR && e.line.span < 2 * lb.span) why = 'vừa báo phá cùng chiều';
     }
-    if (!why && learned && model.filtering && e.ev < LEARN.EV_MIN) why = 'bot chấm kỳ vọng thấp';
     state.sent[key] = Date.now();
-    if (why) { e.why = why; skipped.push(e); log(`  không đẩy ${e.coin} ${e.type} ${e.dir}: ${why}${e.ev != null ? ` (${fmtR(e.ev)})` : ''}`); continue; }
+    if (why) { e.why = why; skipped.push(e); log(`  không đẩy ${e.coin} ${e.type} ${e.dir}: ${why}`); continue; }
     if (e.type === 'BREAK') state.lastBreak[e.instId + '|' + e.side] = { t: e.t, span: e.line.span };
     fresh.push(e);
   }
@@ -381,35 +321,26 @@ async function main() {
   status.pushDoneAfterCloseMs = Date.now() - (target + HOUR);
   log(`Gửi xong: ${fresh.length} tín hiệu, ${batches.length} thông báo, gửi được ${sentN}, không đẩy ${skipped.length}. Báo sau khi nến đóng ${(status.pushDoneAfterCloseMs / 1000).toFixed(1)} giây.`);
 
-  // ===== từ đây trở đi thông báo đã đi rồi: ghi nhớ và học, không ảnh hưởng tốc độ báo =====
+  // ----- lưu cho app (sau khi thông báo đã đi, không làm chậm thông báo) -----
+  const added = [];
   for (const e of [...fresh, ...skipped]) {
     const pu = e._pu ?? 0;
-    journal.add(makeRow(e.instId, e.coin, e, e.f, { p: r3(e.p), ev: r3(e.ev), pu, why: e.why || null }));
-    signals.unshift({
+    const row = {
       id: e._key, instId: e.instId, coin: e.coin, type: e.type, dir: e.dir, side: e.side,
       t: e.t, close: e.close, atr: +e.atr.toPrecision(6), linePrice: e.linePrice, level: e.level, confirmed: e.confirmed,
       others: e.others, tickSz: e.tickSz, line: e.line,
       sentAt: Date.now(), pushed: e._okN || 0, pu, via: pu === 2 ? 'summary' : pu === 1 ? 'single' : null,
-      why: e.why || null, p: r3(e.p), ev: r3(e.ev), f: e.f,
-    });
+      why: e.why || null,
+    };
+    signals.unshift(row); added.push(row);
   }
-
-  // chấm lại tín hiệu cũ — cần nến của cả những đồng đã rơi khỏi top 50
-  const extra = journal.pendingInsts().filter(id => !data[id]).slice(0, 25);
-  if (extra.length) await pool(extra.map(instId => ({ instId })), async u => { data[u.instId] = (await okx.candles(u.instId, '1H', 120)).K; });
-  const resolved = journal.evaluate(data);
-  if (resolved) log(`Chấm kết quả: ${resolved} tín hiệu vừa ngã ngũ`);
-
-  // nhật ký trống (lần đầu, hoặc mất dữ liệu) → tự chạy lại quá khứ
-  if (journal.rows.length < 50 && (!state.bootAt || Date.now() - state.bootAt > 6 * HOUR)) await bootstrap(universe, signals);
 
   // dọn bộ nhớ chống trùng cũ hơn 20 ngày
   const old = Date.now() - 20 * 24 * HOUR;
   for (const [k, v] of Object.entries(state.sent)) if (v < old) delete state.sent[k];
   for (const [k, v] of Object.entries(state.lastBreak)) if (v.t < old) delete state.lastBreak[k];
 
-  learn(signals);
-  status.botStart = start;
+  saveSignals(signals, added);
   finish({ result: 'ok' });
 }
 

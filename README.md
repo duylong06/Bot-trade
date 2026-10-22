@@ -1,18 +1,14 @@
 # Bot Trade — báo phá vỡ trendline H1
 
-Bot quét **top 50 đồng crypto** (hợp đồng USDT vĩnh cửu trên OKX, xếp theo khối lượng 24h, cập nhật mỗi giờ),
-tìm các **đường xu hướng trong 500 nến H1 gần nhất** và báo về iPhone khi có:
+Bot quét **top 60 đồng crypto** (hợp đồng USDT vĩnh cửu trên OKX, xếp theo khối lượng 24h, cập nhật mỗi giờ)
+**cùng vàng (XAU) và dầu WTI (CL)**, tìm các **đường xu hướng trong 500 nến H1 gần nhất** và báo về iPhone khi có:
 
 - **Phá** — nến H1 **đóng cửa** ra ngoài đường (râu không tính). Phá kháng cự → LONG, phá hỗ trợ → SHORT.
 - **Xác nhận** — đóng cửa vượt đỉnh/đáy cuối cùng nằm trên đường (gãy cấu trúc).
 - **Retest** — giá chạy ra xa rồi quay về chạm lại đường vừa phá và giữ được.
 
 Kèm app xem chart kiểu OKX/TradingView: nến cập nhật trực tiếp, EMA200, Stoch 32/13/5 và 10/5/5,
-các đường bot đang theo dõi, danh sách tín hiệu. Bấm vào thông báo là mở đúng chart, đúng đường vừa phá,
-kèm giá vào / mục tiêu / dừng lỗ bot dùng để chấm điểm.
-
-Bot **ghi nhớ kết quả từng tín hiệu** và tự học kiểu phá nào hay chạy tiếp (tab **Ghi nhớ** trong app) —
-xem mục [Bộ nhớ của bot](#bộ-nhớ-của-bot).
+các đường bot đang theo dõi, danh sách tín hiệu. Bấm vào thông báo là mở đúng chart, đúng đường vừa phá.
 
 **App:** https://duylong06.github.io/Bot-trade/
 
@@ -68,37 +64,21 @@ Toàn bộ nằm trong `core/breakout.js` (bot và app dùng chung một file, n
 | Cửa sổ | 500 nến H1 gần nhất; mô hình nhỏ hay lớn đều xét |
 | Điểm neo | râu nến (đỉnh/đáy); đường càng dài càng phải nối đỉnh/đáy lớn |
 | Chạm | ≥ 3 lần; giữa hai lần chạm giá phải bật ra ≥ 1,5 ATR |
-| Phá | nến H1 **đóng cửa** ngoài đường ≥ 0,5 ATR, thân nến ≥ 0,5 ATR; giá trôi ngang qua đường bằng nến nhỏ không tính |
+| Phá | nến H1 **đóng cửa** ngoài đường ≥ 0,5 ATR, thân nến ≥ 0,5 ATR |
+| Trôi qua rồi mới sập | nến đầu đóng ra ngoài còn yếu (hay gặp ở đường dốc) thì đường chưa bị bỏ: giá còn nằm ngoài, bot theo dõi thêm tối đa 4 nến — nến nào đạt chuẩn trên, hoặc đóng cách đường ≥ 1 ATR, là báo. Đóng quay lại trong đường thì thôi |
 | Xác nhận | đóng cửa vượt đỉnh/đáy cuối cùng nằm trên đường |
 | Retest | sau khi phá, chạy xa ≥ 2 ATR rồi quay về chạm đường, đóng cửa giữ được |
 | Chống ồn | cùng đồng cùng chiều gộp một tin; giờ nào > 3 tín hiệu thì gửi 2 tin lớn nhất + 1 tin tóm tắt; không báo phá cùng chiều 2 lần trong 3 nến |
 
-Đo trên giá thật 48 giờ (ngày 21/10/2026, top 50 crypto): khoảng **80 tín hiệu/ngày**, điện thoại rung khoảng **40 lần/ngày**, tối đa 3 lần mỗi giờ.
-
-## Bộ nhớ của bot
-
-Toàn bộ trong `core/learn.js` và `bot/journal.mjs`. **Luật phát hiện ở trên không đổi** — bot chỉ học xem trong
-các cú phá đúng luật, kiểu nào thường chạy tiếp, kiểu nào hay quay đầu.
-
-- **Ghi nhật ký**: mọi tín hiệu (kể cả cái không đẩy về máy) được ghi vào `journal.json` ở nhánh `data`, giữ 120 ngày.
-- **Chấm điểm**: mỗi tín hiệu tính như một lệnh giả định — vào ở giá đóng cửa nến báo, mục tiêu **+2 ATR**,
-  dừng lỗ **−1 ATR**, tối đa 72 nến H1; cùng một nến chạm cả hai thì tính thua. Hoà vốn ở tỉ lệ thắng 33%.
-- **Học từ ngày đầu**: lần chạy đầu bot tự chạy lại 480 giờ quá khứ, từng giờ một, chỉ dùng nến có tới giờ đó
-  (không nhìn trước tương lai). Có thể chạy lại tay: Actions → Run workflow → `bootstrap`.
-- **Mô hình**: hồi quy logistic trên 17 đặc trưng (loại tín hiệu, chiều, cỡ mô hình, số lần chạm, gãy cấu trúc,
-  độ dốc, kiểu đường, khối lượng nến, vị trí so với EMA200, khoảng cách đóng cửa tới đường), học lại mỗi giờ.
-- **Chỉ tự lọc khi chứng minh được**: kiểm tra theo thời gian 3 đoạn (học trên dữ liệu cũ, thử trên dữ liệu mới),
-  lọc phải giúp tăng ≥ +0,05R/lệnh ở **cả 3 đoạn**, độ tin cậy t ≥ 2. Chưa đạt thì bot vẫn báo hết như cũ.
-  Khi đạt, bot chỉ đẩy tín hiệu có kỳ vọng ≥ 0R và thông báo kèm dòng “Bot chấm: thắng ~X% · kỳ vọng ±YR”.
-  Tín hiệu bị bỏ vẫn hiện trong tab Tín hiệu, kèm lý do.
-- `node bot/test-learn.mjs`: kiểm tra trên dữ liệu ngẫu nhiên — bộ lọc bật nhầm 0/40 lần.
+Đo trên giá thật 48 giờ (ngày 20–22/10/2026, top 50 crypto): khoảng **120 tín hiệu/ngày**, điện thoại rung khoảng **50 lần/ngày**, tối đa 3 lần mỗi giờ.
 
 ## Chỉnh nhanh — `core/config.js`
 
 | Biến | Ý nghĩa |
 |---|---|
-| `TOP_N` | số đồng theo dõi (mặc định 50) |
-| `CATEGORIES` | `['1']` chỉ crypto · thêm `'4'` để có vàng, bạc, dầu · `'3'` cổ phiếu |
+| `TOP_N` | số đồng crypto theo dõi theo khối lượng (mặc định 60) |
+| `PINNED` | mã luôn theo dõi dù khối lượng bao nhiêu: `XAU-USDT-SWAP` (vàng), `CL-USDT-SWAP` (dầu WTI); thêm `BZ-USDT-SWAP` (dầu Brent), `XAG-USDT-SWAP` (bạc) nếu muốn |
+| `CATEGORIES` | loại được xếp hạng vào top: `['1']` chỉ crypto · `'3'` cổ phiếu |
 | `ALERTS` | bỏ loại nào khỏi `['BREAK','CONFIRM','RETEST']` là thôi báo loại đó |
 | `MIN_SPAN_ALERT` | chỉ báo mô hình từ N nến trở lên (0 = mọi cỡ). Ví dụ 60 → còn khoảng 55 tín hiệu/ngày, 100 → khoảng 30 |
 | `TUNE` | ghi đè ngưỡng trong `core/breakout.js`, ví dụ `{ MIN_SPAN: 20, BUF: 0.6 }` |
@@ -109,17 +89,15 @@ các cú phá đúng luật, kiểu nào thường chạy tiếp, kiểu nào ha
 index.html, manifest.webmanifest, sw.js   app (GitHub Pages)
 app/                                       giao diện, chart, WebSocket OKX, bật thông báo
 core/breakout.js                           lõi phát hiện phá vỡ — dùng chung
-core/learn.js                              chấm điểm, học, thống kê — dùng chung
 core/okx.js, core/format.js, core/config.js
 bot/scan.mjs                               bot quét + gửi thông báo (GitHub Actions)
 bot/plan.mjs                               soạn nội dung và gộp thông báo
-bot/journal.mjs                            nhật ký tín hiệu + chạy lại quá khứ
-bot/test-core.mjs, bot/test-learn.mjs      kiểm thử:  npm test
+bot/test-core.mjs                          kiểm thử lõi:  npm test
 bot/replay.mjs                             phát lại bot trên nến thật để đếm số thông báo
 .github/workflows/scan.yml                 lịch chạy
 ```
 
-Bot lưu tín hiệu, trạng thái, nhật ký, mô hình và thống kê ở nhánh `data` (app đọc từ đây).
+Bot lưu tín hiệu, trạng thái và bộ nhớ chống trùng ở nhánh `data` (app đọc từ đây).
 Bản cũ (`quet-tin-hieu.html` + bot Telegram) vẫn còn nguyên ở nhánh `legacy`.
 
 ## Thêm mô hình mới

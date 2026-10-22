@@ -1,36 +1,33 @@
 // bot/plan.mjs — soạn nội dung thông báo và quyết định gửi gì trong một lượt quét.
-import { fmtPrice, hhmm } from '../core/format.js';
+import { fmtPrice, hhmm, labelOf } from '../core/format.js';
 
 export const BUNDLE_AT = 3;     // lượt quét có hơn 3 tín hiệu → gửi 2 cái lớn nhất + 1 thông báo tóm tắt
 const SINGLES_WHEN_BUNDLED = 2;
 const RANK = { BREAK: 0, RETEST: 1, CONFIRM: 2 };
 const NAME = { BREAK: 'Phá', RETEST: 'Retest', CONFIRM: 'Xác nhận' };
-const fmtR = x => (x >= 0 ? '+' : '') + x.toFixed(2).replace('.', ',') + 'R';
-// Thứ tự ưu tiên khi phải chọn: bot đã chấm điểm thì theo kỳ vọng, chưa thì PHÁ > RETEST > XÁC NHẬN rồi đường dài hơn.
-const better = (a, b) => (a.ev != null && b.ev != null && a.ev !== b.ev ? b.ev - a.ev : 0)
-  || (RANK[a.type] - RANK[b.type]) || (b.line.span - a.line.span);
+// Thứ tự ưu tiên khi phải chọn: PHÁ > RETEST > XÁC NHẬN, rồi mô hình dài hơn.
+const better = (a, b) => (RANK[a.type] - RANK[b.type]) || (b.line.span - a.line.span);
 
 export function buildMessage(e) {
   const p = v => fmtPrice(v, e.tickSz);
-  const up = e.dir === 'LONG', L = e.line;
+  const up = e.dir === 'LONG', L = e.line, name = labelOf(e.coin);
   const arrow = up ? '▲' : '▼';
   const lvl = up ? 'đỉnh' : 'đáy';
   let title, body;
   if (e.type === 'BREAK') {
-    title = `${arrow} ${e.dir} ${e.coin} · phá ${L.kind}`;
+    title = `${arrow} ${e.dir} ${name} · phá ${L.kind}`;
     body = `Đóng cửa ${p(e.close)} ${up ? 'trên' : 'dưới'} đường ${p(e.linePrice)} · mô hình ${L.span} nến, ${L.touches} chạm.`;
     body += e.confirmed ? `\nĐã ${up ? 'vượt' : 'thủng'} ${lvl} cũ ${p(e.level)} ✓` : `\nChưa ${up ? 'vượt' : 'thủng'} ${lvl} cũ ${p(e.level)}.`;
     if (L.steep) body += ' Đường dốc — thường không có retest.';
     if (e.others) body += ` Cùng lúc phá thêm ${e.others} đường.`;
   } else if (e.type === 'CONFIRM') {
-    title = `✓ Xác nhận ${e.dir} ${e.coin}`;
+    title = `✓ Xác nhận ${e.dir} ${name}`;
     body = `Đóng cửa ${p(e.close)} ${up ? 'vượt' : 'thủng'} ${lvl} cũ ${p(e.level)} — cấu trúc đã gãy. Phá ${L.kind} ${L.span} nến lúc ${hhmm(L.tBreak)}.`;
   } else {
-    title = `↺ Retest ${e.dir} ${e.coin}`;
+    title = `↺ Retest ${e.dir} ${name}`;
     body = `Giá quay về chạm ${L.kind} ${L.span} nến vừa phá (${p(e.linePrice)}) và đóng cửa giữ được ở ${p(e.close)}.`;
   }
   if (e.also && e.also.length) body += `\nKèm: ${e.also.map(a => `${NAME[a.type].toLowerCase()} đường ${a.line.span} nến`).join(', ')}.`;
-  if (e.p != null && e.showScore) body += `\nBot chấm: thắng ~${Math.round(e.p * 100)}% · kỳ vọng ${fmtR(e.ev)}`;
   body += `\nNến H1 ${hhmm(e.t)}`;
   const q = new URLSearchParams({ s: e.instId, ev: e.type, t: String(e.t) });
   return { title, body, url: './#' + q.toString(), tag: `${e.instId}|${e.type}|${e.t}` };
@@ -39,7 +36,7 @@ export function buildMessage(e) {
 function buildSummary(rest, t) {
   const L = rest.filter(e => e.dir === 'LONG'), S = rest.filter(e => e.dir === 'SHORT');
   const head = [L.length ? `▲ ${L.length} LONG` : '', S.length ? `▼ ${S.length} SHORT` : ''].filter(Boolean).join(' · ');
-  const list = (arr, type) => arr.filter(e => e.type === type).map(e => e.coin);
+  const list = (arr, type) => arr.filter(e => e.type === type).map(e => labelOf(e.coin));
   const parts = [];
   for (const type of ['BREAK', 'RETEST', 'CONFIRM']) {
     const l = list(L, type), s = list(S, type);
@@ -57,7 +54,7 @@ function buildSummary(rest, t) {
 /**
  * Gộp tín hiệu của một lượt quét thành danh sách thông báo cần gửi.
  * - Cùng đồng, cùng chiều → một thông báo (ưu tiên PHÁ > RETEST > XÁC NHẬN, rồi mô hình lớn hơn).
- * - Nhiều hơn BUNDLE_AT thông báo → gửi riêng 2 cái tốt nhất (kỳ vọng cao nhất khi bot đã học) + 1 tin tóm tắt.
+ * - Nhiều hơn BUNDLE_AT thông báo → gửi riêng 2 cái tốt nhất + 1 tin tóm tắt.
  * Trả về [{ msg, events }] — events là các tín hiệu mà thông báo đó đại diện.
  */
 export function plan(events) {
