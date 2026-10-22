@@ -16,7 +16,8 @@ const LS = {
 };
 const TYPE = { BREAK: 'Phá', RETEST: 'Retest', CONFIRM: 'Xác nhận' };
 const cap = s => (s ? s[0].toUpperCase() + s.slice(1) : '');
-const fmtR = x => (x == null || !isFinite(x) ? '—' : (x > 0 ? '+' : x < 0 ? '−' : '') + Math.abs(x).toFixed(2).replace('.', ',') + 'R');
+const r2 = x => Math.round(x * 100) / 100 || 0;   // làm tròn 2 số lẻ, không có "−0"
+const fmtR = x => (x == null || !isFinite(x) ? '—' : (r2(x) > 0 ? '+' : r2(x) < 0 ? '−' : '') + Math.abs(r2(x)).toFixed(2).replace('.', ',') + 'R');
 const pct = x => (x == null || !isFinite(x) ? '—' : Math.round(x * 100) + '%');
 const pushedOf = s => (s.pu ?? (s.pushed > 0 ? 1 : 0)) > 0;
 const ago = ms => { const m = Math.round((Date.now() - ms) / 60000); return m < 1 ? 'vừa xong' : m < 60 ? `${m} phút trước` : m < 1440 ? `${Math.floor(m / 60)} giờ ${m % 60} phút trước` : `${Math.floor(m / 1440)} ngày trước`; };
@@ -339,7 +340,7 @@ function renderStats() {
     return;
   }
   const m = st.model || {}, v = m.validation || {}, a = st.all || {}, w = st.week || {};
-  const tone = x => (x == null ? '' : x > 0 ? 'up' : x < 0 ? 'down' : '');
+  const tone = x => (x == null ? '' : r2(x) > 0 ? 'up' : r2(x) < 0 ? 'down' : '');
   let h = '';
 
   // 1) trạng thái bộ nhớ
@@ -369,7 +370,8 @@ function renderStats() {
   h += `<details class="how"><summary>Bot chấm điểm thế nào?</summary><p>Mỗi tín hiệu được tính như một lệnh giả định: vào ở giá đóng cửa của nến báo, mục tiêu <b>+${LEARN.TP} ATR</b>, dừng lỗ <b>−${LEARN.SL} ATR</b>, giữ tối đa ${LEARN.HORIZON} nến H1. Chạm cái nào trước tính cái đó; cùng một nến chạm cả hai thì tính thua. 1R = khoảng dừng lỗ. Thắng ${pct(BREAKEVEN)} số lệnh là hoà vốn.</p></details>`;
 
   // 3) yếu tố bot học được
-  const fx = (m.factors || []).filter(f => Math.abs(f.delta) >= 0.005).sort((x, y) => y.delta - x.delta).slice(0, 12);
+  const fx = (m.factors || []).filter(f => Math.abs(f.delta) >= 0.005)
+    .sort((x, y) => Math.abs(y.delta) - Math.abs(x.delta)).slice(0, 12).sort((x, y) => y.delta - x.delta);
   if (m.ready && fx.length) {
     const mx = Math.max(...fx.map(f => Math.abs(f.delta)), 0.01);
     h += `<div class="card"><h3>Bot học được gì</h3>
@@ -389,7 +391,7 @@ function renderStats() {
     h += `<div class="gn">${esc(g.name)}</div>`;
     for (const r of g.rows) {
       h += `<div class="gr${r.n < 20 ? ' few' : ''}"><span>${esc(r.label)}</span><span class="n">${r.n}</span>
-        <span class="wb"><span class="bar"><i class="${r.avgR > 0 ? 'pos' : 'neg'}" style="width:${((r.win || 0) * 100).toFixed(1)}%"></i><s style="left:${be}%"></s></span><em>${pct(r.win)}</em></span>
+        <span class="wb"><span class="bar"><i class="${r2(r.avgR) > 0 ? 'pos' : 'neg'}" style="width:${((r.win || 0) * 100).toFixed(1)}%"></i><s style="left:${be}%"></s></span><em>${pct(r.win)}</em></span>
         <span class="${tone(r.avgR)}">${fmtR(r.avgR)}</span></div>`;
     }
   }
