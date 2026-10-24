@@ -1,0 +1,439 @@
+{
+ "at": 1792839344917,
+ "list": [
+  {
+   "instId": "BTC-USDT-SWAP",
+   "coin": "BTC",
+   "volUsd": 4257180632,
+   "last": 80610,
+   "chg": -0.0131
+  },
+  {
+   "instId": "ETH-USDT-SWAP",
+   "coin": "ETH",
+   "volUsd": 4129425486,
+   "last": 2368,
+   "chg": -0.01223
+  },
+  {
+   "instId": "IRYS-USDT-SWAP",
+   "coin": "IRYS",
+   "volUsd": 959829704,
+   "last": 0.06372,
+   "chg": 0.56062
+  },
+  {
+   "instId": "ZEC-USDT-SWAP",
+   "coin": "ZEC",
+   "volUsd": 908534668,
+   "last": 1153.3,
+   "chg": -0.04574
+  },
+  {
+   "instId": "SOL-USDT-SWAP",
+   "coin": "SOL",
+   "volUsd": 606390182,
+   "last": 101.59,
+   "chg": -0.02355
+  },
+  {
+   "instId": "SUI-USDT-SWAP",
+   "coin": "SUI",
+   "volUsd": 589305002,
+   "last": 0.9455,
+   "chg": -0.04302
+  },
+  {
+   "instId": "PEPE-USDT-SWAP",
+   "coin": "PEPE",
+   "volUsd": 244583847,
+   "last": 0.00000438,
+   "chg": -0.11102
+  },
+  {
+   "instId": "NEAR-USDT-SWAP",
+   "coin": "NEAR",
+   "volUsd": 178944978,
+   "last": 4.511,
+   "chg": -0.07599
+  },
+  {
+   "instId": "DOGE-USDT-SWAP",
+   "coin": "DOGE",
+   "volUsd": 169399164,
+   "last": 0.07745,
+   "chg": -0.03127
+  },
+  {
+   "instId": "XRP-USDT-SWAP",
+   "coin": "XRP",
+   "volUsd": 166902687,
+   "last": 1.2795,
+   "chg": -0.03002
+  },
+  {
+   "instId": "WLD-USDT-SWAP",
+   "coin": "WLD",
+   "volUsd": 137385563,
+   "last": 0.4689,
+   "chg": -0.12779
+  },
+  {
+   "instId": "ORDER-USDT-SWAP",
+   "coin": "ORDER",
+   "volUsd": 130546152,
+   "last": 0.0831,
+   "chg": 1.56007
+  },
+  {
+   "instId": "HYPE-USDT-SWAP",
+   "coin": "HYPE",
+   "volUsd": 123693483,
+   "last": 75.472,
+   "chg": -0.03096
+  },
+  {
+   "instId": "PUMP-USDT-SWAP",
+   "coin": "PUMP",
+   "volUsd": 101113623,
+   "last": 0.004244,
+   "chg": -0.06623
+  },
+  {
+   "instId": "AKE-USDT-SWAP",
+   "coin": "AKE",
+   "volUsd": 95225632,
+   "last": 0.02944,
+   "chg": -0.12977
+  },
+  {
+   "instId": "ENA-USDT-SWAP",
+   "coin": "ENA",
+   "volUsd": 64987931,
+   "last": 0.18976,
+   "chg": -0.04586
+  },
+  {
+   "instId": "UNI-USDT-SWAP",
+   "coin": "UNI",
+   "volUsd": 55019800,
+   "last": 6.854,
+   "chg": -0.04434
+  },
+  {
+   "instId": "TRUMP-USDT-SWAP",
+   "coin": "TRUMP",
+   "volUsd": 54321673,
+   "last": 1.681,
+   "chg": -0.05349
+  },
+  {
+   "instId": "FIL-USDT-SWAP",
+   "coin": "FIL",
+   "volUsd": 51245801,
+   "last": 0.9425,
+   "chg": -0.04711
+  },
+  {
+   "instId": "DOS-USDT-SWAP",
+   "coin": "DOS",
+   "volUsd": 46725442,
+   "last": 0.2536,
+   "chg": 0.03977
+  },
+  {
+   "instId": "BNB-USDT-SWAP",
+   "coin": "BNB",
+   "volUsd": 45514431,
+   "last": 731.9,
+   "chg": -0.02035
+  },
+  {
+   "instId": "AXIS-USDT-SWAP",
+   "coin": "AXIS",
+   "volUsd": 41778583,
+   "last": 0.2509,
+   "chg": -0.08863
+  },
+  {
+   "instId": "ARB-USDT-SWAP",
+   "coin": "ARB",
+   "volUsd": 39035941,
+   "last": 0.16847,
+   "chg": -0.06437
+  },
+  {
+   "instId": "BCH-USDT-SWAP",
+   "coin": "BCH",
+   "volUsd": 38208872,
+   "last": 276.3,
+   "chg": -0.03222
+  },
+  {
+   "instId": "STRK-USDT-SWAP",
+   "coin": "STRK",
+   "volUsd": 36290048,
+   "last": 0.04794,
+   "chg": -0.06604
+  },
+  {
+   "instId": "LIT-USDT-SWAP",
+   "coin": "LIT",
+   "volUsd": 33412990,
+   "last": 3.0885,
+   "chg": -0.08662
+  },
+  {
+   "instId": "ADA-USDT-SWAP",
+   "coin": "ADA",
+   "volUsd": 29248059,
+   "last": 0.208,
+   "chg": -0.03525
+  },
+  {
+   "instId": "BTW-USDT-SWAP",
+   "coin": "BTW",
+   "volUsd": 26312698,
+   "last": 1.6991,
+   "chg": -0.00445
+  },
+  {
+   "instId": "LTC-USDT-SWAP",
+   "coin": "LTC",
+   "volUsd": 25854952,
+   "last": 56.26,
+   "chg": -0.04676
+  },
+  {
+   "instId": "LINK-USDT-SWAP",
+   "coin": "LINK",
+   "volUsd": 25085535,
+   "last": 11.591,
+   "chg": -0.03929
+  },
+  {
+   "instId": "AVAX-USDT-SWAP",
+   "coin": "AVAX",
+   "volUsd": 24642116,
+   "last": 8.906,
+   "chg": -0.03122
+  },
+  {
+   "instId": "AAVE-USDT-SWAP",
+   "coin": "AAVE",
+   "volUsd": 23683512,
+   "last": 140.16,
+   "chg": -0.05272
+  },
+  {
+   "instId": "DOT-USDT-SWAP",
+   "coin": "DOT",
+   "volUsd": 23199033,
+   "last": 1.0601,
+   "chg": -0.09725
+  },
+  {
+   "instId": "DOOD-USDT-SWAP",
+   "coin": "DOOD",
+   "volUsd": 23099062,
+   "last": 0.001532,
+   "chg": -0.1877
+  },
+  {
+   "instId": "KAT-USDT-SWAP",
+   "coin": "KAT",
+   "volUsd": 21620421,
+   "last": 0.004614,
+   "chg": 0.14776
+  },
+  {
+   "instId": "ONDO-USDT-SWAP",
+   "coin": "ONDO",
+   "volUsd": 20810818,
+   "last": 0.4071,
+   "chg": -0.0596
+  },
+  {
+   "instId": "TAO-USDT-SWAP",
+   "coin": "TAO",
+   "volUsd": 19494752,
+   "last": 248.7,
+   "chg": -0.04456
+  },
+  {
+   "instId": "PENGU-USDT-SWAP",
+   "coin": "PENGU",
+   "volUsd": 19142680,
+   "last": 0.007658,
+   "chg": -0.04573
+  },
+  {
+   "instId": "TIA-USDT-SWAP",
+   "coin": "TIA",
+   "volUsd": 18975155,
+   "last": 0.5418,
+   "chg": -0.0124
+  },
+  {
+   "instId": "CT-USDT-SWAP",
+   "coin": "CT",
+   "volUsd": 18130736,
+   "last": 0.1804,
+   "chg": -0.13311
+  },
+  {
+   "instId": "XPL-USDT-SWAP",
+   "coin": "XPL",
+   "volUsd": 17108501,
+   "last": 0.07462,
+   "chg": -0.04137
+  },
+  {
+   "instId": "INJ-USDT-SWAP",
+   "coin": "INJ",
+   "volUsd": 17044280,
+   "last": 7.673,
+   "chg": -0.03714
+  },
+  {
+   "instId": "ZRO-USDT-SWAP",
+   "coin": "ZRO",
+   "volUsd": 16987451,
+   "last": 1.6879,
+   "chg": -0.0582
+  },
+  {
+   "instId": "USELESS-USDT-SWAP",
+   "coin": "USELESS",
+   "volUsd": 16925893,
+   "last": 0.16351,
+   "chg": 0.00529
+  },
+  {
+   "instId": "CP-USDT-SWAP",
+   "coin": "CP",
+   "volUsd": 16826206,
+   "last": 0.00928,
+   "chg": -0.0115
+  },
+  {
+   "instId": "DNA-USDT-SWAP",
+   "coin": "DNA",
+   "volUsd": 16490343,
+   "last": 0.1889,
+   "chg": -0.10896
+  },
+  {
+   "instId": "DASH-USDT-SWAP",
+   "coin": "DASH",
+   "volUsd": 16163604,
+   "last": 51.12,
+   "chg": -0.03218
+  },
+  {
+   "instId": "WET-USDT-SWAP",
+   "coin": "WET",
+   "volUsd": 15775230,
+   "last": 0.06217,
+   "chg": 0.1479
+  },
+  {
+   "instId": "OKB-USDT-SWAP",
+   "coin": "OKB",
+   "volUsd": 15217805,
+   "last": 108.75,
+   "chg": -0.02936
+  },
+  {
+   "instId": "LA-USDT-SWAP",
+   "coin": "LA",
+   "volUsd": 14445632,
+   "last": 0.06745,
+   "chg": 0.20727
+  },
+  {
+   "instId": "INIT-USDT-SWAP",
+   "coin": "INIT",
+   "volUsd": 14441823,
+   "last": 0.14876,
+   "chg": 0.10619
+  },
+  {
+   "instId": "PONS-USDT-SWAP",
+   "coin": "PONS",
+   "volUsd": 12654620,
+   "last": 0.2266,
+   "chg": -0.10364
+  },
+  {
+   "instId": "SAND-USDT-SWAP",
+   "coin": "SAND",
+   "volUsd": 12087430,
+   "last": 0.05016,
+   "chg": -0.05821
+  },
+  {
+   "instId": "OP-USDT-SWAP",
+   "coin": "OP",
+   "volUsd": 12081630,
+   "last": 0.11194,
+   "chg": -0.0512
+  },
+  {
+   "instId": "BAT-USDT-SWAP",
+   "coin": "BAT",
+   "volUsd": 11845122,
+   "last": 0.15951,
+   "chg": -0.08976
+  },
+  {
+   "instId": "SHIB-USDT-SWAP",
+   "coin": "SHIB",
+   "volUsd": 11756587,
+   "last": 0.000004901,
+   "chg": -0.03295
+  },
+  {
+   "instId": "GRAM-USDT-SWAP",
+   "coin": "GRAM",
+   "volUsd": 11617081,
+   "last": 1.24,
+   "chg": -0.05847
+  },
+  {
+   "instId": "BLEND-USDT-SWAP",
+   "coin": "BLEND",
+   "volUsd": 11336156,
+   "last": 0.06937,
+   "chg": 0.32563
+  },
+  {
+   "instId": "XLM-USDT-SWAP",
+   "coin": "XLM",
+   "volUsd": 10635951,
+   "last": 0.1697,
+   "chg": -0.03902
+  },
+  {
+   "instId": "W-USDT-SWAP",
+   "coin": "W",
+   "volUsd": 10105157,
+   "last": 0.012521,
+   "chg": -0.06034
+  },
+  {
+   "instId": "XAU-USDT-SWAP",
+   "coin": "XAU",
+   "volUsd": 214168350,
+   "last": 3999.9,
+   "chg": -0.0072
+  },
+  {
+   "instId": "CL-USDT-SWAP",
+   "coin": "CL",
+   "volUsd": 167828414,
+   "last": 103.77,
+   "chg": 0.0255
+  }
+ ]
+}

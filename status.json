@@ -1,0 +1,55 @@
+{
+ "version": 4,
+ "mode": "scan",
+ "trigger": "workflow_dispatch",
+ "startedAt": 1792839617156,
+ "cfg": {
+  "window": 500,
+  "top": 60,
+  "pinned": [
+   "XAU-USDT-SWAP",
+   "CL-USDT-SWAP"
+  ],
+  "alerts": [
+   "BREAK",
+   "CONFIRM",
+   "RETEST"
+  ]
+ },
+ "result": "nothing-to-do",
+ "target": 1792836000000,
+ "finishedAt": 1792839617192,
+ "devices": [
+  {
+   "id": "0ab4dc914eae",
+   "at": 1792839605603,
+   "name": "iPhone 2026-10-24",
+   "ok": true,
+   "status": 201
+  }
+ ],
+ "push": {
+  "configured": 1,
+  "ids": [
+   "0ab4dc914eae"
+  ]
+ },
+ "lastScan": {
+  "at": 1792839605793,
+  "target": 1792836000000,
+  "closeAt": 1792839600000,
+  "trigger": "schedule",
+  "host": "https://www.okx.com",
+  "readyAfterCloseMs": 5543,
+  "pushDoneAfterCloseMs": 5789,
+  "counts": {
+   "coins": 60,
+   "lines": 1756,
+   "events": 1
+  },
+  "signals": 1,
+  "pushes": 1,
+  "sent": 1,
+  "skipped": 0
+ }
+}
