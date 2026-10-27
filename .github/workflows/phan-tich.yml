@@ -1,0 +1,26 @@
+# Nhánh tạm để lấy nến lịch sử phục vụ phân tích. Không ảnh hưởng bot (bot chạy trên main).
+name: Phân tích lịch sử (tạm)
+on:
+  push:
+    branches: [phan-tich]
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node research/fetch.mjs
+      - name: Lưu vào nhánh phan-tich-data
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd research-out
+          git init -q -b phan-tich-data
+          git add -A
+          git -c user.name="bot-trade" -c user.email="bot-trade@users.noreply.github.com" commit -qm "nến lịch sử $(date -u +%F)"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" phan-tich-data
