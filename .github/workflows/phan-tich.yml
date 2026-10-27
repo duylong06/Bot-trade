@@ -15,6 +15,9 @@ jobs:
         with:
           node-version: 22
       - run: node research/fetch.mjs
+        env:
+          COINS: 'BREV ADA UNI LTC APT TAO ONDO PENGU AXIS AAVE BTC ETH'
+          DAYS: '40'
       - name: Lưu vào nhánh phan-tich-data
         env:
           GH_TOKEN: ${{ github.token }}
@@ -23,4 +26,4 @@ jobs:
           git init -q -b phan-tich-data
           git add -A
           git -c user.name="bot-trade" -c user.email="bot-trade@users.noreply.github.com" commit -qm "nến lịch sử $(date -u +%F)"
-          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" phan-tich-data
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:phan-tich-data2

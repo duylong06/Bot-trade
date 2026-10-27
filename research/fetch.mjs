@@ -1,8 +1,8 @@
 // Lấy nến lịch sử từ OKX để phân tích (chạy trên GitHub Actions). Không liên quan tới bot.
 import fs from 'node:fs';
 import zlib from 'node:zlib';
-const COINS = ['BTC', 'ETH', 'BNB', 'XRP', 'SOL', 'TRX', 'HYPE', 'ZEC', 'XMR', 'LINK', 'DOGE', 'ADA'];
-const DAYS = 400;
+const COINS = (process.env.COINS || 'BTC ETH BNB XRP SOL TRX HYPE ZEC XMR LINK DOGE ADA').split(/\s+/).filter(Boolean);
+const DAYS = +(process.env.DAYS || 400);
 const HOSTS = ['https://www.okx.com', 'https://aws.okx.com'];
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 let host = HOSTS[0];
