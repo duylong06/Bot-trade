@@ -3,10 +3,11 @@
 export const REPO = 'duylong06/Bot-trade';
 export const PAGES_URL = 'https://duylong06.github.io/Bot-trade/';
 
-// Số đồng theo dõi: top N hợp đồng crypto USDT-SWAP trên OKX có khối lượng 24h lớn nhất, cập nhật mỗi lần quét.
-export const TOP_N = 60;
+// Số đồng theo dõi: top N đồng theo VỐN HOÁ THỊ TRƯỜNG (CoinGecko, cập nhật mỗi lần quét).
+// Đồng nào không có hợp đồng USDT vĩnh cửu trên OKX (hoặc là stablecoin, token bọc) thì lấy đồng kế tiếp.
+export const TOP_N = 67;
 
-// Luôn theo dõi thêm các mã này, khối lượng bao nhiêu cũng được: vàng, dầu WTI.
+// Luôn theo dõi thêm các mã này, ngoài top N: vàng, dầu WTI.
 // Thêm 'BZ-USDT-SWAP' (dầu Brent) hoặc 'XAG-USDT-SWAP' (bạc) nếu muốn.
 export const PINNED = ['XAU-USDT-SWAP', 'CL-USDT-SWAP'];
 
@@ -32,6 +33,10 @@ export const CATEGORIES = ['1'];
 
 // Không theo dõi các đồng ổn định giá.
 export const EXCLUDE = ['USDC', 'FDUSD', 'DAI', 'TUSD', 'USDE', 'PYUSD', 'USDG', 'USD1'];
+
+// App gửi đăng ký thông báo cho bot qua kênh ntfy.sh này (không cần dán mã vào GitHub mỗi lần đăng ký lại).
+// Đăng ký thông báo không phải bí mật: chỉ bot (có khoá riêng trong GitHub Secret) mới gửi được tới máy.
+export const NTFY = 'https://ntfy.sh/bottrade-duylong06-7f3k9q2m';
 
 // Bot ghi tín hiệu và trạng thái vào nhánh "data" của repo; app đọc từ đây.
 export const DATA_RAW = `https://raw.githubusercontent.com/${REPO}/data/`;

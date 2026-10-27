@@ -1,4 +1,4 @@
-// app/app.js — điều khiển giao diện: tab, biểu đồ, tín hiệu, top 50, thông báo, tình trạng bot.
+// app/app.js — điều khiển giao diện: tab, biểu đồ, tín hiệu, top 67 theo vốn hoá, thông báo, tình trạng bot.
 import * as okx from '../core/okx.js';
 import { CFG, HOUR, lineAt } from '../core/breakout.js';
 import { REPO, TOP_N, PINNED, DATA_API, DATA_RAW, ALERTS, MIN_SPAN_ALERT } from '../core/config.js';
@@ -25,7 +25,7 @@ const S = {
   ticks: {}, allow: null, all: [], markets: [], mkMap: new Map(), tickSubs: new Set(),
   signals: [], status: null, sigFilter: 'all', seen: LS.get('seen', 0),
   sigMap: new Map(), markMap: new Map(), dataAt: 0,
-  config: null, devId: null,
+  config: null, devId: null, health: null, top: null, topMap: new Map(),
 };
 let chart, bws, pws;
 
@@ -49,7 +49,7 @@ function showTab(tab) {
   for (const b of document.querySelectorAll('#tabs button')) b.classList.toggle('on', b.dataset.tab === tab);
   if (tab === 'signals') { renderSignals(); markSeen(); loadData(); }
   if (tab === 'markets') renderMarkets();
-  if (tab === 'settings') { renderPush(); renderBot(); loadData(); }
+  if (tab === 'settings') { renderPush(); renderBot(); loadData(); checkPush(); }
 }
 
 /* ======================= GIÁ ======================= */
@@ -86,14 +86,38 @@ function subscribeTickers() {
   for (const id of want) if (!S.tickSubs.has(id)) { pws.sub({ channel: 'tickers', instId: id }, onTicker); S.tickSubs.add(id); }
 }
 
+// Danh sách bot đang theo dõi: top.json bot ghi mỗi giờ (top 67 theo vốn hoá có trên OKX + vàng, dầu).
+// Chưa có file đó thì tạm xếp theo khối lượng OKX.
+function universe() {
+  if (S.top && S.top.list && S.top.list.length) {
+    const pins = S.top.list.filter(x => x.pinned), rest = S.top.list.filter(x => !x.pinned);
+    return [...pins, ...rest].map(x => ({ ...x, ...(S.mkMap.get(x.instId) || {}) }));
+  }
+  const m = okx.pickUniverse(S.all);
+  return m.sort((a, b) => PINNED.includes(b.instId) - PINNED.includes(a.instId));
+}
+
+function setTop(top) {
+  if (!top || !Array.isArray(top.list)) return;
+  S.top = top;
+  S.topMap = new Map(top.list.map(x => [x.instId, x]));
+  for (const x of top.list) {
+    const m = S.mkMap.get(x.instId) || { instId: x.instId, coin: x.coin };
+    if (m.last == null && x.last != null) { m.last = x.last; m.chg = x.chg; m.volUsd = x.volUsd; }
+    S.mkMap.set(x.instId, m);
+  }
+  S.markets = universe();
+  if (pws) subscribeTickers();
+  const n = top.list.filter(x => !x.pinned).length;
+  for (const el of document.querySelectorAll('.topN')) el.textContent = `Top ${n || TOP_N}`;
+}
+
 async function loadMarkets() {
   try {
     const list = await okx.swapTickers(S.allow);
     S.all = list;
-    S.markets = okx.pickUniverse(list);
-    // vàng, dầu lên đầu danh sách
-    S.markets.sort((a, b) => PINNED.includes(b.instId) - PINNED.includes(a.instId));
     for (const m of list) S.mkMap.set(m.instId, { ...(S.mkMap.get(m.instId) || {}), ...m });
+    S.markets = universe();
     subscribeTickers();
     setHeader();
     if (S.tab === 'markets') renderMarkets();
@@ -182,6 +206,7 @@ function throttleLines() {
   linesTimer = setTimeout(() => { linesTimer = 0; if (chart && chart.res) renderLines(chart.res, chart.focusMatch); }, 2000);
 }
 
+// Khung dưới biểu đồ: từng đường đang vẽ, màu theo vai trò (đỏ = kháng cự, xanh = hỗ trợ), trạng thái rõ ràng.
 function renderLines(res, fm) {
   const tick = S.ticks[S.inst], p = v => fmtPrice(v, tick);
   const price = chart.livePrice();
@@ -195,32 +220,37 @@ function renderLines(res, fm) {
   }
   const lines = [...res.lines];
   if (fm && !lines.some(x => x.ta === fm.line.ta && x.tb === fm.line.tb)) lines.unshift(fm.line);
-  lines.sort((a, b) => (a.tBreak != null) - (b.tBreak != null) || b.span - a.span);
+  // còn hiệu lực trước (kháng cự rồi hỗ trợ, gần giá trước), đã phá sau (mới nhất trước)
+  const distOf = ln => price ? Math.abs(price - lineAt(ln, now)) : 0;
+  lines.sort((a, b) => (a.tBreak != null) - (b.tBreak != null)
+    || (a.tBreak != null ? b.tBreak - a.tBreak : (a.side === 'S') - (b.side === 'S') || distOf(a) - distOf(b)));
   for (const ln of lines) {
     const isF = fm && ln.ta === fm.line.ta && ln.tb === fm.line.tb;
     const broken = ln.tBreak != null;
     const nowLine = lineAt(ln, now);
     const R = ln.side === 'R';
-    let ic, t2, pr;
+    let t2, pr;
     if (broken) {
-      ic = `<span class="${R ? 'up' : 'down'}">${R ? '▲' : '▼'}</span>`;
-      t2 = `Phá ${hhmm(ln.tBreak)} ${ddmm(ln.tBreak)}` + (ln.tConfirm ? ' · đã gãy cấu trúc' : '') + (ln.tRetest ? ` · retest ${hhmm(ln.tRetest)}` : '') + (ln.tFail ? ' · phá hụt' : '');
+      const sig = S.sigMap.get(`${S.inst}|BREAK|${ln.side}|${ln.tBreak}`);
+      const m = sig ? (sig.m30 === 'wait' ? ' · chờ M30' : pushedOf(sig) ? ' · đã báo' : sig.why ? ' · không báo' : '') : '';
+      t2 = `<span class="${R ? 'up' : 'down'}">${R ? '▲ Phá lên' : '▼ Phá xuống'}</span> ${hhmm(ln.tBreak)} ${ddmm(ln.tBreak)}${m}`
+        + (ln.tConfirm ? ' · gãy cấu trúc' : '') + (ln.tRetest ? ` · retest ${hhmm(ln.tRetest)}` : '');
       pr = p(lineAt(ln, ln.tBreak));
     } else {
-      ic = `<span style="color:#2f7dff">━</span>`;
       const dist = price ? (price - nowLine) / nowLine : 0;
       const beyond = price && (R ? price > nowLine : price < nowLine);
-      t2 = beyond ? `<span class="${R ? 'up' : 'down'}">Giá đang ở ngoài đường — chờ nến H1 đóng</span>` : `Đang giữ · giá cách đường ${(Math.abs(dist) * 100).toFixed(2)}%`;
+      t2 = beyond ? `<span class="${R ? 'up' : 'down'}">Giá đang vượt đường — chờ nến H1 đóng</span>`
+        : `Đang giữ · giá ${R ? 'dưới' : 'trên'} đường ${(Math.abs(dist) * 100).toFixed(2)}%`;
       pr = p(nowLine);
     }
-    html += `<button class="lrow${isF ? ' focus' : ''}" data-ta="${ln.ta}" data-tb="${ln.tb}" data-side="${ln.side}">
-      <span class="ic">${ic}</span>
-      <span class="t1">${esc(cap(ln.kind))} · ${ln.span} nến · ${ln.touches} chạm${ln.steep ? ' · dốc' : ''}</span>
-      <span class="pr">${pr}</span>
+    html += `<button class="lrow${isF ? ' focus' : ''}${broken ? ' br' : ''}" data-ta="${ln.ta}" data-tb="${ln.tb}" data-side="${ln.side}">
+      <span class="ic"><i class="sw ${isF ? 'F' : ln.side}${broken ? ' d' : ''}"></i></span>
+      <span class="t1"><b class="${ln.side}">${R ? 'Kháng cự' : 'Hỗ trợ'}</b> ${esc(ln.kind.replace(/^(kháng cự|hỗ trợ)\s*/, ''))} · ${ln.span} nến · ${ln.touches} chạm${ln.steep ? ' · dốc' : ''}</span>
+      <span class="pr ${ln.side}">${pr}</span>
       <span class="t2">${t2}</span>
     </button>`;
   }
-  if (!lines.length) html += `<div class="lrow"><span></span><span class="t1 muted">Chưa thấy đường xu hướng đủ chuẩn trong 500 nến H1 gần nhất.</span></div>`;
+  if (!lines.length) html += `<div class="lrow"><span></span><span class="t1 muted">Chưa thấy đường xu hướng đủ chuẩn (≥ ${CFG.MIN_PATTERN} nến, ≥ ${CFG.MIN_TOUCH} chạm) gần giá hiện tại.</span></div>`;
   setLines(html);
 }
 
@@ -255,7 +285,8 @@ function loadData(force = false) {
       if (st) S.status = st;
       const key = st ? st.finishedAt || 1 : 0;
       if (force || !S.dataAt || key !== S.dataAt) {
-        const [sig, marks] = await Promise.all(['signals.json', 'marks.json'].map(f => fetchData(f).catch(() => null)));
+        const [sig, marks, top] = await Promise.all(['signals.json', 'marks.json', 'top.json'].map(f => fetchData(f).catch(() => null)));
+        if (top) setTop(top);
         if (Array.isArray(sig)) { S.signals = sig; S.sigMap = new Map(sig.map(x => [x.id, x])); S.dataAt = key; }
         if (marks && marks.m) {
           const m = new Map();
@@ -266,7 +297,8 @@ function loadData(force = false) {
         if (S.tab === 'signals') { renderSignals(); markSeen(); }
         if (S.tab === 'markets') renderMarkets();
       }
-      if (S.tab === 'settings') { renderBot(); renderPushStatus(); }
+      if (S.tab === 'settings') renderBot();
+      checkPush();
       updateBadges();
     } catch {} finally { loading = null; }
   })();
@@ -304,9 +336,9 @@ function renderSignals() {
     if (d !== day) { day = d; html += `<div class="dayhead">${d === ddmm(Date.now()) ? 'Hôm nay' : d}</div>`; }
     const up = s.dir === 'LONG', ln = s.line || {};
     const ds = `${esc(cap(ln.kind || ''))} · ${ln.span || '?'} nến · ${ln.touches || '?'} chạm` + (s.type === 'BREAK' ? (s.confirmed ? ' · đã gãy cấu trúc' : '') : '') + (ln.steep ? ' · dốc' : '');
-    const pushed = pushedOf(s);
-    const ex = pushed ? '' : `<span class="why">không đẩy: ${esc(s.why || (s.pu == null ? 'trước khi bot chạy' : 'chưa có máy nhận'))}</span>`;
-    html += `<button class="srow${pushed ? '' : ' skip'}" data-id="${esc(s.id)}">
+    const pushed = pushedOf(s), wait = s.m30 === 'wait';
+    const ex = m30Chip(s) + (pushed || wait ? '' : `<span class="why">không báo: ${esc(s.why || (s.pu == null ? 'trước khi bot chạy' : 'chưa có máy nhận'))}</span>`);
+    html += `<button class="srow${pushed || wait ? '' : ' skip'}" data-id="${esc(s.id)}">
       <span class="tm">${hhmm(s.t)}</span>
       <span class="ti"><span class="co">${esc(labelOf(s.coin))}</span><span class="dir ${up ? 'up' : 'down'}">${up ? '▲ LONG' : '▼ SHORT'}</span><span class="ty ${s.type}">${TYPE[s.type] || s.type}</span></span>
       <span class="pr">${fmtPrice(s.close, s.tickSz)}</span>
@@ -317,12 +349,29 @@ function renderSignals() {
   $('#sigList').innerHTML = html;
 }
 
-/* ======================= TOP 60 + VÀNG, DẦU ======================= */
+// Trạng thái luật M30 của một cú PHÁ (bot chưa báo ngay khi nến H1 phá, chờ cây M30 đầu tiên của giờ sau).
+function m30Chip(s) {
+  if (s.type !== 'BREAK') return '';
+  const up = s.dir === 'LONG';
+  switch (s.m30) {
+    case 'wait': return `<span class="m30 wait">⏳ chờ nến M30 · báo lúc ${hhmm(s.t + 90 * 60e3)} nếu giữ được</span>`;
+    case 'ok': return `<span class="m30 ok">✓ M30 giữ được · đã báo ${s.m30At ? hhmm(s.m30At) : ''}</span>`;
+    case 'wick': return `<span class="m30 ok">✓ M30 rút râu về ${up ? 'đáy' : 'đỉnh'} cây phá nhưng đóng ${up ? 'xanh' : 'đỏ'} · đã báo</span>`;
+    case 'nodata': return `<span class="m30">không lấy được nến M30 · vẫn báo</span>`;
+    default: return '';
+  }
+}
+
+/* ======================= TOP 67 THEO VỐN HOÁ + VÀNG, DẦU ======================= */
 
 function marketRow(m, sigDir) {
   const tick = S.ticks[m.instId];
+  const t = S.topMap.get(m.instId);
+  const rank = t ? (t.pinned ? '★' : t.rank ? '#' + t.rank : '') : '';
+  const sub = t && t.mcap ? `Vốn hoá ${fmtVol(t.mcap)}` : `KL ${fmtVol(m.volUsd)}`;
+  const nm = nameOf(m.coin) || (t && t.name && t.name.toUpperCase() !== m.coin ? t.name : '');
   return `<button class="mrow" data-inst="${m.instId}">
-    <span class="nm"><b>${esc(m.coin)}</b>${nameOf(m.coin) ? `<em>${esc(nameOf(m.coin))}</em>` : ''}${sigDir ? `<i class="${sigDir}">${sigDir === 'LONG' ? '▲' : '▼'} 24h</i>` : ''}<small>KL ${fmtVol(m.volUsd)}</small></span>
+    <span class="nm">${rank ? `<u>${rank}</u>` : ''}<b>${esc(m.coin)}</b>${nm ? `<em${nameOf(m.coin) ? ' class="g"' : ''}>${esc(nm)}</em>` : ''}${sigDir ? `<i class="${sigDir}">${sigDir === 'LONG' ? '▲' : '▼'} 24h</i>` : ''}<small>${sub}</small></span>
     <span class="p">${fmtPrice(m.last, tick)}</span>
     <span class="c ${m.chg >= 0 ? 'up' : 'down'}">${fmtPct(m.chg || 0)}</span>
   </button>`;
@@ -335,7 +384,9 @@ function recentDir(inst) {
 
 function renderMarkets() {
   const q = ($('#search').value || '').trim().toUpperCase();
-  const src = q ? S.all.filter(m => m.coin.includes(q) || (nameOf(m.coin) || '').toUpperCase().includes(q)).slice(0, 60) : S.markets;
+  const src = q ? S.all.filter(m => m.coin.includes(q) || (nameOf(m.coin) || '').toUpperCase().includes(q) || ((S.topMap.get(m.instId) || {}).name || '').toUpperCase().includes(q)).slice(0, 80) : S.markets;
+  const tm = $('#mkMeta');
+  if (tm) tm.textContent = S.top ? `${S.top.src && S.top.src.includes('vốn hoá') ? 'theo vốn hoá' : 'theo khối lượng'} · cập nhật ${hhmm(S.top.at)}` : 'theo khối lượng OKX';
   if (!src.length) { $('#mkList').innerHTML = `<div class="empty">${S.all.length ? 'Không tìm thấy.' : 'Đang tải danh sách…'}</div>`; return; }
   $('#mkList').innerHTML = src.map(m => marketRow(S.mkMap.get(m.instId) || m, recentDir(m.instId))).join('');
 }
@@ -350,85 +401,95 @@ function updateMarketRow(m) {
 }
 
 /* ======================= THÔNG BÁO ======================= */
+//
+// Mỗi lần mở app / quay lại app / tải xong dữ liệu bot: kiểm tra đăng ký thông báo của máy này.
+// Tự sửa được thì tự sửa (đăng ký lại + gửi cho bot qua ntfy). iOS không cho tự làm khi chưa chạm
+// → hiện thanh đỏ ở trên cùng, chạm một lần là xong, không phải dán mã gì nữa.
 
-async function renderPush() {
-  const body = $('#pushBody');
-  const repoSecret = `https://github.com/${REPO}/settings/secrets/actions/new`;
-
-  if (push.isIOS() && !push.isStandalone()) {
-    body.innerHTML = `<p>iPhone chỉ cho nhận thông báo khi app được <b>thêm vào Màn hình chính</b> và mở từ biểu tượng đó.</p>
-      <div class="ios-steps">
-        <div><b class="n">1</b><span>Bấm nút <b>Chia sẻ</b> <span class="muted">(ô vuông có mũi tên lên)</span> ở thanh dưới của Safari.</span></div>
-        <div><b class="n">2</b><span>Chọn <b>Thêm vào MH chính</b> → <b>Thêm</b>.</span></div>
-        <div><b class="n">3</b><span>Mở <b>Bot Trade</b> từ màn hình chính, vào lại tab Cài đặt.</span></div>
-      </div>`;
-    return;
-  }
-  if (!push.pushSupported()) { body.innerHTML = `<p class="muted">Trình duyệt này không hỗ trợ thông báo đẩy. Trên iPhone cần iOS 16.4 trở lên.</p>`; return; }
-  if (push.permission() === 'denied') {
-    body.innerHTML = `<p class="bad">Thông báo đang bị chặn.</p><p>Vào <b>Cài đặt</b> của iPhone → <b>Thông báo</b> → <b>Bot Trade</b> → bật <b>Cho phép thông báo</b>, rồi mở lại app.</p>`;
-    return;
-  }
-
-  S.config = await push.currentConfig().catch(() => null);
-  if (!S.config) {
-    body.innerHTML = `<p>Bật để bot gửi tín hiệu phá vỡ thẳng về máy này, kể cả khi đang không mở app.</p>
-      <button class="btn" id="btnPush">Bật thông báo trên máy này</button>`;
-    $('#btnPush').onclick = async () => {
-      try { S.config = await push.enablePush(); renderPush(); toast('Đã bật — giờ dán đoạn mã vào GitHub'); }
-      catch (e) { toast(e.message, 4000); renderPush(); }
-    };
-    return;
-  }
-
-  S.devId = await push.deviceId(S.config);
-  body.innerHTML = `
-    <p id="pushStatus" class="muted">Đang kiểm tra bot đã nhận máy này chưa…</p>
-    <details id="pushHow">
-      <summary>Đoạn mã của máy này và cách dán vào GitHub</summary>
-      <ol class="steps">
-        <li>Chép đoạn mã dưới đây.<code class="blob" id="cfgBlob">${esc(S.config)}</code><button class="mini" id="btnCopyCfg">Sao chép đoạn mã</button></li>
-        <li>Mở <a href="${repoSecret}" target="_blank" rel="noopener">trang thêm Secret của repo</a> (đăng nhập GitHub nếu được hỏi).</li>
-        <li>Ô <b>Name</b> ghi đúng: <code>PUSH_CONFIG</code> · ô <b>Secret</b> dán đoạn mã → <b>Add secret</b>.<br><span class="muted">Đã có PUSH_CONFIG rồi thì bấm vào nó → Update, dán đè.</span></li>
-        <li>Lần quét kế tiếp bot sẽ gửi “Bot Trade đã nhận máy này”. Muốn thử ngay: mở <a href="https://github.com/${REPO}/actions/workflows/scan.yml" target="_blank" rel="noopener">trang Actions</a> → <b>Run workflow</b> → chọn <b>test-push</b> → Run.</li>
-      </ol>
-      <p class="muted">Đoạn mã chứa khoá riêng của máy này — chỉ dán vào GitHub Secret, đừng gửi cho ai.</p>
-    </details>
-    <button class="btn sec" id="btnRePush">Tạo lại đăng ký</button>`;
-  $('#btnCopyCfg').onclick = () => copyText(S.config);
-  $('#btnRePush').onclick = async () => {
-    try { S.config = await push.enablePush(); renderPush(); toast('Đã làm mới — dán lại đoạn mã mới vào GitHub'); }
-    catch (e) { toast(e.message, 4000); }
-  };
-  renderPushStatus();
+const botPub = () => (S.status && S.status.push ? S.status.push.vapidPub || null : undefined);
+let checking = null;
+function checkPush() {
+  if (checking) return checking;
+  checking = push.check(S.status).then(h => { S.health = h; S.devId = h.id || null; renderPushBar(); if (S.tab === 'settings') renderPush(); })
+    .catch(() => {}).finally(() => { checking = null; });
+  return checking;
 }
 
-function renderPushStatus() {
-  const el = $('#pushStatus');
-  if (!el || !S.devId) return;
-  const st = S.status;
-  const known = st && st.push && (st.push.ids || []).includes(S.devId);
-  const rec = st && (st.devices || []).find(d => d.id === S.devId);
-  const how = $('#pushHow');
-  if (rec && rec.ok) {
-    el.className = 'ok';
-    el.textContent = `✓ Bot đã gửi tới máy này lúc ${hhmm(rec.at)} ${ddmm(rec.at)}.`;
-    if (how) how.open = false;
-  } else if (rec && rec.gone) {
-    el.className = 'bad';
-    el.textContent = 'Đăng ký của máy này đã hết hạn. Bấm “Tạo lại đăng ký” rồi dán đoạn mã mới vào GitHub.';
-    if (how) how.open = true;
-  } else if (rec) {
-    el.className = 'bad';
-    el.textContent = `Lần gửi gần nhất bị lỗi (${rec.status || '?'}). ${rec.error ? rec.error.slice(0, 120) : ''}`;
-  } else if (known) {
-    el.className = 'muted';
-    el.textContent = 'Bot đã có đoạn mã của máy này, sẽ gửi lời chào ở lần quét kế tiếp.';
-  } else {
-    el.className = 'warnc';
-    el.textContent = 'Bot chưa có đoạn mã của máy này. Làm theo các bước dưới đây.';
-    if (how) how.open = true;
+const BAR = {
+  off: '🔕 Thông báo đang tắt — chạm để bật lại',
+  error: '⚠️ Bot gửi tới máy này bị lỗi — chạm để làm mới',
+  blocked: '🔕 Thông báo bị chặn trong Cài đặt iPhone — chạm để xem cách mở',
+  'need-code': '🔔 Chưa bật thông báo — chạm để cài',
+};
+function renderPushBar() {
+  const el = $('#pushBar'), h = S.health;
+  const txt = h && BAR[h.state];
+  el.hidden = !txt;
+  if (txt) el.textContent = txt;
+}
+
+async function turnOn() {
+  try {
+    const r = await push.enablePush(botPub());
+    S.config = r.config;
+    toast(r.sent ? 'Đã bật lại ✓ Bot nhận máy này ở lần quét kế tiếp (trong vòng 1 giờ).' : botPub() ? 'Đã bật — đang gửi đăng ký cho bot…' : 'Đã bật — dán đoạn mã vào GitHub (một lần duy nhất)', 4200);
+  } catch (e) { toast(e.message, 4500); }
+  await checkPush();
+}
+
+async function onPushBar() {
+  const st = S.health && S.health.state;
+  if (st === 'off' || st === 'error') return turnOn();
+  showTab('settings');
+}
+
+function renderPush() {
+  const body = $('#pushBody'), h = S.health || { state: 'checking' };
+  const repoSecret = `https://github.com/${REPO}/settings/secrets/actions/new`;
+  const rec = h.rec;
+  let html = '';
+  switch (h.state) {
+    case 'not-installed':
+      html = `<p>iPhone chỉ cho nhận thông báo khi app được <b>thêm vào Màn hình chính</b> và mở từ biểu tượng đó.</p>
+        <div class="ios-steps">
+          <div><b class="n">1</b><span>Bấm nút <b>Chia sẻ</b> <span class="muted">(ô vuông có mũi tên lên)</span> ở thanh dưới của Safari.</span></div>
+          <div><b class="n">2</b><span>Chọn <b>Thêm vào MH chính</b> → <b>Thêm</b>.</span></div>
+          <div><b class="n">3</b><span>Mở <b>Bot Trade</b> từ màn hình chính, vào lại tab Cài đặt.</span></div>
+        </div>`;
+      break;
+    case 'unsupported':
+      html = `<p class="muted">Trình duyệt này không hỗ trợ thông báo đẩy. Trên iPhone cần iOS 16.4 trở lên.</p>`; break;
+    case 'blocked':
+      html = `<p class="bad">Thông báo đang bị chặn.</p><p>Vào <b>Cài đặt</b> của iPhone → <b>Thông báo</b> → <b>Bot Trade</b> → bật <b>Cho phép thông báo</b>, rồi mở lại app.</p>`; break;
+    case 'off':
+      html = `<p class="bad">Thông báo đang tắt trên máy này${h.why ? ` (${esc(h.why)})` : ''}.</p>
+        <p>Chạm nút dưới — app tự đăng ký lại và gửi cho bot, <b>không phải dán mã</b>.</p>
+        <button class="btn" id="btnPush">Bật thông báo</button>`; break;
+    case 'need-code':
+      html = `<p>Bot chưa có khoá gửi thông báo. Làm một lần duy nhất — từ lần sau app tự lo, không phải dán lại.</p>
+        <ol class="steps">
+          <li>Chép đoạn mã dưới đây.<code class="blob" id="cfgBlob">${esc(h.config || '')}</code><button class="mini" id="btnCopyCfg">Sao chép đoạn mã</button></li>
+          <li>Mở <a href="${repoSecret}" target="_blank" rel="noopener">trang thêm Secret của repo</a> (đăng nhập GitHub nếu được hỏi).</li>
+          <li>Ô <b>Name</b> ghi đúng: <code>PUSH_CONFIG</code> · ô <b>Secret</b> dán đoạn mã → <b>Add secret</b>.</li>
+        </ol>
+        <p class="muted">Đoạn mã chứa khoá riêng của bot — chỉ dán vào GitHub Secret, đừng gửi cho ai.</p>`; break;
+    case 'pending':
+      html = `<p class="warnc">Máy này đã đăng ký, đang chờ bot nhận (lần quét kế tiếp, trong vòng 1 giờ).</p>
+        <p class="muted">Bot sẽ gửi “Bot Trade đã nhận máy này ✓”. Không cần làm gì thêm.</p>`; break;
+    case 'error':
+      html = `<p class="bad">Lần gửi gần nhất tới máy này bị lỗi (${rec ? rec.status || '?' : '?'}).</p>
+        <button class="btn" id="btnPush">Làm mới đăng ký</button>`; break;
+    case 'ok':
+      html = `<p class="ok">✓ Thông báo đang bật.${rec && rec.ok ? ` Bot gửi tới máy này lần cuối lúc ${hhmm(rec.at)} ${ddmm(rec.at)}.` : ' Bot đã nhận máy này.'}</p>
+        <p class="muted">App tự kiểm tra mỗi lần mở. Nếu iPhone huỷ đăng ký, thanh đỏ sẽ hiện ở trên cùng — chạm một lần là bật lại.</p>`; break;
+    default:
+      html = `<p class="muted">Đang kiểm tra…</p>`;
   }
+  if (h.state === 'ok' || h.state === 'pending') html += `<button class="btn sec" id="btnRePush">Đăng ký lại</button>`;
+  body.innerHTML = html;
+  const bp = $('#btnPush'); if (bp) bp.onclick = turnOn;
+  const rp = $('#btnRePush'); if (rp) rp.onclick = turnOn;
+  const cc = $('#btnCopyCfg'); if (cc) cc.onclick = () => copyText(h.config || '');
 }
 
 /* ======================= TÌNH TRẠNG BOT ======================= */
@@ -453,9 +514,13 @@ function renderBot() {
     html += row('Quét thật gần nhất', `nến H1 ${hhmm(ls.target)} ${ddmm(ls.target)}`);
     if (ls.pushDoneAfterCloseMs != null && ls.pushDoneAfterCloseMs < 3600e3) html += row('Báo sau khi nến đóng', `${(ls.pushDoneAfterCloseMs / 1000).toFixed(1)} giây`);
     if (ls.counts) html += row('Đang theo dõi', `${ls.counts.coins} đồng · ${ls.counts.lines} đường`);
-    html += row('Tín hiệu lần đó', `${ls.signals || 0} · gửi ${ls.pushes || 0} thông báo`);
+    if (ls.universe) html += row('Danh sách', esc(ls.universe.src || ''));
+    html += row('Lần quét đó', `báo ngay ${ls.signals || 0} · chờ M30 ${ls.waiting || 0} · bỏ ${ls.skipped || 0}`);
   }
-  html += row('Máy nhận thông báo', String(st.push ? st.push.configured : 0));
+  const m3 = st.m30;
+  if (m3) html += row('Xét nến M30 gần nhất', `${hhmm(m3.closeAt)} ${ddmm(m3.closeAt)} · báo ${m3.pushed} · bỏ ${m3.skipped}`);
+  if (st.pending && st.pending.length) html += row('Đang chờ M30', `${st.pending.length} cú phá · xét lúc ${hhmm(Math.min(...st.pending.map(p => p.m30Close)))}`);
+  html += row('Máy nhận thông báo', String(st.push ? st.push.configured : 0) + (st.push && st.push.fromApp ? ` (${st.push.fromApp} tự đăng ký)` : ''));
   html += row('Nguồn giá', esc((st.host || (ls && ls.host) || '').replace('https://', '')));
   html += '</dl>';
   html += `<a class="btn sec" href="https://github.com/${REPO}/actions/workflows/scan.yml" target="_blank" rel="noopener">Mở trang chạy bot trên GitHub</a>`;
@@ -465,14 +530,16 @@ function renderBot() {
 function renderRules() {
   const pins = PINNED.map(id => nameOf(coinOf(id)) || coinOf(id));
   const items = [
-    `Theo dõi top ${TOP_N} đồng crypto USDT vĩnh cửu trên OKX theo khối lượng 24h (cập nhật mỗi giờ)${pins.length ? `, cộng ${pins.join(', ')} luôn được theo dõi` : ''}.`,
-    `Nến H1, xét tối đa ${CFG.WINDOW} nến gần nhất — mô hình nhỏ hay lớn đều tính.`,
-    `Đường neo vào râu nến, cần ít nhất ${CFG.MIN_TOUCH} lần chạm; giữa hai lần chạm giá phải bật ra ≥ ${CFG.REACT} ATR. Đường càng dài càng phải nối các đỉnh/đáy lớn.`,
-    `Điểm neo đầu phải là đáy thật (hỗ trợ) / đỉnh thật (kháng cự): phía trước nó, trong khoảng dài bằng nửa đường, không có đáy thấp hơn / đỉnh cao hơn. Không neo vào đáy/đỉnh nhỏ ở khoảng giữa.`,
-    `Phá vỡ = cây nến H1 <b>đầu tiên đóng cửa</b> ra ngoài đường — báo ngay ở cây đó. Râu chọc qua không tính.`,
-    `Xác nhận = đóng cửa vượt đỉnh/đáy cuối cùng nằm trên đường (gãy cấu trúc).`,
-    `Retest = sau khi phá, giá chạy xa ≥ ${CFG.AWAY} ATR rồi quay về chạm đường và đóng cửa giữ được.`,
-    `Thông báo: ${ALERTS.map(a => TYPE[a]).join(', ')}${MIN_SPAN_ALERT ? `, chỉ mô hình từ ${MIN_SPAN_ALERT} nến` : ''}. Mỗi cú phá một tin, không giới hạn; chỉ gộp khi cùng đồng, cùng chiều, cùng cây nến.`,
+    `Theo dõi <b>top ${TOP_N} đồng theo vốn hoá</b> (CoinGecko, cập nhật mỗi giờ). Đồng nào không có hợp đồng USDT vĩnh cửu trên OKX, stablecoin, token bọc → lấy đồng vốn hoá kế tiếp${pins.length ? `. Luôn theo dõi thêm ${pins.join(', ')}` : ''}.`,
+    `Nến H1, xét ${CFG.WINDOW} nến gần nhất. Mô hình phải dài <b>từ ${CFG.MIN_PATTERN} nến H1</b> trở lên (tính từ điểm neo đầu tới cây phá).`,
+    `<span class="sw R"></span><b>Kháng cự</b> nối các đỉnh (râu trên), <span class="sw S"></span><b>Hỗ trợ</b> nối các đáy (râu dưới). Cần ít nhất ${CFG.MIN_TOUCH} lần chạm; giữa hai lần chạm giá phải bật ra ≥ ${CFG.REACT} ATR.`,
+    `Chỉ kẻ đường thuận chiều phá: kháng cự <b>giảm/ngang</b> (phá lên → LONG), hỗ trợ <b>tăng/ngang</b> (phá xuống → SHORT). Không kẻ kháng cự tăng, hỗ trợ giảm.`,
+    `Điểm neo đầu phải là đáy/đỉnh thật: phía trước nó không có đáy thấp hơn / đỉnh cao hơn. Không neo vào cây râu kim (râu dài gấp đôi thân và thò ra ≥ ${CFG.NEEDLE_OUT} ATR so với các nến quanh).`,
+    `Biểu đồ: mỗi phía vẽ tối đa ${CFG.SHOW_PER_SIDE} đường còn hiệu lực gần giá (nét liền, nhãn KC/HT ở trục giá). Hai đường cùng phía cách nhau dưới ${CFG.ZONE_ATR} ATR là một vùng — chỉ vẽ đường rõ nhất; bỏ các đường chung điểm neo. Đường vừa bị phá trong ${CFG.SHOW_BROKEN_WITHIN} giờ: nét đứt, mỗi phía một đường. Dấu Phá / XN / Retest chỉ hiện trên đường đang vẽ.`,
+    `<b>Phá</b> = nến H1 <b>đóng cửa</b> ra ngoài đường (râu không tính). Cây phá là cây giật râu (râu theo chiều phá ≥ ${CFG.SPIKE_WICK} ATR và ≥ ${CFG.SPIKE_RATIO} lần thân) → không báo.`,
+    `<b>Luật M30</b>: phá xong chưa báo ngay. Chờ cây M30 đầu tiên của giờ sau đóng (phút :30). LONG: M30 chạm về ≤ đáy cây phá → không báo, trừ khi M30 đóng xanh (rút râu). SHORT: M30 chạm ≥ đỉnh cây phá → không báo, trừ khi đóng đỏ.`,
+    `<b>Xác nhận</b> = đóng cửa vượt đỉnh/đáy cuối cùng nằm trên đường (gãy cấu trúc). <b>Retest</b> = sau khi phá, giá chạy xa ≥ ${CFG.AWAY} ATR rồi quay về chạm đường và đóng cửa giữ được. Hai loại này báo ngay khi nến H1 đóng.`,
+    `Thông báo: ${ALERTS.map(a => TYPE[a]).join(', ')}${MIN_SPAN_ALERT ? `, chỉ mô hình từ ${MIN_SPAN_ALERT} nến` : ''}. Mỗi cú phá một tin, không giới hạn.`,
   ];
   $('#rules').innerHTML = items.map(x => `<li>${x}</li>`).join('');
 }
@@ -539,9 +606,10 @@ function bindUI() {
   });
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible') return;
-    loadData(); chart && chart.resync();
+    loadData().then(checkPush); chart && chart.resync();
     if (Date.now() - clockAt > 30 * 60000) syncClock();
   });
+  $('#pushBar').addEventListener('click', onPushBar);
   $('#cjUrl').textContent = `https://api.github.com/repos/${REPO}/actions/workflows/scan.yml/dispatches`;
   const rl = $('#repoLink'); rl.href = `https://github.com/${REPO}`; rl.textContent = `github.com/${REPO}`;
   renderRules();
@@ -584,7 +652,7 @@ async function boot() {
 
   syncClock();
   if (!route(location.hash)) openSymbol(S.inst);
-  loadData();
+  loadData().then(checkPush);
   (S.allow ? Promise.resolve() : instP).then(loadMarkets);
   setInterval(() => { if (document.visibilityState === 'visible') loadData(); }, 120000);
   setInterval(() => { if (document.visibilityState === 'visible') loadMarkets(); }, 300000);

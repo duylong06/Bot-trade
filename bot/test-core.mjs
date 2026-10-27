@@ -2,6 +2,7 @@
 // Chạy: node bot/test-core.mjs
 import fs from 'node:fs';
 import { analyze, CFG, HOUR } from '../core/breakout.js';
+import { m30Verdict } from '../core/confirm.js';
 
 let fails = 0;
 const ok = (cond, msg) => { console.log((cond ? '  ✓ ' : '  ✗ ') + msg); if (!cond) fails++; };
@@ -69,7 +70,7 @@ const show = ev => `${ev.type} ${ev.dir} @${ev.i} span=${ev.line.span} touches=$
 /* 3. Nến thật OKX 22/10/2026 — các ca chủ repo chỉ ra */
 {
   console.log('3. Nến thật: báo ngay cây đầu tiên đóng ngoài đường; neo ở đáy thật');
-  const fx = JSON.parse(fs.readFileSync(new URL('./fixtures/okx-h1-2026-10-22.json', import.meta.url), 'utf8'));
+  const fx = JSON.parse(fs.readFileSync(new URL('./fixtures/okx-h1-real.json', import.meta.url), 'utf8'));
   const load = c => { const { t0, rows } = fx[c]; return { t: rows.map((_, i) => t0 + i * HOUR), o: rows.map(r => r[0]), h: rows.map(r => r[1]), l: rows.map(r => r[2]), c: rows.map(r => r[3]), v: rows.map(() => 100) }; };
   const VN = (d, h) => Date.UTC(2026, 9, d, h - 7);       // giờ Việt Nam → mili giây
   const breakAt = (coin, t) => analyze(load(coin)).events.find(e => e.type === 'BREAK' && e.dir === 'SHORT' && e.t === t && e.line.kind === 'hỗ trợ tăng');
@@ -166,6 +167,65 @@ const show = ev => `${ev.type} ${ev.dir} @${ev.i} span=${ev.line.span} touches=$
   if (br) console.log('    ' + show(br));
   ok(!!br, 'có BREAK SHORT ở nến 06:00 22/10 (trước đây 08:00)');
   ok(br && br.line.kind === 'hỗ trợ tăng' && br.line.span >= 30, 'đúng đường hỗ trợ tăng ~38 nến');
+}
+
+/* 8–11. Luật mới 28/10/2026 */
+{
+  const fx = JSON.parse(fs.readFileSync(new URL('./fixtures/okx-h1-real.json', import.meta.url), 'utf8'));
+  const load = c => { const { t0, rows } = fx[c]; return { t: rows.map((_, i) => t0 + i * HOUR), o: rows.map(r => r[0]), h: rows.map(r => r[1]), l: rows.map(r => r[2]), c: rows.map(r => r[3]), v: rows.map(() => 100) }; };
+  const VN = (d, h) => Date.UTC(2026, 9, d, h - 7);
+
+  console.log('8. Không neo vào râu kim (BREV 10/10 15:00)');
+  {
+    const r = analyze(load('BREV'));
+    const used = [...r.events.map(e => e.line), ...r.lines].filter(L => L.ta === VN(10, 15) || L.tb === VN(10, 15));
+    ok(!used.length, `BREV: không còn đường nào neo vào cây râu kim 10/10 15:00 (${used.length})`);
+    ok(!r.events.some(e => e.t === VN(28, 0) && e.type === 'RETEST'), 'BREV: không còn tín hiệu Retest 00:00 28/10 từ đường đó');
+  }
+
+  console.log('9. Chỉ đường thuận xu hướng, mô hình ≥ 30 nến');
+  {
+    let bad = 0, short = 0, n = 0;
+    for (const c of Object.keys(fx)) {
+      const r = analyze(load(c));
+      for (const L of [...r.events.map(e => e.line), ...r.lines]) { n++; if (L.kind === 'kháng cự tăng' || L.kind === 'hỗ trợ giảm') bad++; }
+      for (const e of r.events) if (e.line.span < CFG.MIN_PATTERN) short++;
+    }
+    ok(bad === 0, `không có kháng cự đi lên / hỗ trợ đi xuống (${bad}/${n} đường)`);
+    ok(short === 0, `không có sự kiện nào của mô hình dưới ${CFG.MIN_PATTERN} nến (${short})`);
+  }
+
+  console.log('10. Cây phá giật râu bị đánh dấu');
+  {
+    const K = gen({ n: 200, seed: 9, amp: 0.5, wick: 0.35,
+      keys: [[0, 110], [20, 106], [55, 116], [95, 112], [130, 125], [170, 118], [185, 124], [192, 121], [199, 116]],
+      pin: [20, 95, 170] });
+    const y = 106 + (192 - 20) * (6 / 75);
+    // đóng dưới đường một chút, râu dưới rất dài (giá giật xuống rồi rút lên)
+    setBar(K, 192, y + 0.3, y + 0.4, y - 6, y - 0.2);
+    const br = analyze(K).events.find(e => e.type === 'BREAK' && e.dir === 'SHORT' && e.i === 192);
+    ok(br && br.spike === true, 'cây phá có râu giật dài → spike = true');
+    const K2 = gen({ n: 200, seed: 9, amp: 0.5, wick: 0.35,
+      keys: [[0, 110], [20, 106], [55, 116], [95, 112], [130, 125], [170, 118], [185, 124], [192, 121], [199, 116]],
+      pin: [20, 95, 170] });
+    setBar(K2, 192, K2.c[191], K2.c[191] + 0.1, y - 2.6, y - 2.2);
+    const br2 = analyze(K2).events.find(e => e.type === 'BREAK' && e.dir === 'SHORT' && e.i === 192);
+    ok(br2 && br2.spike === false, 'cây phá thân dài bình thường → spike = false');
+  }
+
+  console.log('11. Luật M30 trên 4 ca thật (OKX)');
+  {
+    const B = (o, h, l, c) => ({ o, h, l, c });
+    const cases = [
+      ['BTC 05/01/26 LONG, M30 không chạm đáy', 'LONG', B(91488.7, 92390, 91475.1, 92371.2), B(92371.2, 92954.4, 92240, 92941.1), true],
+      ['BTC 26/10/25 LONG, chạm đáy nhưng rút râu đóng xanh', 'LONG', B(111680, 111800, 111675.8, 111729.5), B(111729.6, 112750, 111643.1, 112635.2), true],
+      ['ETH 12/11/25 SHORT, vọt lên đỉnh cây phá, đóng xanh', 'SHORT', B(3437.01, 3451, 3422.04, 3426.4), B(3426.39, 3458.5, 3426.39, 3458.37), false],
+      ['XRP 13/03/26 LONG, rơi dưới đáy cây phá, đóng đỏ', 'LONG', B(1.4282, 1.4383, 1.4282, 1.4334), B(1.4334, 1.4339, 1.4238, 1.4245), false],
+    ];
+    for (const [name, dir, h1, m, want] of cases) ok(m30Verdict(dir, h1, m).ok === want, `${name} → ${want ? 'báo' : 'không báo'}`);
+    ok(m30Verdict('LONG', B(10, 12, 9, 11.5), B(11.5, 11.6, 9, 11.5)).ok === false, 'chạm đáy mà nến M30 đứng giá (mở = đóng) → không báo');
+    ok(m30Verdict('SHORT', B(10, 11, 8, 8.5), null).ok === true, 'không lấy được nến M30 → vẫn báo');
+  }
 }
 
 console.log(fails ? `\n${fails} kiểm thử sai` : '\nTất cả đều đúng');

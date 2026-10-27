@@ -25,6 +25,9 @@ export function buildMessage(e) {
     title = `↺ Retest ${e.dir} ${name}`;
     body = `Giá quay về chạm ${L.kind} ${L.span} nến vừa phá (${p(e.linePrice)}) và đóng cửa giữ được ở ${p(e.close)}.`;
   }
+  if (e.m30) body += e.m30.touch
+    ? `\nNến M30 sau đó có rút râu về ${up ? 'đáy' : 'đỉnh'} cây phá nhưng đóng ${up ? 'xanh' : 'đỏ'} — vẫn giữ.`
+    : `\nĐã giữ được 30 phút: nến M30 không quay về ${up ? 'đáy' : 'đỉnh'} cây phá.`;
   if (e.also && e.also.length) body += `\nKèm: ${e.also.map(a => `${NAME[a.type].toLowerCase()} đường ${a.line.span} nến`).join(', ')}.`;
   body += `\nNến H1 ${hhmm(e.t)}`;
   const q = new URLSearchParams({ s: e.instId, ev: e.type, t: String(e.t) });

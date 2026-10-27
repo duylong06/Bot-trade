@@ -11,6 +11,11 @@
  *   - Đường neo vào RÂU (đỉnh/đáy), nhưng phá vỡ tính bằng GIÁ ĐÓNG CỬA — râu không tính.
  *   - Điểm neo đầu phải là ĐÁY THẬT (hỗ trợ) / ĐỈNH THẬT (kháng cự) của vùng: không có đáy thấp hơn
  *     (đỉnh cao hơn) trong một khoảng phía trước dài bằng nửa đường. Không neo vào đáy/đỉnh nhỏ ở giữa.
+ *   - Không neo vào RÂU KIM: cây có râu dài gấp ≥ 2 lần thân và chọc ra khỏi các cây xung quanh ≥ 1,5 ATR.
+ *   - Mô hình phải dài ít nhất 30 nến H1 (từ điểm neo đầu tới cây phá).
+ *   - Chỉ kẻ đường thuận xu hướng: hỗ trợ đi lên hoặc ngang, kháng cự đi xuống hoặc ngang.
+ *     (Kháng cự đi lên / hỗ trợ đi xuống là các đường "bay lơ lửng" theo kênh giá — đo trên 13 tháng nến thật
+ *     của top 10 đồng, đây cũng là hai loại phá kém nhất.)
  *   - Phá vỡ = cây nến H1 ĐẦU TIÊN đóng cửa ra ngoài đường. Báo ngay ở cây đó, không chờ thêm.
  *   - Xác nhận: đóng cửa vượt đỉnh/đáy cuối cùng nằm trên đường (gãy cấu trúc).
  *   - Retest: giá chạy ra xa ít nhất 2 ATR rồi quay về chạm đường và đóng cửa giữ được.
@@ -25,6 +30,12 @@ const DEFAULTS = {
   SCALE: 12,          // đường dài S nến chỉ được neo vào đỉnh/đáy lớn: cao/thấp nhất trong ±S/12 nến
   SCALE_MAX: 30,      //   (tối đa ±30 nến); lần chạm thứ ba trở đi chỉ cần một nửa độ lớn đó
   MIN_SPAN: 10,       // hai điểm neo cách nhau tối thiểu 10 nến
+  MIN_PATTERN: 30,    // mô hình (từ điểm neo đầu tới cây phá, hoặc tới hiện tại) dài tối thiểu 30 nến H1
+  TREND_ONLY: true,   // chỉ hỗ trợ đi lên/ngang và kháng cự đi xuống/ngang
+  NEEDLE_OUT: 1.5,    // râu kim: chọc ra khỏi râu các cây ±5 bên cạnh ≥ 1,5 ATR …
+  NEEDLE_WICK: 2,     //   … và râu dài ≥ 2 lần thân → không dùng làm điểm neo
+  SPIKE_WICK: 1.0,    // cây phá là cây "giật râu": râu theo hướng phá ≥ 1 ATR …
+  SPIKE_RATIO: 2,     //   … và ≥ 2 lần thân → không báo cú phá đó
   MIN_TOUCH: 3,       // tối thiểu 3 lần chạm (tính cả 2 điểm neo)
   REACT: 1.5,         // giữa hai lần chạm, giá phải bật ra xa đường ≥ 1,5 ATR thì lần sau mới tính là chạm mới
   GAP: 0.08,          // hai lần chạm cách nhau ≥ 8% chiều dài đường (và ≥ 5 nến)
@@ -38,12 +49,14 @@ const DEFAULTS = {
   LEFT_MAX: 120,      //   (tối đa 120 nến)
   AWAY: 2.0,          // phải chạy ra xa ≥ 2 ATR rồi quay về mới tính là retest
   RETEST_MAX: 120,    // tìm retest trong 120 nến sau khi phá
-  FLAT: 0.02,         // |độ dốc| < 0,02 ATR/nến coi là đường ngang
+  FLAT: 0.02,         // |độ dốc| < 0,02 ATR/nến …
+  FLAT_TOTAL: 1.5,    //   … và cả đường lệch không quá 1,5 ATR từ đầu tới cuối → đường ngang
   STEEP: 0.25,        // |độ dốc| ≥ 0,25 ATR/nến coi là đường dốc (thường không retest)
-  SHOW_PER_SIDE: 3,   // app: số đường còn hiệu lực hiển thị mỗi phía
-  SHOW_BROKEN: 3,     // app: số đường vừa bị phá hiển thị
-  SHOW_BROKEN_WITHIN: 120,
-  NEAR_ATR: 10,       // app: chỉ hiện đường còn hiệu lực nằm trong 10 ATR quanh giá
+  SHOW_PER_SIDE: 2,   // app: số đường còn hiệu lực hiển thị mỗi phía (hỗ trợ / kháng cự)
+  SHOW_BROKEN: 2,     // app: số đường vừa bị phá hiển thị (tối đa 1 kháng cự + 1 hỗ trợ)
+  SHOW_BROKEN_WITHIN: 48,   // … chỉ đường có động tĩnh (phá / xác nhận / retest) trong 48 nến gần nhất
+  ZONE_ATR: 1.5,      // app: hai đường cùng phía cách nhau ≤ 1,5 ATR ở giá hiện tại là một vùng → chỉ vẽ đường rõ nhất
+  NEAR_ATR: 8,        // app: chỉ hiện đường còn hiệu lực nằm trong 8 ATR quanh giá
 };
 
 export const CFG = Object.freeze({ ...DEFAULTS, ...TUNE });
@@ -111,6 +124,24 @@ export function pivotStrength(K, piv, side, kmax = 60) {
 
 const needFor = span => Math.max(CFG.PIVOT, Math.min(CFG.SCALE_MAX, Math.round(span / CFG.SCALE)));
 
+// Râu kim: râu dài ≥ NEEDLE_WICK lần thân và chọc ra khỏi râu các cây ±5 bên cạnh ≥ NEEDLE_OUT ATR.
+export function isNeedle(K, A, i, side) {
+  const s = side === 'R' ? 1 : -1, X = side === 'R' ? K.h : K.l;
+  const edge = side === 'R' ? Math.max(K.o[i], K.c[i]) : Math.min(K.o[i], K.c[i]);
+  const wick = (X[i] - edge) * s, body = Math.abs(K.c[i] - K.o[i]);
+  let nb = -Infinity;
+  for (let j = Math.max(0, i - 5); j <= Math.min(X.length - 1, i + 5); j++) if (j !== i) nb = Math.max(nb, X[j] * s);
+  return wick >= CFG.NEEDLE_WICK * Math.max(body, 0.05 * A[i]) && X[i] * s - nb >= CFG.NEEDLE_OUT * A[i];
+}
+
+// Cây phá "giật râu": râu theo hướng phá dài ≥ SPIKE_WICK ATR và ≥ SPIKE_RATIO lần thân (giá vọt ra rồi rút về).
+export function isSpike(K, A, i, dir) {
+  const up = dir === 'LONG';
+  const wick = up ? K.h[i] - Math.max(K.o[i], K.c[i]) : Math.min(K.o[i], K.c[i]) - K.l[i];
+  const body = Math.abs(K.c[i] - K.o[i]);
+  return wick >= CFG.SPIKE_WICK * A[i] && wick >= CFG.SPIKE_RATIO * Math.max(body, 0.05 * A[i]);
+}
+
 // Bao nhiêu nến phía TRƯỚC đáy (đỉnh) này không có đáy thấp hơn (đỉnh cao hơn). Chạm đầu dữ liệu → vô hạn.
 function leftStrength(X, piv, s) {
   const m = new Map();
@@ -130,12 +161,14 @@ function candidates(K, A, piv, side) {
   const C = K.c, N = C.length, out = [];
   const st = pivotStrength(K, piv, side);
   const left = leftStrength(X, piv, s);
+  const needle = new Map(piv.map(i => [i, isNeedle(K, A, i, side)]));
 
   for (let a = 0; a < piv.length; a++) {
     const ia = piv[a];
+    if (needle.get(ia)) continue;                                   // không neo vào râu kim
     for (let b = a + 1; b < piv.length; b++) {
       const ib = piv[b];
-      if (ib - ia < CFG.MIN_SPAN) continue;
+      if (ib - ia < CFG.MIN_SPAN || needle.get(ib)) continue;
       const m = (X[ib] - X[ia]) / (ib - ia);
       const y0 = X[ia] - m * ia;
 
@@ -153,6 +186,13 @@ function candidates(K, A, piv, side) {
         if ((C[i] - (y0 + m * i)) * s > CFG.BREAK * A[i]) { v = i; break; }
       }
       const end = v < 0 ? N : v;
+      if (end - ia < CFG.MIN_PATTERN) continue;                     // mô hình quá ngắn
+
+      // Chỉ đường thuận xu hướng: hỗ trợ không đi xuống, kháng cự không đi lên.
+      if (CFG.TREND_ONLY) {
+        const slope = m / ((A[ia] + A[Math.min(end, N - 1)]) / 2);
+        if (s * slope > 0 && kindOf(side, slope, end - ia).endsWith(s > 0 ? 'tăng' : 'giảm')) continue;
+      }
 
       // Đường càng dài thì hai điểm neo càng phải là đỉnh/đáy lớn.
       const need = needFor(end - ia);
@@ -221,13 +261,14 @@ function classify(K, A, L) {
   const aRef = (A[L.ia] + A[Math.min(endIdx, N - 1)]) / 2;
   L.slopeAtr = L.m / aRef;
   L.steep = Math.abs(L.slopeAtr) >= CFG.STEEP;
-  L.kind = kindOf(L.side, L.slopeAtr);
+  L.kind = kindOf(L.side, L.slopeAtr, L.span);
   L.score = L.touches + L.span / 80;
   return L;
 }
 
-export function kindOf(side, slopeAtr) {
-  const flat = Math.abs(slopeAtr) < CFG.FLAT;
+// Ngang = dốc rất ít mỗi nến VÀ cả đường không lệch quá FLAT_TOTAL ATR (đường dài mà nghiêng đều vẫn là đường dốc).
+export function kindOf(side, slopeAtr, span = 0) {
+  const flat = Math.abs(slopeAtr) < CFG.FLAT && Math.abs(slopeAtr) * span <= CFG.FLAT_TOTAL;
   if (side === 'R') return flat ? 'kháng cự ngang' : slopeAtr < 0 ? 'kháng cự giảm' : 'kháng cự tăng';
   return flat ? 'hỗ trợ ngang' : slopeAtr > 0 ? 'hỗ trợ tăng' : 'hỗ trợ giảm';
 }
@@ -300,11 +341,14 @@ export function analyze(Kfull) {
 
   // ---- đường để vẽ ----
   const last = N - 1, price = W.c[last];
+  // Mỗi phía chỉ giữ vài đường rõ nhất; bỏ đường gần trùng và các đường "nan quạt" chung một điểm neo.
   const pick = (list, n) => {
     const kept = [];
     for (const L of list.sort((x, y) => y.score - x.score)) {
       if (kept.length >= n) break;
-      if (!kept.some(K2 => similar(A, K2, L, N))) kept.push(L);
+      const now = L2 => L2.y0 + L2.m * (N - 1);
+      if (!kept.some(K2 => similar(A, K2, L, N) || K2.ia === L.ia || K2.ib === L.ib
+        || (L.state === 'active' && K2.state === 'active' && Math.abs(now(L) - now(K2)) <= CFG.ZONE_ATR * A[N - 1]))) kept.push(L);
     }
     return kept;
   };
@@ -313,10 +357,11 @@ export function analyze(Kfull) {
   // Đường đã phá: lấy đúng đường của các tín hiệu (đường chính mỗi cú phá), cái nào vừa có động tĩnh
   // (phá / xác nhận / retest) gần nhất thì vẽ trước — để mũi tên nào cũng có đường đi kèm.
   const lastAct = L => Math.max(L.b, L.confirm, L.retest);
-  const brokenShown = kept.map(k => k.L)
-    .filter(L => last - lastAct(L) <= CFG.SHOW_BROKEN_WITHIN)
-    .sort((x, y) => lastAct(y) - lastAct(x))
-    .slice(0, CFG.SHOW_BROKEN);
+  const brokenShown = [];
+  for (const L of kept.map(k => k.L).filter(L => last - lastAct(L) <= CFG.SHOW_BROKEN_WITHIN).sort((x, y) => lastAct(y) - lastAct(x))) {
+    if (brokenShown.length >= CFG.SHOW_BROKEN) break;
+    if (!brokenShown.some(B => B.side === L.side)) brokenShown.push(L);
+  }
   const lines = [
     ...pick(live.filter(L => L.side === 'R'), CFG.SHOW_PER_SIDE),
     ...pick(live.filter(L => L.side === 'S'), CFG.SHOW_PER_SIDE),
@@ -348,6 +393,8 @@ function makeEvent(W, A, type, i, L, others) {
   return {
     type, dir, side: L.side, i, t: W.t[i],
     close: W.c[i], linePrice: y, atr: A[i],
+    bar: { o: W.o[i], h: W.h[i], l: W.l[i], c: W.c[i] },   // cây nến của sự kiện (dùng cho luật M30)
+    spike: type === 'BREAK' && isSpike(W, A, i, dir),       // cây phá là cây giật râu → không báo
     confirmed: L.confirm >= 0 && L.confirm <= i,     // đã gãy cấu trúc tính tới nến này
     level: L.level, others,
     line: lineInfo(W, A, L),

@@ -12,8 +12,15 @@ const MS = sec => (sec - TZ) * 1000;
 
 export const COLORS = {
   up: '#c3f23f', down: '#f2398b', ema: '#f6a51a', blue: '#2f7dff', blueDim: 'rgba(47,125,255,0.55)',
+  res: '#ff4f4f', sup: '#2ea8ff',          // kháng cự đỏ · hỗ trợ xanh dương
   focus: '#ffd60a', stochY: '#f5d90a', stochR: '#ff4a4a', grid: 'rgba(255,255,255,0.045)', text: '#8b8e95', line: '#24262b',
 };
+
+// Màu theo vai trò của đường: kháng cự (R) đỏ, hỗ trợ (S) xanh dương.
+export function roleColor(side, a = 1) {
+  const [r, g, b] = side === 'R' ? [255, 79, 79] : [46, 168, 255];
+  return a >= 1 ? (side === 'R' ? COLORS.res : COLORS.sup) : `rgba(${r},${g},${b},${a})`;
+}
 
 export const TFS = [
   { id: '5m', label: '5m', ms: 5 * 60e3 },
@@ -280,25 +287,33 @@ export class ChartView {
       }
     }
 
+    // Đường: kháng cự đỏ, hỗ trợ xanh dương. Còn hiệu lực = nét liền đậm + nhãn KC/HT ở trục giá.
+    // Đã phá = nét đứt mờ, chỉ kéo tới sau cú phá 24 giờ (hoặc retest + 6 giờ). Đang xem = vàng.
+    const drawn = new Set();
     for (const ln of lines) {
       const broken = ln.tBreak != null;
-      const tEnd = broken ? Math.min(lastT, (ln.tRetest || ln.tFail || ln.tBreak) + (ln.tRetest ? 6 : 24) * HOUR) : lastT;
+      // đường đã phá: kéo quá cây phá 6 nến (có retest thì tới retest + 3 nến) — đủ thấy giá đóng ngoài đường
+      const tEnd = broken ? Math.min(lastT, ln.tRetest ? ln.tRetest + 3 * HOUR : ln.tBreak + 6 * HOUR) : lastT;
       const t0 = this.snap(ln.ta, times), t1 = this.snap(tEnd, times);
       if (t1 <= t0) continue;
-      const color = ln._focus ? COLORS.focus : broken ? COLORS.blueDim : COLORS.blue;
+      drawn.add(`${ln.side}|${ln.ta}|${ln.tb}`);
+      const R = ln.side === 'R';
+      const fresh = broken && lastT - ln.tBreak <= 24 * HOUR;
+      const color = ln._focus ? COLORS.focus : broken ? roleColor(ln.side, fresh ? 0.9 : 0.6) : roleColor(ln.side);
       const s = this.chart.addSeries(L.LineSeries, {
-        color, lineWidth: ln._focus ? 2 : broken ? 1 : 2,
+        color, lineWidth: ln._focus || !broken || fresh ? 2 : 1,
         lineStyle: broken && !ln._focus ? L.LineStyle.Dashed : L.LineStyle.Solid,
-        lastValueVisible: false, priceLineVisible: false, crosshairMarkerVisible: false,
+        lastValueVisible: !broken || !!ln._focus, title: broken ? (ln._focus ? (R ? 'phá KC' : 'phá HT') : '') : R ? 'KC' : 'HT',
+        priceLineVisible: false, crosshairMarkerVisible: false,
         autoscaleInfoProvider: () => null,
       }, 0);
       s.setData([{ time: T(t0), value: lineAt(ln, t0) }, { time: T(t1), value: lineAt(ln, t1) }]);
       this.lineSeries.push(s);
     }
 
-    // Mũi tên cho MỌI tín hiệu trong vùng đang xem — không phụ thuộc đường của nó có được vẽ hay không.
-    //   đậm = bot đã đẩy về máy · mờ = không đẩy / xảy ra trước khi bot chạy
-    //   tín hiệu cũ hơn 3 ngày chỉ hiện dấu nhỏ, không chữ
+    // Dấu phá / xác nhận / retest: CHỈ cho các đường đang vẽ — dấu nào cũng có đường đi kèm, không có
+    // mũi tên "mồ côi". Muốn xem tín hiệu cũ: bấm vào nó ở tab Tín hiệu.
+    //   đậm = bot đã báo về máy · mờ = không báo (M30 quay về, cây giật râu…) / xảy ra trước khi bot chạy
     const firstT = times[0];
     const tf = TFS.find(x => x.id === this.tf);
     const mk = [];
@@ -306,19 +321,19 @@ export class ChartView {
     for (const e of this.res.events) {
       if (e.t < firstT) continue;
       const isFocus = this.focusMatch && this.focusMatch.ev === e;
+      if (!isFocus && !drawn.has(`${e.line.side}|${e.line.ta}|${e.line.tb}`)) continue;
       const at = this.snap(tf.ms < HOUR ? e.t + HOUR - 1 : e.t, times);
       const up = e.dir === 'LONG';
       const rec = info(`${this.inst}|${e.type}|${e.side}|${e.line.tBreak}`);
-      const pushed = rec && rec.pu > 0;
-      const recent = lastT - e.t <= 72 * HOUR;
-      const base = e.type === 'RETEST' ? [COLORS.blue, 'rgba(47,125,255,0.4)'] : up ? [COLORS.up, 'rgba(195,242,63,0.38)'] : [COLORS.down, 'rgba(242,57,139,0.38)'];
+      const pushed = rec && (rec.pu > 0 || rec.m30 === 'wait');
+      const base = e.type === 'RETEST' ? [roleColor(e.side), roleColor(e.side, 0.4)]
+        : up ? [COLORS.up, 'rgba(195,242,63,0.38)'] : [COLORS.down, 'rgba(242,57,139,0.38)'];
       const color = isFocus ? COLORS.focus : pushed ? base[0] : base[1];
-      const word = e.type === 'BREAK' ? 'Phá' : e.type === 'RETEST' ? 'RT' : 'XN';
+      const word = e.type === 'BREAK' ? 'Phá' : e.type === 'RETEST' ? 'Retest' : 'XN';
       mk.push({
         time: T(at), position: up ? 'belowBar' : 'aboveBar', color,
         shape: e.type === 'BREAK' ? (up ? 'arrowUp' : 'arrowDown') : e.type === 'RETEST' ? 'circle' : 'square',
-        text: isFocus || recent ? word : '',
-        size: recent || isFocus ? 1 : 0.6,     // mũi tên đang xem: cùng cỡ, chỉ khác màu vàng
+        text: word, size: 1,
       });
     }
     mk.sort((a, b) => a.time - b.time);

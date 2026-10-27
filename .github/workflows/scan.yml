@@ -36,7 +36,7 @@ permissions:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 55   # bước M30 ở lại chờ tới phút :30 của giờ sau
     steps:
       - uses: actions/checkout@v4
 
@@ -60,9 +60,11 @@ jobs:
           fi
           ls -la out
 
-      - name: Quét
+      - name: Quét nến H1
+        id: h1
         env:
           MODE: ${{ github.event_name == 'push' && 'dry-run' || inputs.mode || 'scan' }}
+          STAGE: h1
           TRIGGER: ${{ github.event_name }}
           DUMP_CANDLES: ${{ (github.event_name == 'push' || inputs.mode == 'dry-run') && '1' || '' }}
           PUSH_CONFIG: ${{ secrets.PUSH_CONFIG }}
@@ -72,10 +74,20 @@ jobs:
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          cd out
-          git init -q -b data
-          git add -A
-          git -c user.name="bot-trade" -c user.email="bot-trade@users.noreply.github.com" \
-            commit -qm "data $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" data
+        run: bash bot/save-data.sh out
+
+      # Cú PHÁ chưa báo ngay: chờ cây M30 đầu tiên của giờ sau đóng (phút :30), xét luật M30 rồi mới báo.
+      - name: Chờ nến M30 rồi báo PHÁ
+        if: always() && github.event_name != 'push' && (inputs.mode || 'scan') == 'scan'
+        env:
+          MODE: scan
+          STAGE: m30
+          TRIGGER: ${{ github.event_name }}
+          PUSH_CONFIG: ${{ secrets.PUSH_CONFIG }}
+        run: node bot/scan.mjs
+
+      - name: Lưu dữ liệu sau bước M30
+        if: always() && github.event_name != 'push' && (inputs.mode || 'scan') == 'scan'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash bot/save-data.sh out
