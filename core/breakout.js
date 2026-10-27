@@ -7,7 +7,7 @@
  * Đầu vào: nến H1 ĐÃ ĐÓNG, xếp cũ → mới, dạng { t, o, h, l, c, v } (mảng số, t = mili giây).
  *
  * Luật:
- *   - Cửa sổ tối đa 500 nến H1. Đường to hay nhỏ đều xét.
+ *   - Cửa sổ tối đa 1000 nến H1. Đường to hay nhỏ đều xét.
  *   - Đường neo vào RÂU (đỉnh/đáy), nhưng phá vỡ tính bằng GIÁ ĐÓNG CỬA — râu không tính.
  *   - Điểm neo đầu phải là ĐÁY THẬT (hỗ trợ) / ĐỈNH THẬT (kháng cự) của vùng: không có đáy thấp hơn
  *     (đỉnh cao hơn) trong một khoảng phía trước dài bằng nửa đường. Không neo vào đáy/đỉnh nhỏ ở giữa.
@@ -24,7 +24,7 @@
 import { TUNE } from './config.js';
 
 const DEFAULTS = {
-  WINDOW: 500,        // tối đa 500 nến H1
+  WINDOW: 1000,       // tối đa 1000 nến H1 (≈ 42 ngày) — bắt được cả đường dài 500–1000 nến
   WARMUP: 20,         // nến thêm phía trước chỉ để tính ATR cho chuẩn
   PIVOT: 3,           // đỉnh/đáy: cao/thấp nhất trong ±3 nến
   SCALE: 12,          // đường dài S nến chỉ được neo vào đỉnh/đáy lớn: cao/thấp nhất trong ±S/12 nến
@@ -285,7 +285,7 @@ function similar(A, L1, L2, N) {
 /* ---------- phân tích ---------- */
 
 /**
- * analyze(K) — K là nến H1 đã đóng, cũ → mới (có thể dài hơn 500; chỉ 500 nến cuối được xét).
+ * analyze(K) — K là nến H1 đã đóng, cũ → mới (có thể dài hơn CFG.WINDOW; chỉ CFG.WINDOW nến cuối được xét).
  * Trả về:
  *   W       nến trong cửa sổ
  *   A       ATR theo từng nến của W

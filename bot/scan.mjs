@@ -40,7 +40,7 @@ const M30_WAIT_MAX = +(process.env.M30_WAIT_MAX ?? 36 * 60e3);   // bước m30:
 const M30_LATE = 90 * 60e3;         // trễ quá 90 phút sau giờ đóng M30 (bot không chạy kịp) thì thôi không báo
 const SETTLE = 1200;                // sau giờ đóng nến chờ thêm 1,2 giây cho OKX chốt nến
 const SIGNAL_DAYS = 7;              // danh sách tín hiệu trong app giữ 7 ngày
-const MARK_DAYS = 23;               // dấu trên biểu đồ: phủ hết 500 nến H1
+const MARK_DAYS = Math.ceil(CFG.WINDOW / 24) + 1;   // dấu trên biểu đồ: phủ hết cửa sổ nến H1 (1000 nến ≈ 42 ngày)
 const CONC = 6;
 
 const t0 = Date.now();
@@ -252,7 +252,7 @@ function upsert(row) {
 
 /**
  * signals.json: danh sách tín hiệu 7 ngày cho tab Tín hiệu.
- * marks.json:   dấu trên biểu đồ (500 nến ≈ 21 ngày) — tín hiệu nào bot đã đẩy về máy (mũi tên đậm)
+ * marks.json:   dấu trên biểu đồ (cả cửa sổ nến H1) — tín hiệu nào bot đã đẩy về máy (mũi tên đậm)
  *               hay không (mờ). Gọn theo từng đồng: { instId: [[loại|cạnh|giờ phá, đã đẩy], …] }
  */
 function saveSignals() {
@@ -331,7 +331,7 @@ async function stageH1() {
 
   const { ticks, universe } = await connectOkx();
 
-  // ----- tải trước 520 nến H1 mỗi đồng -----
+  // ----- tải trước WINDOW + WARMUP nến H1 mỗi đồng -----
   const data = {};
   await pool(universe, async u => { data[u.instId] = (await okx.candles(u.instId, '1H', CFG.WINDOW + CFG.WARMUP)).K; });
   status.prefetchMs = Date.now() - t0;

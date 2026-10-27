@@ -2,7 +2,7 @@
 
 Bot quét **top 67 đồng crypto theo vốn hoá** (CoinGecko, cập nhật mỗi giờ; đồng nào không có hợp đồng USDT vĩnh cửu
 trên OKX, stablecoin hay token bọc thì lấy đồng vốn hoá kế tiếp) **cùng vàng (XAU) và dầu WTI (CL)**,
-tìm các **đường xu hướng trong 500 nến H1 gần nhất** và báo về iPhone khi có:
+tìm các **đường xu hướng trong 1000 nến H1 gần nhất** (≈ 42 ngày) và báo về iPhone khi có:
 
 - **Phá** — nến H1 **đóng cửa** ra ngoài đường (râu không tính), rồi **giữ được qua cây M30 đầu tiên của giờ sau**
   (luật M30, xem dưới). Phá kháng cự → LONG, phá hỗ trợ → SHORT.
@@ -68,7 +68,7 @@ Toàn bộ nằm trong `core/breakout.js` và `core/confirm.js` (bot và app dù
 
 | | |
 |---|---|
-| Cửa sổ | 500 nến H1 gần nhất |
+| Cửa sổ | 1000 nến H1 gần nhất (≈ 42 ngày). Đo trên 400 ngày nến thật 11 đồng top: đường dài 500–1000 nến phá khoảng 1,2 lần/đồng/tháng, hơn nửa số đó cửa sổ 500 nến bỏ lỡ, và sau khi phá giá chạy theo chiều phá tốt hơn đường ngắn (chưa thật chắc chắn về thống kê) |
 | Độ dài mô hình | **≥ 30 nến H1** (từ điểm neo đầu tới cây phá). Rút ra từ 1 năm nến thật top 10 vốn hoá: mô hình ngắn hơn cho nhiều cú phá giả |
 | Hướng | chỉ đường **thuận chiều phá**: kháng cự giảm/ngang (phá lên → LONG), hỗ trợ tăng/ngang (phá xuống → SHORT) |
 | Điểm neo | râu nến (đỉnh/đáy); neo đầu phải là **đáy/đỉnh thật** — phía trước nó không có đáy thấp hơn / đỉnh cao hơn |
@@ -88,8 +88,9 @@ dưới 1,5 ATR là một vùng, chỉ vẽ đường rõ nhất. Dấu Phá / X
 cú Phá thì ghi “chờ M30” (app hiện “⏳ chờ nến M30 · báo lúc HH:30”) → bot ở lại tới phút :30 → xét cây M30 → báo hoặc bỏ
 (app ghi lý do). Bot không kịp xét M30 trong 90 phút thì thôi không báo cú đó.
 
-Đo trên nến thật 30 ngày (12 đồng, 28/9–28/10/2026), quy ra 69 mã: khoảng **80 thông báo/ngày**
-(~42 Phá đã qua M30, ~21 Xác nhận, ~16 Retest); luật M30 bỏ khoảng 8% cú phá, cây giật râu ~1%.
+Đo trên nến thật 30 ngày (tới 28/10/2026), quy ra 69 mã: khoảng **85–100 thông báo/ngày**
+(khoảng một nửa là Phá đã qua M30, còn lại Xác nhận và Retest); luật M30 bỏ khoảng 8% cú phá, cây giật râu ~1%.
+Nới cửa sổ từ 500 lên 1000 nến thêm khoảng 5 thông báo/ngày.
 Muốn bớt: đặt `MIN_SPAN_ALERT` (ví dụ 60) hoặc bỏ `CONFIRM`/`RETEST` khỏi `ALERTS`.
 
 ## Chỉnh nhanh — `core/config.js`

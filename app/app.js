@@ -216,7 +216,7 @@ function renderLines(res, fm) {
     const e = fm.ev, ln = fm.line;
     html += `<div class="banner">${fm.found
       ? `Đang xem: ${TYPE[e.type]} ${e.dir} · ${esc(cap(ln.kind))} ${ln.span} nến · nến H1 ${hhmm(e.t)} ${ddmm(e.t)}`
-      : `Tín hiệu này đã ra khỏi 500 nến gần nhất — đang vẽ lại theo dữ liệu bot đã lưu.`}</div>`;
+      : `Tín hiệu này đã ra khỏi ${CFG.WINDOW} nến gần nhất — đang vẽ lại theo dữ liệu bot đã lưu.`}</div>`;
   }
   const lines = [...res.lines];
   if (fm && !lines.some(x => x.ta === fm.line.ta && x.tb === fm.line.tb)) lines.unshift(fm.line);

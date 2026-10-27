@@ -124,14 +124,15 @@ const show = ev => `${ev.type} ${ev.dir} @${ev.i} span=${ev.line.span} touches=$
   ok(events.some(e => e.type === 'RETEST' && e.dir === 'LONG' && e.i >= 88 && e.i <= 96), 'RETEST LONG quanh nến 94');
 }
 
-/* 6. Hiệu năng: 500 nến, nhiều nhiễu */
+/* 6. Hiệu năng: cả cửa sổ, nhiều nhiễu */
 {
-  console.log('6. Hiệu năng 520 nến');
-  const keys = []; for (let i = 0; i <= 520; i += 13) keys.push([i, 100 + 8 * Math.sin(i / 40) + 3 * Math.sin(i / 9)]);
-  const K = gen({ n: 520, seed: 77, amp: 0.8, wick: 0.5, keys });
+  const NN = CFG.WINDOW + CFG.WARMUP;
+  console.log(`6. Hiệu năng ${NN} nến`);
+  const keys = []; for (let i = 0; i <= NN; i += 13) keys.push([i, 100 + 8 * Math.sin(i / 40) + 3 * Math.sin(i / 9)]);
+  const K = gen({ n: NN, seed: 77, amp: 0.8, wick: 0.5, keys });
   const t0 = performance.now(); const r = analyze(K); const ms = performance.now() - t0;
   console.log(`    ${r.all.length} đường hợp lệ, ${r.events.length} sự kiện, vẽ ${r.lines.length} đường — ${ms.toFixed(0)} ms`);
-  ok(r.W.c.length === CFG.WINDOW, 'chỉ xét đúng 500 nến cuối');
+  ok(r.W.c.length === CFG.WINDOW, `chỉ xét đúng ${CFG.WINDOW} nến cuối`);
   ok(ms < 1500, 'chạy dưới 1,5 giây một đồng');
 }
 

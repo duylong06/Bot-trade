@@ -1,6 +1,6 @@
 // app/chart.js — biểu đồ kiểu OKX/TradingView: nến realtime, EMA200, Stoch 32/13/5 + 10/5/5,
 // cùng các đường xu hướng và điểm phá mà bot đang theo dõi (tính bằng đúng lõi của bot).
-import { analyze, lineAt, HOUR, fromRows } from '../core/breakout.js';
+import { analyze, lineAt, HOUR, fromRows, CFG } from '../core/breakout.js';
 import * as okx from '../core/okx.js';
 import { fmtPrice, hhmm, stamp, decimalsOf } from '../core/format.js';
 import { ema, stoch } from './indicators.js';
@@ -21,6 +21,9 @@ export function roleColor(side, a = 1) {
   const [r, g, b] = side === 'R' ? [255, 79, 79] : [46, 168, 255];
   return a >= 1 ? (side === 'R' ? COLORS.res : COLORS.sup) : `rgba(${r},${g},${b},${a})`;
 }
+
+// Số nến H1 tải về: đủ cửa sổ của bot (1000) + phần tính ATR
+const H1N = CFG.WINDOW + CFG.WARMUP;
 
 export const TFS = [
   { id: '5m', label: '5m', ms: 5 * 60e3 },
@@ -52,7 +55,7 @@ export class ChartView {
       },
       grid: { vertLines: { color: COLORS.grid }, horzLines: { color: COLORS.grid } },
       rightPriceScale: { borderColor: COLORS.line, scaleMargins: { top: 0.08, bottom: 0.12 } },
-      timeScale: { borderColor: COLORS.line, timeVisible: true, secondsVisible: false, rightOffset: 6, barSpacing: 4.5, minBarSpacing: 1 },
+      timeScale: { borderColor: COLORS.line, timeVisible: true, secondsVisible: false, rightOffset: 6, barSpacing: 4.5, minBarSpacing: 0.3 },
       // vuốt dọc trên vùng nến không kéo trục giá (dễ vô tình làm mất tự căn giá); muốn kéo thì kéo ở trục giá
       handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false },
       crosshair: { mode: L.CrosshairMode.Normal, vertLine: { color: '#5d6067', labelBackgroundColor: '#2a2c31' }, horzLine: { color: '#5d6067', labelBackgroundColor: '#2a2c31' } },
@@ -94,8 +97,8 @@ export class ChartView {
 
     try {
       const [rows, h1] = await Promise.all([
-        this.fetchRows(inst, tf, tf === '1H' ? 520 : 600),
-        tf === '1H' ? null : okx.candles(inst, '1H', 520),
+        this.fetchRows(inst, tf, tf === '1H' ? H1N : 600),
+        tf === '1H' ? null : okx.candles(inst, '1H', H1N),
       ]);
       if (seq !== this.seq) return;
       this.bars = rows;
@@ -123,7 +126,7 @@ export class ChartView {
   async fetchRows(inst, bar, count) {
     const seen = new Map();
     let after;
-    for (let page = 0; page < 3 && seen.size < count; page++) {
+    for (let page = 0; page < 6 && seen.size < count; page++) {
       const p = { instId: inst, bar, limit: '300' };
       if (after) p.after = after;
       const d = await okx.api('/api/v5/market/candles', p);
@@ -387,7 +390,7 @@ export class ChartView {
     clearTimeout(this.h1Debounce);
     this.h1Debounce = setTimeout(async () => {
       try {
-        const { K } = await okx.candles(this.inst, '1H', 520);
+        const { K } = await okx.candles(this.inst, '1H', H1N);
         this.h1 = K;
         this.analyze();
       } catch {}
