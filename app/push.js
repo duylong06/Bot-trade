@@ -139,7 +139,8 @@ export async function check(status) {
   if (perm === 'denied') return { state: 'blocked' };
   if (perm !== 'granted') return { state: 'off', why: 'chưa cấp quyền' };
 
-  const botPub = status && status.push ? status.push.vapidPub || null : undefined;   // undefined = chưa biết
+  // undefined = chưa biết (chưa tải được status.json, hoặc status.json của bot bản cũ chưa có trường vapidPub)
+  const botPub = status && status.push && 'vapidPub' in status.push ? status.push.vapidPub || null : undefined;
   let { sub } = await getSub();
   const pub = botPub === undefined ? null : await wantKey(botPub);
   let id = sub ? await idOf(sub.endpoint) : null;
@@ -158,7 +159,11 @@ export async function check(status) {
     }
   }
   if (!sub) return { state: 'off', why: 'chưa đăng ký' };
-  if (botPub === undefined) return { state: 'pending', id };
+  if (botPub === undefined) {
+    const r0 = status && (status.devices || []).find(d => d.id === id);
+    if (status && status.push && (status.push.ids || []).includes(id)) return r0 && !r0.ok ? { state: 'error', id, rec: r0 } : { state: 'ok', id, rec: r0 || null };
+    return { state: 'pending', id };
+  }
   if (!botPub) return { state: 'need-code', id, config: makeConfig(sub, await getVapid()) };
 
   const known = (status.push.ids || []).includes(id);

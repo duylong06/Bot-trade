@@ -406,7 +406,7 @@ function updateMarketRow(m) {
 // Tự sửa được thì tự sửa (đăng ký lại + gửi cho bot qua ntfy). iOS không cho tự làm khi chưa chạm
 // → hiện thanh đỏ ở trên cùng, chạm một lần là xong, không phải dán mã gì nữa.
 
-const botPub = () => (S.status && S.status.push ? S.status.push.vapidPub || null : undefined);
+const botPub = () => (S.status && S.status.push && 'vapidPub' in S.status.push ? S.status.push.vapidPub || null : undefined);
 let checking = null;
 function checkPush() {
   if (checking) return checking;
