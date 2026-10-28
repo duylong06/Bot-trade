@@ -1,7 +1,7 @@
 // Kiểm thử lõi phát hiện phá vỡ trên dữ liệu dựng sẵn.
 // Chạy: node bot/test-core.mjs
 import fs from 'node:fs';
-import { analyze, CFG, HOUR } from '../core/breakout.js';
+import { analyze, CFG, HOUR, breakClass } from '../core/breakout.js';
 import { m30Verdict } from '../core/confirm.js';
 
 let fails = 0;
@@ -74,10 +74,15 @@ const show = ev => `${ev.type} ${ev.dir} @${ev.i} span=${ev.line.span} touches=$
   const load = c => { const { t0, rows } = fx[c]; return { t: rows.map((_, i) => t0 + i * HOUR), o: rows.map(r => r[0]), h: rows.map(r => r[1]), l: rows.map(r => r[2]), c: rows.map(r => r[3]), v: rows.map(() => 100) }; };
   const VN = (d, h) => Date.UTC(2026, 9, d, h - 7);       // giờ Việt Nam → mili giây
   const breakAt = (coin, t) => analyze(load(coin)).events.find(e => e.type === 'BREAK' && e.dir === 'SHORT' && e.t === t && e.line.kind === 'hỗ trợ tăng');
-  for (const [coin, h, was] of [['DASH', 9, 15], ['ETH', 12, 15], ['AAVE', 14, 15]]) {
+  for (const [coin, h, was] of [['DASH', 9, 15], ['AAVE', 14, 15]]) {
     const br = breakAt(coin, VN(22, h));
     if (br) console.log(`    ${coin}: ${show(br)}`);
     ok(!!br, `${coin}: báo phá hỗ trợ tăng ngay nến ${h}:00 22/10 (trước đây ${was}:00)`);
+  }
+  {   // ETH: đáy 08:00 20/10 là cây rút râu (râu dưới dài gấp ~2 cây bình thường) → không còn được làm điểm neo
+    const r = analyze(load('ETH'));
+    const used = [...r.events.map(e => e.line), ...r.lines].filter(L => L.ta === VN(20, 8) || L.tb === VN(20, 8));
+    ok(!used.length, `ETH: không neo vào cây rút râu 08:00 20/10 (${used.length} đường)`);
   }
   for (const [coin, mid, bottom] of [['APT', VN(20, 1), VN(19, 3)], ['ONDO', VN(20, 2), VN(19, 3)]]) {
     const r = analyze(load(coin));
@@ -105,18 +110,24 @@ const show = ev => `${ev.type} ${ev.dir} @${ev.i} span=${ev.line.span} touches=$
 /* 5. Retest sau khi phá */
 {
   console.log('5. Retest');
-  const K = gen({ n: 150, seed: 33, amp: 0.35, wick: 0.25,
-    keys: [[0, 121], [6, 124], [20, 117], [36, 114], [48, 116], [57, 119.5], [66, 125], [74, 127], [84, 122], [94, 118], [104, 122], [149, 126]],
-    pin: [6] });
-  // Kháng cự nối 3 đỉnh ở 6, 30, 52: đặt râu đúng đường y = 124 - 0.074*(i-6)
+  // Kháng cự giảm nối 3 đỉnh ĐẸP (nến thân đầy, râu ngắn) ở 6, 30, 52 theo y = 124 - 0.074*(i-6)
   const y = i => 124 - 0.074 * (i - 6);
-  for (const p of [30, 52]) { K.h[p] = y(p); for (const q of [p - 3, p - 2, p - 1, p + 1, p + 2, p + 3]) K.h[q] = Math.min(K.h[q], y(p) - 0.3); }
+  const K = gen({ n: 150, seed: 33, amp: 0.35, wick: 0.15,
+    keys: [[0, 120], [6, y(6) - 0.15], [18, 116], [30, y(30) - 0.15], [41, 115.5], [52, y(52) - 0.15], [56, 118.6], [57, 119], [66, 125], [74, 127], [84, 122], [94, 118], [104, 122], [149, 126]],
+    pin: [6, 30, 52] });
+  for (const p of [6, 30, 52]) {           // đỉnh: nến xanh thân đầy, râu trên ngắn, chạm đúng đường
+    setBar(K, p, y(p) - 1.0, y(p), y(p) - 1.1, y(p) - 0.1);
+    for (const q of [p - 3, p - 2, p - 1, p + 1, p + 2, p + 3]) { K.h[q] = Math.min(K.h[q], y(p) - 0.4); K.c[q] = Math.min(K.c[q], y(p) - 0.5); K.o[q] = Math.min(K.o[q], y(p) - 0.5); }
+  }
   setBar(K, 58, K.c[57], y(58) + 2.3, K.c[57] - 0.1, y(58) + 2.0);
   // Lấy đúng đường bot tìm được, rồi đặt nến 94: râu chạm lại đường đó, đóng cửa phía trên.
   const first = analyze(K);
   const L = first.all.filter(x => x.state === 'broken' && x.b === 58).sort((a, b) => b.span - a.span)[0];
-  const yl = L.y0 + L.m * 94, a94 = first.A[94];
-  setBar(K, 94, K.c[93], K.c[93] + 0.2, yl + 0.1 * a94, yl + 0.9 * a94);
+  ok(!!L, 'tìm được kháng cự nối 3 đỉnh đẹp, bị phá ở nến 58');
+  if (L) {
+    const yl = L.y0 + L.m * 94, a94 = first.A[94];
+    setBar(K, 94, K.c[93], K.c[93] + 0.2, yl + 0.1 * a94, yl + 0.9 * a94);
+  }
   const { events } = analyze(K);
   events.forEach(e => console.log('    ' + show(e)));
   const br = events.find(e => e.type === 'BREAK' && e.dir === 'LONG' && e.i === 58);
@@ -138,7 +149,7 @@ const show = ev => `${ev.type} ${ev.dir} @${ev.i} span=${ev.line.span} touches=$
 
 /* 7. Hỗ trợ tăng dốc, giá trôi qua bằng nến nhỏ rồi mới sập (NEAR 20–22/10/2026, nến thật): báo ngay cây đầu */
 {
-  console.log('7. Đường dốc NEAR: báo ngay cây đầu tiên đóng dưới đường (06:00 22/10)');
+  console.log('7. Đường dốc NEAR ~38 nến (ngắn hơn tối thiểu 45 nến)');
   const rows = [
   [4.869,5.004,4.861,4.934], [4.935,5.011,4.921,4.994], [4.994,5.061,4.986,5.038], [5.039,5.049,4.966,4.977], [4.977,4.982,4.921,4.938],
   [4.937,5.022,4.93,4.999], [4.999,5.02,4.932,4.965], [4.964,4.995,4.937,4.958], [4.959,5.019,4.949,5.004], [5.004,5.011,4.951,4.968],
@@ -166,8 +177,8 @@ const show = ev => `${ev.type} ${ev.dir} @${ev.i} span=${ev.line.span} touches=$
   const { events } = analyze(K);
   const br = events.find(e => e.type === 'BREAK' && e.dir === 'SHORT' && e.i === 94);
   if (br) console.log('    ' + show(br));
-  ok(!!br, 'có BREAK SHORT ở nến 06:00 22/10 (trước đây 08:00)');
-  ok(br && br.line.kind === 'hỗ trợ tăng' && br.line.span >= 30, 'đúng đường hỗ trợ tăng ~38 nến');
+  // Luật mới (28/10): mô hình tối thiểu 45 nến — đường ~38 nến này không còn được báo.
+  ok(!br, 'đường NEAR ~38 nến ngắn hơn 45 nến → không báo');
 }
 
 /* 8–11. Luật mới 28/10/2026 */
@@ -184,7 +195,7 @@ const show = ev => `${ev.type} ${ev.dir} @${ev.i} span=${ev.line.span} touches=$
     ok(!r.events.some(e => e.t === VN(28, 0) && e.type === 'RETEST'), 'BREV: không còn tín hiệu Retest 00:00 28/10 từ đường đó');
   }
 
-  console.log('9. Chỉ đường thuận xu hướng, mô hình ≥ 30 nến');
+  console.log(`9. Chỉ đường thuận xu hướng, mô hình ≥ ${CFG.MIN_PATTERN} nến`);
   {
     let bad = 0, short = 0, n = 0;
     for (const c of Object.keys(fx)) {
@@ -196,22 +207,53 @@ const show = ev => `${ev.type} ${ev.dir} @${ev.i} span=${ev.line.span} touches=$
     ok(short === 0, `không có sự kiện nào của mô hình dưới ${CFG.MIN_PATTERN} nến (${short})`);
   }
 
-  console.log('10. Cây phá giật râu bị đánh dấu');
+  console.log('10. Phân loại cây phá: đẹp → luật M30; yếu (sai màu / râu dài hơn thân / đóng sát đường) → chờ cây sau');
   {
-    const K = gen({ n: 200, seed: 9, amp: 0.5, wick: 0.35,
+    ok(breakClass(100, 103, 99.9, 102.8, 'LONG') === 'clean', 'phá lên bằng nến xanh thân dài → đẹp');
+    ok(breakClass(100, 104, 99.9, 101, 'LONG') === 'weak', 'phá lên nhưng râu trên dài hơn thân → yếu');
+    ok(breakClass(102, 102.2, 100.5, 101.6, 'LONG') === 'weak', 'phá lên mà nến đỏ → yếu');
+    ok(breakClass(100, 100.1, 97, 97.3, 'SHORT') === 'clean', 'phá xuống bằng nến đỏ thân dài → đẹp');
+    ok(breakClass(100, 100.2, 96, 99.4, 'SHORT') === 'weak', 'phá xuống nhưng râu dưới dài hơn thân → yếu');
+    const mk = () => gen({ n: 200, seed: 9, amp: 0.5, wick: 0.35,
       keys: [[0, 110], [20, 106], [55, 116], [95, 112], [130, 125], [170, 118], [185, 124], [192, 121], [199, 116]],
       pin: [20, 95, 170] });
-    const y = 106 + (192 - 20) * (6 / 75);
-    // đóng dưới đường một chút, râu dưới rất dài (giá giật xuống rồi rút lên)
-    setBar(K, 192, y + 0.3, y + 0.4, y - 6, y - 0.2);
+    const y = i => 106 + (i - 20) * (6 / 75);
+    // râu dưới giật rất dài, thân nhỏ → yếu; cây sau đóng tiếp dưới đường, nến đỏ → phá tiếp
+    const K = mk();
+    setBar(K, 192, y(192) + 0.3, y(192) + 0.4, y(192) - 4, y(192) - 0.4);
+    setBar(K, 193, y(192) - 0.4, y(192) - 0.3, y(193) - 2.2, y(193) - 2.0);
     const br = analyze(K).events.find(e => e.type === 'BREAK' && e.dir === 'SHORT' && e.i === 192);
-    ok(br && br.spike === true, 'cây phá có râu giật dài → spike = true');
-    const K2 = gen({ n: 200, seed: 9, amp: 0.5, wick: 0.35,
-      keys: [[0, 110], [20, 106], [55, 116], [95, 112], [130, 125], [170, 118], [185, 124], [192, 121], [199, 116]],
-      pin: [20, 95, 170] });
-    setBar(K2, 192, K2.c[191], K2.c[191] + 0.1, y - 2.6, y - 2.2);
+    ok(br && br.cls === 'weak' && br.follow === true, 'cây phá râu dài → yếu; cây sau phá tiếp → báo ở cây sau');
+    // cây sau quay lại trong đường → phá giả, đường vẫn còn
+    const K3 = mk();
+    setBar(K3, 192, y(192) + 0.3, y(192) + 0.4, y(192) - 4, y(192) - 0.4);
+    setBar(K3, 193, y(192) - 0.4, y(193) + 1.4, y(192) - 0.5, y(193) + 1.2);
+    const r3 = analyze(K3);
+    ok(!r3.events.some(e => e.type === 'BREAK' && e.dir === 'SHORT' && e.i === 192), 'cây sau quay lại trong đường → phá giả, không báo');
+    const K2 = mk();
+    setBar(K2, 192, K2.c[191], K2.c[191] + 0.1, y(192) - 2.6, y(192) - 2.2);
     const br2 = analyze(K2).events.find(e => e.type === 'BREAK' && e.dir === 'SHORT' && e.i === 192);
-    ok(br2 && br2.spike === false, 'cây phá thân dài bình thường → spike = false');
+    ok(br2 && br2.cls === 'clean', 'cây phá nến đỏ thân dài → đẹp (xét tiếp M30)');
+  }
+
+  console.log('12. Các ca bạn sửa ngày 28/10 (nến thật OKX)');
+  {
+    const fx2 = JSON.parse(fs.readFileSync(new URL('./fixtures/okx-h1-1028.json', import.meta.url), 'utf8'));
+    const ld = (c, until) => { const { t0, rows } = fx2[c]; let K = { t: rows.map((_, i) => t0 + i * HOUR), o: rows.map(r => r[0]), h: rows.map(r => r[1]), l: rows.map(r => r[2]), c: rows.map(r => r[3]), v: rows.map(() => 100) };
+      const j = K.t.indexOf(until); if (j >= 0) for (const k of Object.keys(K)) K[k] = K[k].slice(0, j + 1); return K; };
+    const lines = r => [...r.lines, ...r.all.map(L => ({ ta: r.W.t[L.ia], tb: r.W.t[L.ib], side: L.side, span: L.span, b: L.b }))];
+    // CL: đường vàng 35 nến nối các cây râu (26/10 23:00 → 27/10 21:00) không được kẻ
+    const cl = analyze(ld('CL', VN(28, 11)));
+    ok(!lines(cl).some(L => L.ta === VN(26, 23) && L.side === 'R'), 'CL: không kẻ kháng cự nối các râu 26–27/10');
+    // ALGO: không neo vào đỉnh giật 16:00 08/10; có kháng cự nối 2 đỉnh khoanh tròn 14:00 12/10 → 01:00 22/10
+    const al = analyze(ld('ALGO', VN(28, 11)));
+    ok(!lines(al).some(L => L.ta === VN(8, 16) || L.tb === VN(8, 16)), 'ALGO: không neo vào đỉnh râu dài 08/10');
+    ok(lines(al).some(L => L.side === 'R' && L.ta === VN(12, 14) && L.tb === VN(22, 1)), 'ALGO: kháng cự nối 2 đỉnh 12/10 và 22/10');
+    // VVV: hỗ trợ tăng từ đáy 20.920 (03:00 19/10) bị phá lúc 11:00 28/10 (không phải 13:00 27/10 — cây đó đóng sát đường rồi quay lên)
+    const vv = analyze(ld('VVV', VN(28, 13)));
+    const sup = vv.all.find(L => L.side === 'S' && vv.W.t[L.ia] === VN(19, 3) && vv.W.t[L.ib] === VN(24, 23));
+    ok(sup && sup.b >= 0 && vv.W.t[sup.b] === VN(28, 11), `VVV: hỗ trợ tăng từ đáy 19/10 bị phá lúc 11:00 28/10 (${sup ? new Date(vv.W.t[sup.b] + 7 * HOUR).toISOString().slice(5, 16) : 'không có'})`);
+    ok(!lines(vv).some(L => L.side === 'R' && L.ta === VN(22, 8)), 'VVV: không kẻ kháng cự từ đỉnh râu 08:00 22/10 (đường vàng nhiều râu)');
   }
 
   console.log('11. Luật M30 trên 4 ca thật (OKX)');

@@ -2,10 +2,10 @@
 
 Bot quét **top 67 đồng crypto theo vốn hoá** (CoinGecko, cập nhật mỗi giờ; đồng nào không có hợp đồng USDT vĩnh cửu
 trên OKX, stablecoin hay token bọc thì lấy đồng vốn hoá kế tiếp) **cùng vàng (XAU) và dầu WTI (CL)**,
-tìm các **đường xu hướng trong 1000 nến H1 gần nhất** (≈ 42 ngày) và báo về iPhone khi có:
+tìm các **đường xu hướng trên khung H1 và H4** (tối đa 1000 nến mỗi khung) và báo về iPhone khi có:
 
-- **Phá** — nến H1 **đóng cửa** ra ngoài đường (râu không tính), rồi **giữ được qua cây M30 đầu tiên của giờ sau**
-  (luật M30, xem dưới). Phá kháng cự → LONG, phá hỗ trợ → SHORT.
+- **Phá** — nến **đóng cửa** ra ngoài đường (râu không tính) bằng cây phá đẹp, rồi **giữ được qua cây M30 đầu tiên của giờ sau**
+  (luật M30); cây phá chưa đẹp thì chờ cây sau phá tiếp. Phá kháng cự → LONG, phá hỗ trợ → SHORT.
 - **Xác nhận** — đóng cửa vượt đỉnh/đáy cuối cùng nằm trên đường (gãy cấu trúc).
 - **Retest** — giá chạy ra xa rồi quay về chạm lại đường vừa phá và giữ được.
 
@@ -65,33 +65,40 @@ Không cài bước này bot vẫn chạy theo lịch GitHub, chỉ là trễ v�
 ## Luật phát hiện
 
 Toàn bộ nằm trong `core/breakout.js` và `core/confirm.js` (bot và app dùng chung, nên đường bot báo và đường app vẽ luôn khớp).
+Cách kẻ đường theo đúng các ca chủ repo chỉ (CL, HBAR, ALGO, VVV, kênh BTC tháng 7–8/2026 — có trong `bot/test-core.mjs`)
+và tài liệu kẻ trendline chuẩn: nối các đỉnh/đáy rõ ràng, 2 điểm là đường tiềm năng, điểm thứ 3 xác nhận; râu ngoại lệ bỏ qua;
+phá vỡ phải là giá đóng cửa dứt khoát; khung nhỏ nhiều nhiễu thì xem đường ở khung lớn hơn.
 
 | | |
 |---|---|
-| Cửa sổ | 1000 nến H1 gần nhất (≈ 42 ngày). Đo trên 400 ngày nến thật 11 đồng top: đường dài 500–1000 nến phá khoảng 1,2 lần/đồng/tháng, hơn nửa số đó cửa sổ 500 nến bỏ lỡ, và sau khi phá giá chạy theo chiều phá tốt hơn đường ngắn (chưa thật chắc chắn về thống kê) |
-| Độ dài mô hình | **≥ 30 nến H1** (từ điểm neo đầu tới cây phá). Rút ra từ 1 năm nến thật top 10 vốn hoá: mô hình ngắn hơn cho nhiều cú phá giả |
-| Hướng | chỉ đường **thuận chiều phá**: kháng cự giảm/ngang (phá lên → LONG), hỗ trợ tăng/ngang (phá xuống → SHORT) |
-| Điểm neo | râu nến (đỉnh/đáy); neo đầu phải là **đáy/đỉnh thật** — phía trước nó không có đáy thấp hơn / đỉnh cao hơn |
-| Râu kim | không neo vào cây râu kim (râu ≥ 2 lần thân và thò ra ≥ 1,5 ATR so với râu các cây ±5 bên cạnh) |
-| Chạm | ≥ 3 lần; giữa hai lần chạm giá phải bật ra ≥ 1,5 ATR |
-| Phá | cây nến H1 **đầu tiên đóng cửa** ra ngoài đường, râu không tính. Cây phá là cây giật râu (râu theo chiều phá ≥ 1 ATR và ≥ 2 lần thân) → không báo |
-| **Luật M30** | phá xong **chưa báo**. Chờ cây M30 đầu tiên của giờ sau đóng (phút :30). LONG: M30 chạm về ≤ đáy cây phá → không báo, **trừ khi M30 đóng xanh** (rút râu). SHORT: M30 chạm ≥ đỉnh cây phá → không báo, trừ khi đóng đỏ. M30 đứng giá mà có chạm → không báo |
-| Xác nhận | đóng cửa vượt đỉnh/đáy cuối cùng nằm trên đường — báo ngay khi nến H1 đóng |
-| Retest | sau khi phá, chạy xa ≥ 2 ATR rồi quay về chạm đường, đóng cửa giữ được — báo ngay khi nến H1 đóng |
-| Thông báo | mỗi cú phá một tin, không giới hạn; chỉ gộp khi cùng đồng, cùng chiều, cùng cây nến |
+| Khung | **H1 và H4**. H1 nhiều râu thì đường rõ nằm ở H4 — bot kẻ và báo cả hai |
+| Cửa sổ | tối đa **1000 nến** mỗi khung (H1 ≈ 42 ngày, H4 ≈ 166 ngày); mô hình dài **≥ 45 nến** |
+| Hướng | downtrend → **kháng cự giảm** nối các đỉnh thấp dần; uptrend → **hỗ trợ tăng** nối các đáy cao dần; sideway → kháng cự / hỗ trợ **ngang**. Không kẻ kháng cự tăng, hỗ trợ giảm |
+| Điểm neo, điểm chạm | phải là **đỉnh/đáy đẹp, rõ ràng**: không phải **cây rút râu** (râu dài hơn 2 lần cây nến bình thường, hoặc chọc ra khỏi 3 nến mỗi bên hơn 1,2 lần cây bình thường); là cao/thấp nhất trong một khoảng đủ rộng; giữa hai lần chạm giá lùi khỏi đường ≥ 1,5 ATR và ≥ 30% bề rộng mô hình |
+| Số chạm | ≥ 3; hoặc 2 nếu cả hai là đỉnh/đáy lớn (cao/thấp nhất ±24 nến, đã được nến thật xác nhận) |
+| Đường sạch | từ điểm neo đầu tới cây phá: không thân nến nào vượt đường; râu chỉ được chạm — quá 2 râu xuyên đường (> 0,35 ATR) là đường kẻ sai, bỏ |
+| Đỉnh/đáy thật | điểm neo đầu là đỉnh cao nhất / đáy thấp nhất của vùng phía trước (bỏ qua cây bất thường như cây giật ALGO 08/10) |
+| Một đỉnh nhiều đường | một đỉnh/đáy được làm điểm neo cho nhiều đường; app chỉ vẽ đường rõ nhất mỗi vùng giá (2 đường cùng phía cách nhau ≤ 3 ATR) |
+| Kênh giá | đường song song qua đáy thấp nhất (kênh giảm) / đỉnh cao nhất (kênh tăng) trong mô hình, khi biên đó cũng được chạm ≥ 2 lần — app vẽ biên kênh + đường giữa đứt |
+| Phá | cây nến **đóng cửa** ngoài đường (râu không tính) |
+| Cây phá đẹp | phá lên **nến xanh**, phá xuống **nến đỏ**, **thân dài hơn cả hai râu**, đóng xa đường ≥ 0,15 ATR |
+| H1 phá đẹp → **luật M30** | chờ cây M30 đầu tiên của giờ sau (phút :30). LONG: M30 chạm về ≤ đáy cây phá → không báo, trừ khi M30 đóng xanh. SHORT: ngược lại |
+| Cây phá chưa đẹp | sai màu / râu dài hơn thân / đóng sát đường → **không xét M30**, chờ cây kế tiếp: đóng tiếp ngoài đường và đúng màu thì báo; quay lại trong đường là phá giả, đường vẫn còn |
+| H4 | phá đẹp → báo ngay khi cây H4 đóng (03, 07, 11, 15, 19, 23 giờ VN); chưa đẹp → chờ cây H4 sau |
+| Xác nhận, Retest | gãy cấu trúc / quay về chạm đường rồi giữ — báo ngay khi nến đóng |
+| Đúng lúc | chỉ báo tín hiệu của cây nến **vừa đóng**, không báo bù tín hiệu cũ |
+| Thông báo | mỗi cú phá một tin, không giới hạn; chỉ gộp khi cùng đồng, cùng chiều, cùng cây nến, cùng khung |
 
-**Biểu đồ trong app:** kháng cự màu đỏ, hỗ trợ màu xanh dương, nét liền + nhãn **KC/HT** ở trục giá = còn hiệu lực;
-nét đứt = vừa bị phá (trong 48 giờ, mỗi phía một đường). Mỗi phía vẽ tối đa 2 đường gần giá; hai đường cùng phía cách nhau
-dưới 1,5 ATR là một vùng, chỉ vẽ đường rõ nhất. Dấu Phá / XN / Retest chỉ hiện trên đường đang vẽ. Đường đang xem từ thông báo: màu vàng.
+**Biểu đồ trong app:** kháng cự đỏ, hỗ trợ xanh dương; nét liền + nhãn **KC/HT** = còn hiệu lực, nét đứt = vừa bị phá;
+đường H4 dày hơn, nhãn **H4**; kênh giá: biên đối diện + đường giữa đứt. Có thêm khung **30m** để xem cây M30.
 
 **Lịch chạy mỗi giờ** (`.github/workflows/scan.yml`): phút :58 bot bắt đầu, chờ nến H1 đóng → báo Retest/Xác nhận ngay,
-cú Phá thì ghi “chờ M30” (app hiện “⏳ chờ nến M30 · báo lúc HH:30”) → bot ở lại tới phút :30 → xét cây M30 → báo hoặc bỏ
-(app ghi lý do). Bot không kịp xét M30 trong 90 phút thì thôi không báo cú đó.
+cú Phá đẹp ghi “chờ M30”, cú phá chưa đẹp ghi “chờ cây sau” → bot ở lại tới phút :30 → xét cây M30 → báo hoặc bỏ (app ghi lý do).
+Giờ nào cây H4 cũng đóng thì bot xét thêm khung H4.
 
-Đo trên nến thật 30 ngày (tới 28/10/2026), quy ra 69 mã: khoảng **85–100 thông báo/ngày**
-(khoảng một nửa là Phá đã qua M30, còn lại Xác nhận và Retest); luật M30 bỏ khoảng 8% cú phá, cây giật râu ~1%.
-Nới cửa sổ từ 500 lên 1000 nến thêm khoảng 5 thông báo/ngày.
-Muốn bớt: đặt `MIN_SPAN_ALERT` (ví dụ 60) hoặc bỏ `CONFIRM`/`RETEST` khỏi `ALERTS`.
+Đo trên nến thật 30 ngày (11 đồng top, tới 27/10/2026), quy ra 69 mã: khoảng **65 thông báo/ngày**
+(phá H1 ~31 — trong đó ~8 là cây phá chưa đẹp nhưng cây sau phá tiếp; xác nhận ~13; retest ~13; H4 ~9).
+Khoảng 37% cây phá là cây chưa đẹp, phải chờ cây sau. Muốn bớt: đặt `MIN_SPAN_ALERT` hoặc bỏ `CONFIRM`/`RETEST` khỏi `ALERTS`.
 
 ## Chỉnh nhanh — `core/config.js`
 

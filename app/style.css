@@ -111,6 +111,9 @@ main { flex: 1 1 auto; position: relative; min-height: 0; }
 .pushbar { display: block; width: 100%; flex: 0 0 auto; padding: 9px var(--sr) 9px var(--sl); background: #3a0d1c; color: #ffd0de; font: 600 13.5px/1.3 var(--font); text-align: left; border-bottom: 1px solid #5c1830; }
 .pushbar[hidden] { display: none; }
 /* trạng thái luật M30 ở tab Tín hiệu */
+.tfh4 { font: 700 9.5px/1 var(--font); font-style: normal; color: #000; background: #c9a7ff; border-radius: 3px; padding: 2px 4px; margin: 0 5px 0 0; vertical-align: 1px; }
+.srow .ti .tfh4 { margin: 0; }
+.chn { color: #c9a7ff; }
 .m30 { font: 500 11px/1.3 var(--font); padding: 2px 7px; border-radius: 5px; color: var(--dim); background: var(--panel2); }
 .m30.wait { color: #8fd3ff; background: rgba(46, 168, 255, 0.12); }
 .m30.ok { color: var(--up); background: rgba(195, 242, 63, 0.1); }

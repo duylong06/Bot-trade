@@ -28,6 +28,7 @@ const H1N = CFG.WINDOW + CFG.WARMUP;
 export const TFS = [
   { id: '5m', label: '5m', ms: 5 * 60e3 },
   { id: '15m', label: '15m', ms: 15 * 60e3 },
+  { id: '30m', label: '30m', ms: 30 * 60e3 },
   { id: '1H', label: '1H', ms: HOUR },
   { id: '4H', label: '4H', ms: 4 * HOUR },
   { id: '1Dutc', label: '1D', ms: 24 * HOUR },
@@ -37,7 +38,7 @@ export class ChartView {
   constructor(el, ws, hooks = {}) {
     this.el = el; this.ws = ws; this.hooks = hooks;
     this.inst = null; this.tf = '1H'; this.tickSz = null;
-    this.bars = null; this.h1 = null; this.res = null;
+    this.bars = null; this.h1 = null; this.h4 = null; this.res = null; this.res4 = null;
     this.lineSeries = []; this.focus = null; this.show = { lines: true, ema: true, stoch: true };
     this.unsub = null; this.seq = 0;
     this.build();
@@ -96,13 +97,15 @@ export class ChartView {
     this.hooks.onStatus && this.hooks.onStatus('loading');
 
     try {
-      const [rows, h1] = await Promise.all([
+      const [rows, h1, h4] = await Promise.all([
         this.fetchRows(inst, tf, tf === '1H' ? H1N : 600),
         tf === '1H' ? null : okx.candles(inst, '1H', H1N),
+        okx.candles(inst, '4H', H1N).catch(() => null),     // đường H4 (khi H1 nhiều râu, xem đường ở H4)
       ]);
       if (seq !== this.seq) return;
       this.bars = rows;
       this.h1 = tf === '1H' ? fromRows(rows.closed) : h1.K;
+      this.h4 = h4 ? h4.K : null;
       this.render(true);
       this.analyze();
       this.subscribe();
@@ -252,11 +255,24 @@ export class ChartView {
   /* ---------- đường xu hướng ---------- */
 
   analyze() {
-    if (!this.h1 || this.h1.c.length < 60) { this.res = null; this.drawLines(); return; }
-    this.res = analyze(this.h1);
+    if (!this.h1 || this.h1.c.length < 60) { this.res = null; this.res4 = null; this.drawLines(); return; }
+    this.res = analyze(this.h1, '1H');
+    this.res4 = this.h4 && this.h4.c.length >= 60 ? analyze(this.h4, '4H') : null;
     this.drawLines();
-    this.hooks.onLines && this.hooks.onLines(this.res, this.focusMatch);
+    this.hooks.onLines && this.hooks.onLines(this.shownLines || [], this.focusMatch);
   }
+
+  // Đường H1 + đường H4 (H4: mỗi phía 1 đường còn hiệu lực gần giá nhất, cộng 1 đường vừa phá).
+  allLines() {
+    const a = this.res ? this.res.lines.map(x => ({ ...x, tf: '1H' })) : [];
+    if (this.res4) {
+      const l4 = this.res4.lines.map(x => ({ ...x, tf: '4H' }));
+      const act = side => l4.filter(x => x.tBreak == null && x.side === side).slice(0, 1);
+      a.push(...act('R'), ...act('S'), ...l4.filter(x => x.tBreak != null).slice(0, 1));
+    }
+    return a;
+  }
+  allEvents() { return [...(this.res ? this.res.events : []), ...(this.res4 ? this.res4.events : [])]; }
 
   barTimes() { return this.bars.all.map(r => +r[0]); }
 
@@ -272,46 +288,57 @@ export class ChartView {
   drawLines() {
     for (const s of this.lineSeries) this.chart.removeSeries(s);
     this.lineSeries = [];
-    if (!this.res || !this.bars || !this.bars.all.length) { this.markers.setMarkers([]); return; }
+    if (!this.res || !this.bars || !this.bars.all.length) { this.markers.setMarkers([]); this.shownLines = []; return; }
     const times = this.barTimes();
     const lastT = times[times.length - 1];
-    const lines = this.show.lines ? [...this.res.lines] : [];
+    const lines = this.show.lines ? this.allLines() : [];
 
     // tín hiệu đang được mở từ thông báo / danh sách
     this.focusMatch = null;
     if (this.focus) {
-      const ev = this.res.events.find(e => e.type === this.focus.ev && e.t === this.focus.t);
+      const ftf = this.focus.tf || '1H';
+      const ev = this.allEvents().find(e => e.type === this.focus.ev && e.t === this.focus.t && (e.tf || '1H') === ftf);
       const line = ev ? ev.line : this.focus.line;
       if (line) {
         this.focusMatch = { ev: ev || null, line, found: !!ev };
         const same = lines.findIndex(x => x.ta === line.ta && x.tb === line.tb && x.side === line.side);
         if (same >= 0) lines.splice(same, 1);
-        lines.push({ ...line, _focus: true });
+        lines.push({ ...line, tf: ftf, _focus: true });
       }
     }
+    this.shownLines = lines;
 
     // Đường: kháng cự đỏ, hỗ trợ xanh dương. Còn hiệu lực = nét liền đậm + nhãn KC/HT ở trục giá.
     // Đã phá = nét đứt mờ, chỉ kéo tới sau cú phá 24 giờ (hoặc retest + 6 giờ). Đang xem = vàng.
+    // Đường H4 vẽ dày hơn, nhãn "KC H4"/"HT H4". Kênh giá: biên song song (màu của vai trò biên đó) + đường giữa đứt.
     const drawn = new Set();
+    const seg = (pts, opts) => {
+      const s = this.chart.addSeries(L.LineSeries, { priceLineVisible: false, crosshairMarkerVisible: false, autoscaleInfoProvider: () => null, lastValueVisible: false, ...opts }, 0);
+      s.setData(pts); this.lineSeries.push(s);
+    };
     for (const ln of lines) {
-      const broken = ln.tBreak != null;
+      const broken = ln.tBreak != null, h4 = ln.tf === '4H', step = h4 ? 4 * HOUR : HOUR;
       // đường đã phá: kéo quá cây phá 6 nến (có retest thì tới retest + 3 nến) — đủ thấy giá đóng ngoài đường
-      const tEnd = broken ? Math.min(lastT, ln.tRetest ? ln.tRetest + 3 * HOUR : ln.tBreak + 6 * HOUR) : lastT;
+      const tEnd = broken ? Math.min(lastT, ln.tRetest ? ln.tRetest + 3 * step : ln.tBreak + 6 * step) : lastT;
       const t0 = this.snap(ln.ta, times), t1 = this.snap(tEnd, times);
       if (t1 <= t0) continue;
-      drawn.add(`${ln.side}|${ln.ta}|${ln.tb}`);
+      drawn.add(`${ln.tf || '1H'}|${ln.side}|${ln.ta}|${ln.tb}`);
       const R = ln.side === 'R';
       const fresh = broken && lastT - ln.tBreak <= 24 * HOUR;
       const color = ln._focus ? COLORS.focus : broken ? roleColor(ln.side, fresh ? 0.9 : 0.6) : roleColor(ln.side);
-      const s = this.chart.addSeries(L.LineSeries, {
-        color, lineWidth: ln._focus || !broken || fresh ? 2 : 1,
+      const tag = h4 ? ' H4' : '';
+      seg([{ time: T(t0), value: lineAt(ln, t0) }, { time: T(t1), value: lineAt(ln, t1) }], {
+        color, lineWidth: (ln._focus || !broken || fresh ? 2 : 1) + (h4 ? 1 : 0),
         lineStyle: broken && !ln._focus ? L.LineStyle.Dashed : L.LineStyle.Solid,
-        lastValueVisible: !broken || !!ln._focus, title: broken ? (ln._focus ? (R ? 'phá KC' : 'phá HT') : '') : R ? 'KC' : 'HT',
-        priceLineVisible: false, crosshairMarkerVisible: false,
-        autoscaleInfoProvider: () => null,
-      }, 0);
-      s.setData([{ time: T(t0), value: lineAt(ln, t0) }, { time: T(t1), value: lineAt(ln, t1) }]);
-      this.lineSeries.push(s);
+        lastValueVisible: !broken || !!ln._focus, title: (broken ? (ln._focus ? (R ? 'phá KC' : 'phá HT') : '') : R ? 'KC' : 'HT') + tag,
+      });
+      if (ln.ch && !broken) {           // kênh giá: biên đối diện + đường giữa
+        const opp = R ? 'S' : 'R';
+        seg([{ time: T(t0), value: lineAt(ln, t0) + ln.ch.off }, { time: T(t1), value: lineAt(ln, t1) + ln.ch.off }],
+          { color: roleColor(opp, 0.75), lineWidth: 1 + (h4 ? 1 : 0), lastValueVisible: true, title: (R ? 'đáy kênh' : 'đỉnh kênh') + tag });
+        seg([{ time: T(t0), value: lineAt(ln, t0) + ln.ch.off / 2 }, { time: T(t1), value: lineAt(ln, t1) + ln.ch.off / 2 }],
+          { color: 'rgba(180,140,255,0.55)', lineWidth: 1, lineStyle: L.LineStyle.Dashed });
+      }
     }
 
     // Dấu phá / xác nhận / retest: CHỈ cho các đường đang vẽ — dấu nào cũng có đường đi kèm, không có
@@ -321,18 +348,20 @@ export class ChartView {
     const tf = TFS.find(x => x.id === this.tf);
     const mk = [];
     const info = this.hooks.eventInfo || (() => null);
-    for (const e of this.res.events) {
+    for (const e of this.allEvents()) {
       if (e.t < firstT) continue;
       const isFocus = this.focusMatch && this.focusMatch.ev === e;
-      if (!isFocus && !drawn.has(`${e.line.side}|${e.line.ta}|${e.line.tb}`)) continue;
-      const at = this.snap(tf.ms < HOUR ? e.t + HOUR - 1 : e.t, times);
+      const etf = e.tf || '1H', step = etf === '4H' ? 4 * HOUR : HOUR;
+      if (!isFocus && !drawn.has(`${etf}|${e.line.side}|${e.line.ta}|${e.line.tb}`)) continue;
+      // dấu đặt ở cây nến hiển thị chứa lúc cây phá ĐÓNG (H4: cuối cây H4)
+      const at = this.snap(tf.ms < step ? e.t + step - 1 : e.t, times);
       const up = e.dir === 'LONG';
-      const rec = info(`${this.inst}|${e.type}|${e.side}|${e.line.tBreak}`);
-      const pushed = rec && (rec.pu > 0 || rec.m30 === 'wait');
+      const rec = info(`${this.inst}|${e.type}|${e.side}|${e.line.tBreak}` + (etf === '4H' ? '|4H' : ''));
+      const pushed = rec && (rec.pu > 0 || rec.m30 === 'wait' || rec.m30 === 'follow');
       const base = e.type === 'RETEST' ? [roleColor(e.side), roleColor(e.side, 0.4)]
         : up ? [COLORS.up, 'rgba(195,242,63,0.38)'] : [COLORS.down, 'rgba(242,57,139,0.38)'];
       const color = isFocus ? COLORS.focus : pushed ? base[0] : base[1];
-      const word = e.type === 'BREAK' ? 'Phá' : e.type === 'RETEST' ? 'Retest' : 'XN';
+      const word = (e.type === 'BREAK' ? 'Phá' : e.type === 'RETEST' ? 'Retest' : 'XN') + (etf === '4H' ? ' H4' : '');
       mk.push({
         time: T(at), position: up ? 'belowBar' : 'aboveBar', color,
         shape: e.type === 'BREAK' ? (up ? 'arrowUp' : 'arrowDown') : e.type === 'RETEST' ? 'circle' : 'square',
@@ -357,7 +386,7 @@ export class ChartView {
     this.lineSeries = [];
     for (const s of [this.candles, this.vol, this.ema, this.kY, this.dY, this.kR, this.dR]) s.setData([]);
     this.markers.setMarkers([]);
-    this.bars = null; this.res = null; this.h1 = null;
+    this.bars = null; this.res = null; this.res4 = null; this.h1 = null; this.h4 = null;
   }
 
   zoomTo(ln) {
@@ -390,8 +419,8 @@ export class ChartView {
     clearTimeout(this.h1Debounce);
     this.h1Debounce = setTimeout(async () => {
       try {
-        const { K } = await okx.candles(this.inst, '1H', H1N);
-        this.h1 = K;
+        const [a, b] = await Promise.all([okx.candles(this.inst, '1H', H1N), okx.candles(this.inst, '4H', H1N).catch(() => null)]);
+        this.h1 = a.K; if (b) this.h4 = b.K;
         this.analyze();
       } catch {}
     }, 1500);

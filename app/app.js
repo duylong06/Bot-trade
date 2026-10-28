@@ -203,11 +203,11 @@ function renderLegend(d) {
 let linesTimer = 0;
 function throttleLines() {
   if (linesTimer) return;
-  linesTimer = setTimeout(() => { linesTimer = 0; if (chart && chart.res) renderLines(chart.res, chart.focusMatch); }, 2000);
+  linesTimer = setTimeout(() => { linesTimer = 0; if (chart && chart.res) renderLines(chart.shownLines || [], chart.focusMatch); }, 2000);
 }
 
 // Khung dưới biểu đồ: từng đường đang vẽ, màu theo vai trò (đỏ = kháng cự, xanh = hỗ trợ), trạng thái rõ ràng.
-function renderLines(res, fm) {
+function renderLines(shown, fm) {
   const tick = S.ticks[S.inst], p = v => fmtPrice(v, tick);
   const price = chart.livePrice();
   const now = Date.now();
@@ -215,24 +215,23 @@ function renderLines(res, fm) {
   if (fm) {
     const e = fm.ev, ln = fm.line;
     html += `<div class="banner">${fm.found
-      ? `Đang xem: ${TYPE[e.type]} ${e.dir} · ${esc(cap(ln.kind))} ${ln.span} nến · nến H1 ${hhmm(e.t)} ${ddmm(e.t)}`
+      ? `Đang xem: ${TYPE[e.type]} ${e.dir}${e.tf === '4H' ? ' H4' : ''} · ${esc(cap(ln.kind))} ${ln.span} nến · nến ${e.tf === '4H' ? 'H4' : 'H1'} ${hhmm(e.t)} ${ddmm(e.t)}`
       : `Tín hiệu này đã ra khỏi ${CFG.WINDOW} nến gần nhất — đang vẽ lại theo dữ liệu bot đã lưu.`}</div>`;
   }
-  const lines = [...res.lines];
-  if (fm && !lines.some(x => x.ta === fm.line.ta && x.tb === fm.line.tb)) lines.unshift(fm.line);
+  const lines = [...shown];
   // còn hiệu lực trước (kháng cự rồi hỗ trợ, gần giá trước), đã phá sau (mới nhất trước)
   const distOf = ln => price ? Math.abs(price - lineAt(ln, now)) : 0;
   lines.sort((a, b) => (a.tBreak != null) - (b.tBreak != null)
     || (a.tBreak != null ? b.tBreak - a.tBreak : (a.side === 'S') - (b.side === 'S') || distOf(a) - distOf(b)));
   for (const ln of lines) {
-    const isF = fm && ln.ta === fm.line.ta && ln.tb === fm.line.tb;
+    const isF = !!ln._focus;
     const broken = ln.tBreak != null;
     const nowLine = lineAt(ln, now);
-    const R = ln.side === 'R';
+    const R = ln.side === 'R', h4 = ln.tf === '4H';
     let t2, pr;
     if (broken) {
-      const sig = S.sigMap.get(`${S.inst}|BREAK|${ln.side}|${ln.tBreak}`);
-      const m = sig ? (sig.m30 === 'wait' ? ' · chờ M30' : pushedOf(sig) ? ' · đã báo' : sig.why ? ' · không báo' : '') : '';
+      const sig = S.sigMap.get(`${S.inst}|BREAK|${ln.side}|${ln.tBreak}` + (h4 ? '|4H' : ''));
+      const m = sig ? (sig.m30 === 'wait' ? ' · chờ M30' : sig.m30 === 'follow' ? ' · chờ cây sau' : pushedOf(sig) ? ' · đã báo' : sig.why ? ' · không báo' : '') : '';
       t2 = `<span class="${R ? 'up' : 'down'}">${R ? '▲ Phá lên' : '▼ Phá xuống'}</span> ${hhmm(ln.tBreak)} ${ddmm(ln.tBreak)}${m}`
         + (ln.tConfirm ? ' · gãy cấu trúc' : '') + (ln.tRetest ? ` · retest ${hhmm(ln.tRetest)}` : '');
       pr = p(lineAt(ln, ln.tBreak));
@@ -245,7 +244,7 @@ function renderLines(res, fm) {
     }
     html += `<button class="lrow${isF ? ' focus' : ''}${broken ? ' br' : ''}" data-ta="${ln.ta}" data-tb="${ln.tb}" data-side="${ln.side}">
       <span class="ic"><i class="sw ${isF ? 'F' : ln.side}${broken ? ' d' : ''}"></i></span>
-      <span class="t1"><b class="${ln.side}">${R ? 'Kháng cự' : 'Hỗ trợ'}</b> ${esc(ln.kind.replace(/^(kháng cự|hỗ trợ)\s*/, ''))} · ${ln.span} nến · ${ln.touches} chạm${ln.steep ? ' · dốc' : ''}</span>
+      <span class="t1">${h4 ? '<i class="tfh4">H4</i>' : ''}<b class="${ln.side}">${R ? 'Kháng cự' : 'Hỗ trợ'}</b> ${esc(ln.kind.replace(/^(kháng cự|hỗ trợ)\s*/, ''))} · ${ln.span} nến · ${ln.touches} chạm${ln.ch && !broken ? ` · <span class="chn">kênh: ${R ? 'đáy' : 'đỉnh'} ${p(nowLine + ln.ch.off)}</span>` : ''}</span>
       <span class="pr ${ln.side}">${pr}</span>
       <span class="t2">${t2}</span>
     </button>`;
@@ -336,11 +335,11 @@ function renderSignals() {
     if (d !== day) { day = d; html += `<div class="dayhead">${d === ddmm(Date.now()) ? 'Hôm nay' : d}</div>`; }
     const up = s.dir === 'LONG', ln = s.line || {};
     const ds = `${esc(cap(ln.kind || ''))} · ${ln.span || '?'} nến · ${ln.touches || '?'} chạm` + (s.type === 'BREAK' ? (s.confirmed ? ' · đã gãy cấu trúc' : '') : '') + (ln.steep ? ' · dốc' : '');
-    const pushed = pushedOf(s), wait = s.m30 === 'wait';
+    const pushed = pushedOf(s), wait = s.m30 === 'wait' || s.m30 === 'follow';
     const ex = m30Chip(s) + (pushed || wait ? '' : `<span class="why">không báo: ${esc(s.why || (s.pu == null ? 'trước khi bot chạy' : 'chưa có máy nhận'))}</span>`);
     html += `<button class="srow${pushed || wait ? '' : ' skip'}" data-id="${esc(s.id)}">
       <span class="tm">${hhmm(s.t)}</span>
-      <span class="ti"><span class="co">${esc(labelOf(s.coin))}</span><span class="dir ${up ? 'up' : 'down'}">${up ? '▲ LONG' : '▼ SHORT'}</span><span class="ty ${s.type}">${TYPE[s.type] || s.type}</span></span>
+      <span class="ti"><span class="co">${esc(labelOf(s.coin))}</span>${s.tf === '4H' ? '<i class="tfh4">H4</i>' : ''}<span class="dir ${up ? 'up' : 'down'}">${up ? '▲ LONG' : '▼ SHORT'}</span><span class="ty ${s.type}">${TYPE[s.type] || s.type}</span></span>
       <span class="pr">${fmtPrice(s.close, s.tickSz)}</span>
       <span class="ds">${ds}</span>
       <span class="ex">${ex}</span>
@@ -358,6 +357,8 @@ function m30Chip(s) {
     case 'ok': return `<span class="m30 ok">✓ M30 giữ được · đã báo ${s.m30At ? hhmm(s.m30At) : ''}</span>`;
     case 'wick': return `<span class="m30 ok">✓ M30 rút râu về ${up ? 'đáy' : 'đỉnh'} cây phá nhưng đóng ${up ? 'xanh' : 'đỏ'} · đã báo</span>`;
     case 'nodata': return `<span class="m30">không lấy được nến M30 · vẫn báo</span>`;
+    case 'follow': return `<span class="m30 wait">⏳ cây phá chưa đẹp (sai màu / râu dài hơn thân) · chờ cây ${s.tf === '4H' ? 'H4' : 'H1'} sau, xét lúc ${hhmm(s.followAt)}</span>`;
+    case 'follow-ok': return `<span class="m30 ok">✓ cây ${s.tf === '4H' ? 'H4' : 'H1'} sau đóng tiếp ${up ? 'trên' : 'dưới'} đường · đã báo</span>`;
     default: return '';
   }
 }
@@ -520,6 +521,7 @@ function renderBot() {
   const m3 = st.m30;
   if (m3) html += row('Xét nến M30 gần nhất', `${hhmm(m3.closeAt)} ${ddmm(m3.closeAt)} · báo ${m3.pushed} · bỏ ${m3.skipped}`);
   if (st.pending && st.pending.length) html += row('Đang chờ M30', `${st.pending.length} cú phá · xét lúc ${hhmm(Math.min(...st.pending.map(p => p.m30Close)))}`);
+  if (st.following && st.following.length) html += row('Chờ cây sau', `${st.following.length} cú phá yếu · xét lúc ${hhmm(Math.min(...st.following.map(p => p.at)))}`);
   html += row('Máy nhận thông báo', String(st.push ? st.push.configured : 0) + (st.push && st.push.fromApp ? ` (${st.push.fromApp} tự đăng ký)` : ''));
   html += row('Nguồn giá', esc((st.host || (ls && ls.host) || '').replace('https://', '')));
   html += '</dl>';
@@ -531,36 +533,38 @@ function renderRules() {
   const pins = PINNED.map(id => nameOf(coinOf(id)) || coinOf(id));
   const items = [
     `Theo dõi <b>top ${TOP_N} đồng theo vốn hoá</b> (CoinGecko, cập nhật mỗi giờ). Đồng nào không có hợp đồng USDT vĩnh cửu trên OKX, stablecoin, token bọc → lấy đồng vốn hoá kế tiếp${pins.length ? `. Luôn theo dõi thêm ${pins.join(', ')}` : ''}.`,
-    `Nến H1, xét ${CFG.WINDOW} nến gần nhất. Mô hình phải dài <b>từ ${CFG.MIN_PATTERN} nến H1</b> trở lên (tính từ điểm neo đầu tới cây phá).`,
-    `<span class="sw R"></span><b>Kháng cự</b> nối các đỉnh (râu trên), <span class="sw S"></span><b>Hỗ trợ</b> nối các đáy (râu dưới). Cần ít nhất ${CFG.MIN_TOUCH} lần chạm; giữa hai lần chạm giá phải bật ra ≥ ${CFG.REACT} ATR.`,
-    `Chỉ kẻ đường thuận chiều phá: kháng cự <b>giảm/ngang</b> (phá lên → LONG), hỗ trợ <b>tăng/ngang</b> (phá xuống → SHORT). Không kẻ kháng cự tăng, hỗ trợ giảm.`,
-    `Điểm neo đầu phải là đáy/đỉnh thật: phía trước nó không có đáy thấp hơn / đỉnh cao hơn. Không neo vào cây râu kim (râu dài gấp đôi thân và thò ra ≥ ${CFG.NEEDLE_OUT} ATR so với các nến quanh).`,
-    `Biểu đồ: mỗi phía vẽ tối đa ${CFG.SHOW_PER_SIDE} đường còn hiệu lực gần giá (nét liền, nhãn KC/HT ở trục giá). Hai đường cùng phía cách nhau dưới ${CFG.ZONE_ATR} ATR là một vùng — chỉ vẽ đường rõ nhất; bỏ các đường chung điểm neo. Đường vừa bị phá trong ${CFG.SHOW_BROKEN_WITHIN} giờ: nét đứt, mỗi phía một đường. Dấu Phá / XN / Retest chỉ hiện trên đường đang vẽ.`,
-    `<b>Phá</b> = nến H1 <b>đóng cửa</b> ra ngoài đường (râu không tính). Cây phá là cây giật râu (râu theo chiều phá ≥ ${CFG.SPIKE_WICK} ATR và ≥ ${CFG.SPIKE_RATIO} lần thân) → không báo.`,
-    `<b>Luật M30</b>: phá xong chưa báo ngay. Chờ cây M30 đầu tiên của giờ sau đóng (phút :30). LONG: M30 chạm về ≤ đáy cây phá → không báo, trừ khi M30 đóng xanh (rút râu). SHORT: M30 chạm ≥ đỉnh cây phá → không báo, trừ khi đóng đỏ.`,
-    `<b>Xác nhận</b> = đóng cửa vượt đỉnh/đáy cuối cùng nằm trên đường (gãy cấu trúc). <b>Retest</b> = sau khi phá, giá chạy xa ≥ ${CFG.AWAY} ATR rồi quay về chạm đường và đóng cửa giữ được. Hai loại này báo ngay khi nến H1 đóng.`,
-    `Thông báo: ${ALERTS.map(a => TYPE[a]).join(', ')}${MIN_SPAN_ALERT ? `, chỉ mô hình từ ${MIN_SPAN_ALERT} nến` : ''}. Mỗi cú phá một tin, không giới hạn.`,
+    `Kẻ đường trên <b>H1</b> và <b>H4</b> (H1 nhiều râu thì đường rõ nằm ở H4). Mỗi khung xét tối đa ${CFG.WINDOW} nến; mô hình dài <b>từ ${CFG.MIN_PATTERN} nến</b> trở lên.`,
+    `<span class="sw R"></span><b>Kháng cự giảm</b> nối các đỉnh thấp dần (downtrend), <span class="sw S"></span><b>hỗ trợ tăng</b> nối các đáy cao dần (uptrend), đi ngang thì nối các đỉnh/đáy tương đương. Không kẻ kháng cự tăng, hỗ trợ giảm.`,
+    `Điểm neo và mỗi lần chạm phải là <b>đỉnh/đáy đẹp, rõ ràng</b>: không phải cây rút râu (râu dài gấp đôi cây nến bình thường, hoặc chọc hẳn ra khỏi các nến xung quanh rồi quay về). Giữa hai lần chạm giá phải lùi khỏi đường rõ rệt. Cần ≥ ${CFG.MIN_TOUCH} lần chạm, hoặc 2 nếu cả hai là đỉnh/đáy lớn (cao/thấp nhất ±${CFG.MAJOR} nến).`,
+    `Từ điểm neo đầu tới cây phá: <b>không thân nến nào vượt đường</b>; râu chỉ được chạm — quá ${CFG.POKE_TOTAL} râu xuyên đường là đường kẻ sai, bỏ. Một đỉnh/đáy có thể là điểm neo của nhiều đường.`,
+    `<b>Kênh giá</b>: đường song song qua đáy thấp nhất (kênh giảm) / đỉnh cao nhất (kênh tăng) trong mô hình, khi biên đó cũng được chạm ≥ 2 lần — để thấy giá đang chạy trong biên nào (biên kênh + đường giữa đứt).`,
+    `<b>Phá</b> = cây nến đóng cửa ra ngoài đường (râu không tính). Cây phá <b>đẹp</b>: phá lên nến xanh, phá xuống nến đỏ, thân dài hơn râu, đóng xa đường ≥ ${CFG.BREAK_MIN} ATR.`,
+    `<b>H1 phá đẹp → luật M30</b>: chờ cây M30 đầu tiên của giờ sau đóng (phút :30). LONG: M30 chạm về ≤ đáy cây phá → không báo, trừ khi M30 đóng xanh. SHORT: M30 chạm ≥ đỉnh cây phá → không báo, trừ khi đóng đỏ.`,
+    `<b>Cây phá chưa đẹp</b> (sai màu, râu dài hơn thân, đóng sát đường) → không xét M30, chờ cây kế tiếp: đóng tiếp ngoài đường, đúng màu thì báo; quay lại trong đường là phá giả, đường vẫn còn.`,
+    `<b>H4 phá đẹp</b> → báo ngay khi cây H4 đóng (03, 07, 11, 15, 19, 23 giờ); chưa đẹp → chờ cây H4 sau.`,
+    `<b>Xác nhận</b> = đóng cửa vượt đỉnh/đáy cuối cùng nằm trên đường (gãy cấu trúc). <b>Retest</b> = giá chạy xa ≥ ${CFG.AWAY} ATR rồi quay về chạm đường, đóng cửa giữ được. Báo ngay khi nến đóng.`,
+    `Chỉ báo tín hiệu của cây nến VỪA đóng (đúng lúc), không báo bù tín hiệu cũ. Mỗi cú phá một tin, không giới hạn.`,
   ];
   $('#rules').innerHTML = items.map(x => `<li>${x}</li>`).join('');
 }
 
 /* ======================= ĐIỀU HƯỚNG ======================= */
 
-const focusOf = s => ({ ev: s.type, t: s.t, line: s.line });
+const focusOf = s => ({ ev: s.type, t: s.t, line: s.line, tf: s.tf || '1H' });
 
-async function openFromSignal(inst, ev, t) {
+async function openFromSignal(inst, ev, t, tf = '1H') {
   showTab('chart');
-  const find = () => S.signals.find(x => x.instId === inst && x.type === ev && x.t === t);
+  const find = () => S.signals.find(x => x.instId === inst && x.type === ev && x.t === t && (x.tf || '1H') === tf);
   let sig = find();
   if (!sig) { await loadData(true); sig = find(); }
-  openSymbol(inst, sig ? focusOf(sig) : { ev, t, line: null });
+  openSymbol(inst, sig ? focusOf(sig) : { ev, t, line: null, tf });
 }
 
 function route(hash) {
   const q = new URLSearchParams(String(hash || '').replace(/^#/, ''));
   const s = q.get('s');
   if (s) {
-    openFromSignal(s, q.get('ev'), +q.get('t'));
+    openFromSignal(s, q.get('ev'), +q.get('t'), q.get('tf') || '1H');
     try { history.replaceState(null, '', location.pathname); } catch {}
     return true;
   }
@@ -592,7 +596,7 @@ function bindUI() {
   });
   $('#lines').addEventListener('click', e => {
     const b = e.target.closest('[data-ta]'); if (!b || !chart.res) return;
-    const ln = chart.res.lines.find(x => String(x.ta) === b.dataset.ta && String(x.tb) === b.dataset.tb)
+    const ln = (chart.shownLines || []).find(x => String(x.ta) === b.dataset.ta && String(x.tb) === b.dataset.tb)
       || (chart.focusMatch && chart.focusMatch.line);
     if (ln) chart.zoomTo(ln);
   });

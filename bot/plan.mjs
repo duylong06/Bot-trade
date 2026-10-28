@@ -12,26 +12,29 @@ export function buildMessage(e) {
   const arrow = up ? '▲' : '▼';
   const lvl = up ? 'đỉnh' : 'đáy';
   let title, body;
+  const tf = e.tf === '4H' ? ' H4' : '';
   if (e.type === 'BREAK') {
-    title = `${arrow} ${e.dir} ${name} · phá ${L.kind}`;
+    title = `${arrow} ${e.dir} ${name} · phá ${L.kind}${tf}`;
     body = `Đóng cửa ${p(e.close)} ${up ? 'trên' : 'dưới'} đường ${p(e.linePrice)} · mô hình ${L.span} nến, ${L.touches} chạm.`;
     body += e.confirmed ? `\nĐã ${up ? 'vượt' : 'thủng'} ${lvl} cũ ${p(e.level)} ✓` : `\nChưa ${up ? 'vượt' : 'thủng'} ${lvl} cũ ${p(e.level)}.`;
     if (L.steep) body += ' Đường dốc — thường không có retest.';
     if (e.others) body += ` Cùng lúc phá thêm ${e.others} đường.`;
   } else if (e.type === 'CONFIRM') {
-    title = `✓ Xác nhận ${e.dir} ${name}`;
+    title = `✓ Xác nhận ${e.dir} ${name}${tf}`;
     body = `Đóng cửa ${p(e.close)} ${up ? 'vượt' : 'thủng'} ${lvl} cũ ${p(e.level)} — cấu trúc đã gãy. Phá ${L.kind} ${L.span} nến lúc ${hhmm(L.tBreak)}.`;
   } else {
-    title = `↺ Retest ${e.dir} ${name}`;
+    title = `↺ Retest ${e.dir} ${name}${tf}`;
     body = `Giá quay về chạm ${L.kind} ${L.span} nến vừa phá (${p(e.linePrice)}) và đóng cửa giữ được ở ${p(e.close)}.`;
   }
-  if (e.m30) body += e.m30.touch
+  if (e.m30 && typeof e.m30 === 'object') body += e.m30.touch
     ? `\nNến M30 sau đó có rút râu về ${up ? 'đáy' : 'đỉnh'} cây phá nhưng đóng ${up ? 'xanh' : 'đỏ'} — vẫn giữ.`
     : `\nĐã giữ được 30 phút: nến M30 không quay về ${up ? 'đáy' : 'đỉnh'} cây phá.`;
+  if (e.nextBar) body += `\nCây phá chưa đẹp (sai màu / râu dài hơn thân / đóng sát đường) → đã chờ cây ${e.tf || 'H1'} sau: đóng ${p(e.nextBar.c)} tiếp tục ${up ? 'trên' : 'dưới'} đường ✓`;
   if (e.also && e.also.length) body += `\nKèm: ${e.also.map(a => `${NAME[a.type].toLowerCase()} đường ${a.line.span} nến`).join(', ')}.`;
-  body += `\nNến H1 ${hhmm(e.t)}`;
+  body += e.tf === '4H' ? `\nNến H4 ${hhmm(e.t)}–${hhmm(e.t + 4 * 3600e3)}` : `\nNến H1 ${hhmm(e.t)}`;
   const q = new URLSearchParams({ s: e.instId, ev: e.type, t: String(e.t) });
-  return { title, body, url: './#' + q.toString(), tag: `${e.instId}|${e.type}|${e.t}` };
+  if (e.tf === '4H') q.set('tf', '4H');
+  return { title, body, url: './#' + q.toString(), tag: `${e.instId}|${e.type}|${e.t}|${e.tf || '1H'}` };
 }
 
 /**
@@ -43,7 +46,7 @@ export function buildMessage(e) {
 export function plan(events) {
   const groups = new Map();
   for (const e of events) {
-    const k = e.instId + '|' + e.dir + '|' + e.t;
+    const k = e.instId + '|' + e.dir + '|' + e.t + '|' + (e.tf || '1H');
     if (!groups.has(k)) groups.set(k, []);
     groups.get(k).push(e);
   }
