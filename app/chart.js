@@ -312,6 +312,7 @@ export class ChartView {
     // Đã phá = nét đứt mờ, chỉ kéo tới sau cú phá 24 giờ (hoặc retest + 6 giờ). Đang xem = vàng.
     // Đường H4 vẽ dày hơn, nhãn "KC H4"/"HT H4". Kênh giá: biên song song (màu của vai trò biên đó) + đường giữa đứt.
     const drawn = new Set();
+    let chDone = false;
     const seg = (pts, opts) => {
       const s = this.chart.addSeries(L.LineSeries, { priceLineVisible: false, crosshairMarkerVisible: false, autoscaleInfoProvider: () => null, lastValueVisible: false, ...opts }, 0);
       s.setData(pts); this.lineSeries.push(s);
@@ -332,11 +333,15 @@ export class ChartView {
         lineStyle: broken && !ln._focus ? L.LineStyle.Dashed : L.LineStyle.Solid,
         lastValueVisible: !broken || !!ln._focus, title: (broken ? (ln._focus ? (R ? 'phá KC' : 'phá HT') : '') : R ? 'KC' : 'HT') + tag,
       });
-      if (ln.ch && !broken) {           // kênh giá: biên đối diện + đường giữa
-        const opp = R ? 'S' : 'R';
-        seg([{ time: T(t0), value: lineAt(ln, t0) + ln.ch.off }, { time: T(t1), value: lineAt(ln, t1) + ln.ch.off }],
-          { color: roleColor(opp, 0.75), lineWidth: 1 + (h4 ? 1 : 0), lastValueVisible: true, title: (R ? 'đáy kênh' : 'đỉnh kênh') + tag });
-        seg([{ time: T(t0), value: lineAt(ln, t0) + ln.ch.off / 2 }, { time: T(t1), value: lineAt(ln, t1) + ln.ch.off / 2 }],
+      // Kênh giá (tối đa 1 kênh trên biểu đồ — của đường đang xem, hoặc đường còn hiệu lực đầu tiên có kênh):
+      // biên bên kia là một trendline thật, gần song song; thêm đường giữa đứt.
+      if (ln.ch && !broken && !chDone && (ln._focus || !lines.some(x => x._focus && x.ch))) {
+        chDone = true;
+        const M = ln.ch.line, opp = R ? 'S' : 'R';
+        const m0 = this.snap(Math.max(M.ta, times[0]), times), s0 = this.snap(Math.max(ln.ta, M.ta), times);
+        seg([{ time: T(m0), value: lineAt(M, m0) }, { time: T(t1), value: lineAt(M, t1) }],
+          { color: roleColor(opp, 0.8), lineWidth: 1 + (h4 ? 1 : 0), lastValueVisible: true, title: (R ? 'đáy kênh' : 'đỉnh kênh') + tag });
+        seg([{ time: T(s0), value: (lineAt(M, s0) + lineAt(ln, s0)) / 2 }, { time: T(t1), value: (lineAt(M, t1) + lineAt(ln, t1)) / 2 }],
           { color: 'rgba(180,140,255,0.55)', lineWidth: 1, lineStyle: L.LineStyle.Dashed });
       }
     }

@@ -244,7 +244,7 @@ function renderLines(shown, fm) {
     }
     html += `<button class="lrow${isF ? ' focus' : ''}${broken ? ' br' : ''}" data-ta="${ln.ta}" data-tb="${ln.tb}" data-side="${ln.side}">
       <span class="ic"><i class="sw ${isF ? 'F' : ln.side}${broken ? ' d' : ''}"></i></span>
-      <span class="t1">${h4 ? '<i class="tfh4">H4</i>' : ''}<b class="${ln.side}">${R ? 'Kháng cự' : 'Hỗ trợ'}</b> ${esc(ln.kind.replace(/^(kháng cự|hỗ trợ)\s*/, ''))} · ${ln.span} nến · ${ln.touches} chạm${ln.ch && !broken ? ` · <span class="chn">kênh: ${R ? 'đáy' : 'đỉnh'} ${p(nowLine + ln.ch.off)}</span>` : ''}</span>
+      <span class="t1">${h4 ? '<i class="tfh4">H4</i>' : ''}<b class="${ln.side}">${R ? 'Kháng cự' : 'Hỗ trợ'}</b> ${esc(ln.kind.replace(/^(kháng cự|hỗ trợ)\s*/, ''))} · ${ln.span} nến · ${ln.touches} chạm${ln.ch && !broken ? ` · <span class="chn">kênh: ${R ? 'đáy' : 'đỉnh'} ${p(lineAt(ln.ch.line, now))}</span>` : ''}</span>
       <span class="pr ${ln.side}">${pr}</span>
       <span class="t2">${t2}</span>
     </button>`;
@@ -536,8 +536,9 @@ function renderRules() {
     `Kẻ đường trên <b>H1</b> và <b>H4</b> (H1 nhiều râu thì đường rõ nằm ở H4). Mỗi khung xét tối đa ${CFG.WINDOW} nến; mô hình dài <b>từ ${CFG.MIN_PATTERN} nến</b> trở lên.`,
     `<span class="sw R"></span><b>Kháng cự giảm</b> nối các đỉnh thấp dần (downtrend), <span class="sw S"></span><b>hỗ trợ tăng</b> nối các đáy cao dần (uptrend), đi ngang thì nối các đỉnh/đáy tương đương. Không kẻ kháng cự tăng, hỗ trợ giảm.`,
     `Điểm neo và mỗi lần chạm phải là <b>đỉnh/đáy đẹp, rõ ràng</b>: không phải cây rút râu (râu dài gấp đôi cây nến bình thường, hoặc chọc hẳn ra khỏi các nến xung quanh rồi quay về). Giữa hai lần chạm giá phải lùi khỏi đường rõ rệt. Cần ≥ ${CFG.MIN_TOUCH} lần chạm, hoặc 2 nếu cả hai là đỉnh/đáy lớn (cao/thấp nhất ±${CFG.MAJOR} nến).`,
+    `Đỉnh/đáy là <b>vùng đi ngang nhiều râu ngắn</b> → đường đi qua <b>trung bình các đầu râu</b>, không thấp hơn thân nến cao nhất (kháng cự) / không cao hơn thân thấp nhất (hỗ trợ). Đỉnh/đáy nhọn thì kẻ ở đầu râu.`,
     `Từ điểm neo đầu tới cây phá: <b>không thân nến nào vượt đường</b>; râu chỉ được chạm — quá ${CFG.POKE_TOTAL} râu xuyên đường là đường kẻ sai, bỏ. Một đỉnh/đáy có thể là điểm neo của nhiều đường.`,
-    `<b>Kênh giá</b>: đường song song qua đáy thấp nhất (kênh giảm) / đỉnh cao nhất (kênh tăng) trong mô hình, khi biên đó cũng được chạm ≥ 2 lần — để thấy giá đang chạy trong biên nào (biên kênh + đường giữa đứt).`,
+    `<b>Kênh giá</b>: chỉ vẽ khi phía bên kia cũng có một trendline thật (đủ luật) chạy gần song song, cùng cỡ mô hình — không tự kẻ song song qua một đỉnh/đáy lẻ. Vẽ biên kênh + đường giữa đứt, tối đa 1 kênh.`,
     `<b>Phá</b> = cây nến đóng cửa ra ngoài đường (râu không tính). Cây phá <b>đẹp</b>: phá lên nến xanh, phá xuống nến đỏ, thân dài hơn râu, đóng xa đường ≥ ${CFG.BREAK_MIN} ATR.`,
     `<b>H1 phá đẹp → luật M30</b>: chờ cây M30 đầu tiên của giờ sau đóng (phút :30). LONG: M30 chạm về ≤ đáy cây phá → không báo, trừ khi M30 đóng xanh. SHORT: M30 chạm ≥ đỉnh cây phá → không báo, trừ khi đóng đỏ.`,
     `<b>Cây phá chưa đẹp</b> (sai màu, râu dài hơn thân, đóng sát đường) → không xét M30, chờ cây kế tiếp: đóng tiếp ngoài đường, đúng màu thì báo; quay lại trong đường là phá giả, đường vẫn còn.`,

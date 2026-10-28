@@ -79,7 +79,8 @@ phá vỡ phải là giá đóng cửa dứt khoát; khung nhỏ nhiều nhiễu
 | Đường sạch | từ điểm neo đầu tới cây phá: không thân nến nào vượt đường; râu chỉ được chạm — quá 2 râu xuyên đường (> 0,35 ATR) là đường kẻ sai, bỏ |
 | Đỉnh/đáy thật | điểm neo đầu là đỉnh cao nhất / đáy thấp nhất của vùng phía trước (bỏ qua cây bất thường như cây giật ALGO 08/10) |
 | Một đỉnh nhiều đường | một đỉnh/đáy được làm điểm neo cho nhiều đường; app chỉ vẽ đường rõ nhất mỗi vùng giá (2 đường cùng phía cách nhau ≤ 3 ATR) |
-| Kênh giá | đường song song qua đáy thấp nhất (kênh giảm) / đỉnh cao nhất (kênh tăng) trong mô hình, khi biên đó cũng được chạm ≥ 2 lần — app vẽ biên kênh + đường giữa đứt |
+| Vùng nhiều râu ngắn | đỉnh/đáy là vùng đi ngang nhiều râu ngắn (≥ 4 cây trong ±4 nến) → đường qua **trung bình các đầu râu**, không thấp hơn thân nến cao nhất (kháng cự) / không cao hơn thân thấp nhất (hỗ trợ); đỉnh/đáy nhọn kẻ ở đầu râu. Râu ngắn mà thân vẫn trong đường không tính là cắt râu |
+| Kênh giá | chỉ khi **phía bên kia cũng có một trendline thật** (đủ luật) gần song song (hai biên lệch nhau ≤ 25% bề rộng kênh), cùng cỡ mô hình. Không tự kẻ song song qua một đỉnh/đáy lẻ. App vẽ tối đa 1 kênh: biên kênh + đường giữa đứt |
 | Phá | cây nến **đóng cửa** ngoài đường (râu không tính) |
 | Cây phá đẹp | phá lên **nến xanh**, phá xuống **nến đỏ**, **thân dài hơn cả hai râu**, đóng xa đường ≥ 0,15 ATR |
 | H1 phá đẹp → **luật M30** | chờ cây M30 đầu tiên của giờ sau (phút :30). LONG: M30 chạm về ≤ đáy cây phá → không báo, trừ khi M30 đóng xanh. SHORT: ngược lại |

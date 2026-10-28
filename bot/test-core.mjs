@@ -32,6 +32,14 @@ function gen({ n, keys, seed = 1, amp = 0.6, wick = 0.4, pin = [] }) {
 }
 // ghi đè một cây nến
 function setBar(K, i, o, h, l, c) { K.o[i] = o; K.h[i] = h; K.l[i] = l; K.c[i] = c; if (i + 1 < K.c.length) K.o[i + 1] = c; }
+// Làm đỉnh (side 'R') / đáy ('S') ở nến p thành đỉnh/đáy NHỌN: các nến ±4 bên cạnh thấp hơn rõ (không thành vùng đi ngang).
+function sharpen(K, p, side, d = 1.2) {
+  for (let q = p - 4; q <= p + 4; q++) {
+    if (q === p || q < 0 || q >= K.c.length) continue;
+    if (side === 'R') { const cap = K.h[p] - d; K.h[q] = Math.min(K.h[q], cap); K.o[q] = Math.min(K.o[q], cap); K.c[q] = Math.min(K.c[q], cap); K.l[q] = Math.min(K.l[q], Math.min(K.o[q], K.c[q])); }
+    else { const fl = K.l[p] + d; K.l[q] = Math.max(K.l[q], fl); K.o[q] = Math.max(K.o[q], fl); K.c[q] = Math.max(K.c[q], fl); K.h[q] = Math.max(K.h[q], Math.max(K.o[q], K.c[q])); }
+  }
+}
 const show = ev => `${ev.type} ${ev.dir} @${ev.i} span=${ev.line.span} touches=${ev.line.touches} ${ev.line.kind}${ev.confirmed ? ' [đã gãy cấu trúc]' : ''}`;
 
 /* 1. Kháng cự giảm 200 nến, phá lên bằng nến thân dài */
@@ -40,6 +48,7 @@ const show = ev => `${ev.type} ${ev.dir} @${ev.i} span=${ev.line.span} touches=$
   const K = gen({ n: 200, seed: 7, amp: 0.5, wick: 0.35,
     keys: [[0, 125.5], [14, 130], [34, 118], [56, 124.14], [76, 112], [100, 118], [122, 107], [146, 111.58], [158, 105.5], [166, 107], [175, 114], [190, 118], [199, 119]],
     pin: [14, 56, 100, 146] });
+  for (const p of [14, 56, 100, 146]) sharpen(K, p, 'R', 0.6);
   // nến 168 là nến phá dứt khoát
   const y = 130 - (168 - 14) * (12 / 86);
   setBar(K, 168, K.c[167], y + 2.4, K.c[167] - 0.1, y + 2.1);
@@ -75,9 +84,10 @@ const show = ev => `${ev.type} ${ev.dir} @${ev.i} span=${ev.line.span} touches=$
   const VN = (d, h) => Date.UTC(2026, 9, d, h - 7);       // giờ Việt Nam → mili giây
   const breakAt = (coin, t) => analyze(load(coin)).events.find(e => e.type === 'BREAK' && e.dir === 'SHORT' && e.t === t && e.line.kind === 'hỗ trợ tăng');
   for (const [coin, h, was] of [['DASH', 9, 15], ['AAVE', 14, 15]]) {
-    const br = breakAt(coin, VN(22, h));
+    // (đáy vùng đi ngang nhiều râu ngắn kẻ qua trung bình râu → đường có thể cao hơn chút, phá sớm hơn)
+    const br = analyze(load(coin)).events.find(e => e.type === 'BREAK' && e.dir === 'SHORT' && e.t <= VN(22, h) && e.t >= VN(22, 0) && e.line.kind === 'hỗ trợ tăng');
     if (br) console.log(`    ${coin}: ${show(br)}`);
-    ok(!!br, `${coin}: báo phá hỗ trợ tăng ngay nến ${h}:00 22/10 (trước đây ${was}:00)`);
+    ok(!!br, `${coin}: báo phá hỗ trợ tăng chậm nhất nến ${h}:00 22/10 (trước đây ${was}:00)`);
   }
   {   // ETH: đáy 08:00 20/10 là cây rút râu (râu dưới dài gấp ~2 cây bình thường) → không còn được làm điểm neo
     const r = analyze(load('ETH'));
@@ -98,6 +108,7 @@ const show = ev => `${ev.type} ${ev.dir} @${ev.i} span=${ev.line.span} touches=$
   const K = gen({ n: 120, seed: 21, amp: 0.4, wick: 0.3,
     keys: [[0, 112], [10, 116], [25, 108], [40, 114], [55, 106], [70, 112], [85, 104], [95, 106], [110, 108], [119, 109]],
     pin: [10, 40, 70] });
+  for (const p of [10, 40, 70]) sharpen(K, p, 'R', 0.8);
   const y = i => 116 - (i - 10) * (2 / 30);
   setBar(K, 96, K.c[95], y(96) + 3, K.c[95] - 0.1, y(96) - 0.6);   // râu xuyên 3, thân đóng trong
   setBar(K, 104, K.c[103], y(104) + 2.4, K.c[103] - 0.1, y(104) + 2.0); // đóng cửa vượt dứt khoát

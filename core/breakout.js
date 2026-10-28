@@ -63,7 +63,11 @@ const DEFAULTS = {
   WICK_ALLOW: 1,      //   … cho phép tối đa 1 râu như vậy của nến thường …
   RUT_ALLOW: 2,       //   … và 2 râu của cây rút râu (không phải đỉnh/đáy thật) …
   POKE_TOTAL: 2,      //   … tổng cộng tối đa 2; nhiều hơn = đường cắt qua râu → bỏ
-  CH_TOUCH: 0.12,     // kênh giá: đáy/đỉnh cách biên kênh ≤ 12% bề rộng kênh coi là chạm biên
+  SHORT_WICK: 0.6,    // râu ngắn: ≤ 0,6 lần cây nến bình thường (râu ngắn mà thân trong đường thì không tính là cắt râu)
+  CL_MIN: 4,          // vùng đỉnh/đáy đi ngang: ≥ 4 cây trong ±4 nến …
+  CL_BODY: 0.6,       //   … thân cách thân cao nhất ≤ 0,6 ATR …
+  CL_TIP: 1.0,        //   … đầu râu cách đầu râu cao nhất ≤ 1 ATR → kẻ qua trung bình các đầu râu
+  PAR: 0.25,          // kênh giá: hai biên lệch nhau (hội tụ/loe ra) không quá 25% bề rộng kênh trên đoạn chung
   PROM: 0.3,          // giữa hai lần chạm, giá phải lùi khỏi đường ≥ 30% bề rộng mô hình (đỉnh/đáy rõ ràng)
   LEFT: 0.5,          // điểm neo đầu là đáy/đỉnh thấp/cao nhất trong khoảng phía trước dài bằng 0,5 × chiều dài đường
   LEFT_MAX: 120,      //   (tối đa 120 nến)
@@ -208,9 +212,34 @@ function leftStrength(K, A, X, piv, s, side, base) {
 /* ---------- dò đường ---------- */
 
 // side 'R' = kháng cự (nối đỉnh, phá LÊN → LONG); 'S' = hỗ trợ (nối đáy, phá XUỐNG → SHORT)
-function candidates(K, A, piv, side, base) {
+// Mức kẻ đường tại một đỉnh/đáy. Thường là đầu râu. Nhưng nếu đỉnh/đáy là một VÙNG ĐI NGANG nhiều râu ngắn
+// (≥ 4 cây trong ±4 nến có thân sát thân cao nhất và đầu râu sát đầu râu cao nhất), đường đi qua TRUNG BÌNH các
+// đầu râu đó, không thấp hơn thân nến cao nhất (kháng cự) / không cao hơn thân thấp nhất (hỗ trợ) — như ICP 22/10.
+// Đỉnh/đáy nhọn (giá quay đầu nhanh) vẫn kẻ ở đầu râu.
+function levelAt(K, A, i, side, base) {
+  const s = side === 'R' ? 1 : -1, X = side === 'R' ? K.h : K.l, N = X.length;
+  const edge = j => (side === 'R' ? Math.max(K.o[j], K.c[j]) : Math.min(K.o[j], K.c[j]));
+  const lo = Math.max(0, i - 4), hi = Math.min(N - 1, i + 4);
+  let top = -Infinity;
+  for (let j = lo; j <= hi; j++) top = Math.max(top, edge(j) * s);
+  const mem = [];
+  for (let j = lo; j <= hi; j++)
+    if (top - edge(j) * s <= CFG.CL_BODY * A[i] && (X[i] - X[j]) * s <= CFG.CL_TIP * A[i] && isClean(K, A, j, side, base)) mem.push(j);
+  const shortN = mem.filter(j => j !== i && (X[j] - edge(j)) * s <= CFG.SHORT_WICK * base).length;
+  if (mem.length < CFG.CL_MIN || shortN < CFG.CL_MIN) return X[i];      // phải là vùng NHIỀU RÂU NGẮN
+  const avg = mem.reduce((t, j) => t + X[j], 0) / mem.length;
+  const body = top * s;
+  return s > 0 ? Math.max(avg, body) : Math.min(avg, body);
+}
+
+function candidates(K, A, piv, side, base, trendOnly = CFG.TREND_ONLY) {
   const s = side === 'R' ? 1 : -1;
   const X = side === 'R' ? K.h : K.l;
+  const edge = j => (side === 'R' ? Math.max(K.o[j], K.c[j]) : Math.min(K.o[j], K.c[j]));
+  const lv = new Map(piv.map(i => [i, levelAt(K, A, i, side, base)]));   // mức kẻ đường ở mỗi đỉnh/đáy
+  // râu ngắn mà thân vẫn nằm trong đường thì không tính là "râu cắt qua đường"
+  const pokesOut = (i, y) => (X[i] - y) * s > CFG.WICK_MAX * A[i]
+    && !((X[i] - edge(i)) * s <= CFG.SHORT_WICK * base && (edge(i) - y) * s <= CFG.TOL * A[i]);
   const Y = side === 'R' ? K.l : K.h;   // phía bật ra xa đường
   const C = K.c, N = C.length, out = [];
   const st = pivotStrength(K, piv, side);
@@ -224,8 +253,8 @@ function candidates(K, A, piv, side, base) {
     for (let b = a + 1; b < good.length; b++) {
       const ib = good[b];
       if (ib - ia < CFG.MIN_SPAN) continue;
-      const m = (X[ib] - X[ia]) / (ib - ia);
-      const y0 = X[ia] - m * ia;
+      const m = (lv.get(ib) - lv.get(ia)) / (ib - ia);
+      const y0 = lv.get(ia) - m * ia;
 
       // Giữa hai điểm neo: không thân nến nào vượt đường; râu xuyên quá WICK_MAX thì đếm. Râu của cây rút râu
       // (không phải đỉnh/đáy thật) đếm riêng, cho phép nhiều hơn một chút; tổng cộng tối đa POKE_TOTAL.
@@ -237,7 +266,7 @@ function candidates(K, A, piv, side, base) {
       for (let i = ia + 1; i < ib; i++) {
         const y = y0 + m * i;
         if ((C[i] - y) * s > CFG.TOL * A[i]) { ok = false; break; }
-        if ((X[i] - y) * s > CFG.WICK_MAX * A[i] && poke(i)) { ok = false; break; }
+        if (pokesOut(i, y) && poke(i)) { ok = false; break; }
       }
       if (!ok) continue;
 
@@ -253,14 +282,14 @@ function candidates(K, A, piv, side, base) {
           if (weak && i + 1 < N && (C[i + 1] - (y0 + m * (i + 1))) * s <= 0 && fakes < 1) { fakes++; continue; }
           v = i; break;
         }
-        if ((X[i] - y) * s > CFG.WICK_MAX * A[i] && poke(i)) { ok = false; break; }
+        if (pokesOut(i, y) && poke(i)) { ok = false; break; }
       }
       if (!ok) continue;
       const end = v < 0 ? N : v;
       if (end - ia < CFG.MIN_PATTERN) continue;                     // mô hình quá ngắn
 
       // Chỉ đường thuận xu hướng: hỗ trợ không đi xuống, kháng cự không đi lên.
-      if (CFG.TREND_ONLY) {
+      if (trendOnly) {
         const slope = m / ((A[ia] + A[Math.min(end, N - 1)]) / 2);
         if (s * slope > 0 && kindOf(side, slope, end - ia).endsWith(s > 0 ? 'tăng' : 'giảm')) continue;
       }
@@ -283,7 +312,7 @@ function candidates(K, A, piv, side, base) {
       for (let q = a; q < good.length && good[q] < end; q++) {
         const p = good[q];
         if (p !== ia && p !== ib && st.get(p) < needTouch) continue;
-        if (Math.abs(X[p] - (y0 + m * p)) > CFG.TOUCH * A[p]) continue;
+        if (Math.abs(lv.get(p) - (y0 + m * p)) > CFG.TOUCH * A[p]) continue;
         if (last >= 0) {
           if (p - last < gap) continue;
           let away = 0;
@@ -380,10 +409,13 @@ export function analyze(Kfull, tf = '1H') {
 
   const piv = findPivots(W);
   const base = typicalRange(W);
-  const all = [
-    ...candidates(W, A, piv.hi, 'R', base),
-    ...candidates(W, A, piv.lo, 'S', base),
+  // Mọi đường hợp lệ (cả kháng cự tăng / hỗ trợ giảm — chỉ dùng để nhận ra kênh giá), rồi lọc đường thuận xu hướng.
+  const any = [
+    ...candidates(W, A, piv.hi, 'R', base, false),
+    ...candidates(W, A, piv.lo, 'S', base, false),
   ].map(L => classify(W, A, L)).filter(L => L.state !== 'dead');
+  const counter = L => L.kind === 'kháng cự tăng' || L.kind === 'hỗ trợ giảm';
+  const all = CFG.TREND_ONLY ? any.filter(L => !counter(L)) : any;
 
   // ---- sự kiện ----
   // Một cú phá = mọi đường cùng phía bị phá trên cùng một cây nến. Đường chính là đường dài nhất;
@@ -445,39 +477,31 @@ export function analyze(Kfull, tf = '1H') {
     ...pick(live.filter(L => L.side === 'R'), CFG.SHOW_PER_SIDE),
     ...pick(live.filter(L => L.side === 'S'), CFG.SHOW_PER_SIDE),
     ...brokenShown,
-  ].map(L => ({ ...lineInfo(W, A, L), tf, ch: channelOf(W, A, L, L.side === 'R' ? piv.lo : piv.hi, base) }));
+  ].map(L => ({ ...lineInfo(W, A, L), tf, ch: channelOf(W, A, L, any) }));
 
   return { W, A, lines, events, all, tf };
 }
 
 /**
- * Kênh giá: đường song song với trendline, đi qua đáy thấp nhất (trendline là kháng cự) / đỉnh cao nhất
- * (trendline là hỗ trợ) trong mô hình. Chỉ coi là kênh khi biên này cũng được chạm ≥ 2 lần bởi đáy/đỉnh đẹp,
- * giữa hai lần chạm giá có chạy về phía trendline rõ ràng. Trả về độ lệch giá của biên so với trendline.
+ * Kênh giá: chỉ có kênh khi PHÍA BÊN KIA cũng có một trendline thật (đủ luật: đỉnh/đáy đẹp, không cắt râu, đủ chạm)
+ * chạy gần SONG SONG với đường này trên ít nhất nửa mô hình — hai biên lệch nhau không quá PAR × bề rộng kênh.
+ * Không tự kẻ song song qua một đỉnh/đáy lẻ (không có căn cứ). Trả về đường biên bên kia.
  */
-function channelOf(W, A, L, oppPiv, base) {
-  const N = W.c.length, s = L.s, end = L.b >= 0 ? L.b : N - 1;
-  const Y = s > 0 ? W.l : W.h, oppSide = s > 0 ? 'S' : 'R';
-  const y = i => L.y0 + L.m * i;
-  let width = 0, at = -1;
-  for (let i = L.ia; i <= end; i++) { const d = (y(i) - Y[i]) * s; if (d > width) { width = d; at = i; } }
-  if (width <= 0) return null;
-  const par = i => y(i) - s * width;
-  const gap = Math.max(5, Math.round((end - L.ia) * CFG.GAP));
-  let touches = 0, last = -1;
-  for (const p of oppPiv) {
-    if (p < L.ia || p > end || !isClean(W, A, p, oppSide, base)) continue;
-    if (Math.abs(Y[p] - par(p)) > Math.max(CFG.TOUCH * A[p], CFG.CH_TOUCH * width)) continue;
-    if (last >= 0) {
-      if (p - last < gap) continue;
-      let back = 0;     // giữa hai lần chạm biên kênh, giá phải chạy về phía trendline rõ ràng
-      for (let i = last + 1; i < p; i++) { const d = ((s > 0 ? W.h[i] : W.l[i]) - par(i)) * s; if (d > back) back = d; }
-      if (back < Math.max(CFG.REACT * A[p], CFG.PROM * width)) continue;
-    }
-    touches++; last = p;
+function channelOf(W, A, L, pool) {
+  const N = W.c.length, endL = L.b >= 0 ? L.b : N - 1;
+  let best = null;
+  for (const M of pool) {
+    if (M.side === L.side) continue;
+    const endM = M.b >= 0 ? M.b : N - 1;
+    const p = Math.max(L.ia, M.ia), q = Math.min(endL, endM);
+    if (q - p < 0.5 * Math.max(endL - L.ia, endM - M.ia)) continue;            // hai biên cùng một mô hình, cùng cỡ
+    const w = i => ((L.y0 + L.m * i) - (M.y0 + M.m * i)) * L.s;     // bề rộng kênh tại nến i
+    const w0 = w(p), w1 = w(q);
+    if (w0 <= 0 || w1 <= 0) continue;
+    if (Math.abs(w0 - w1) > CFG.PAR * (w0 + w1) / 2) continue;
+    if (!best || M.touches > best.touches || (M.touches === best.touches && M.span > best.span)) best = M;
   }
-  if (touches < 2) return null;
-  return { off: -s * width, touches, tAt: W.t[at] };
+  return best ? { line: lineInfo(W, A, best), touches: best.touches } : null;
 }
 
 export function lineAt(info, tMs) {
@@ -496,7 +520,7 @@ export function lineInfo(W, A, L) {
   const T = i => (i >= 0 ? W.t[i] : null);
   return {
     side: L.side, kind: L.kind, state: L.state,
-    ta: W.t[L.ia], pa: X[L.ia], tb: W.t[L.ib], pb: X[L.ib],
+    ta: W.t[L.ia], pa: L.y0 + L.m * L.ia, tb: W.t[L.ib], pb: L.y0 + L.m * L.ib,
     mPerH: L.m / (stepOf(W) / HOUR), slopeAtr: +L.slopeAtr.toFixed(4), steep: L.steep,
     touches: L.touches, span: L.span, level: L.level, tLevel: W.t[L.last],
     tBreak: T(L.b), tConfirm: T(L.confirm), tRetest: T(L.retest), tFail: T(L.fail),
