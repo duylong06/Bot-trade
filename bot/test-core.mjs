@@ -40,6 +40,17 @@ function sharpen(K, p, side, d = 1.2) {
     else { const fl = K.l[p] + d; K.l[q] = Math.max(K.l[q], fl); K.o[q] = Math.max(K.o[q], fl); K.c[q] = Math.max(K.c[q], fl); K.h[q] = Math.max(K.h[q], Math.max(K.o[q], K.c[q])); }
   }
 }
+// Đặt đỉnh (side 'R') / đáy ('S') ĐẸP chạm đúng đường y ở nến p: thân sát đường, râu rất ngắn; các nến bên cạnh
+// (±8) lùi vào trong rõ ràng (đỉnh/đáy của một con sóng, không lình xình sát đường).
+function place(K, p, side, y, d = 0.45) {
+  if (side === 'R') setBar(K, p, y - 0.9, y + 0.02, y - 1.0, y);
+  else setBar(K, p, y + 0.9, y + 1.0, y - 0.02, y);
+  for (let q = p - 8; q <= p + 8; q++) {
+    if (q === p || q < 0 || q >= K.c.length) continue;
+    if (side === 'R') { const cap = y - d; K.h[q] = Math.min(K.h[q], cap); K.o[q] = Math.min(K.o[q], cap - 0.05); K.c[q] = Math.min(K.c[q], cap - 0.05); K.l[q] = Math.min(K.l[q], Math.min(K.o[q], K.c[q]) - 0.05); }
+    else { const fl = y + d; K.l[q] = Math.max(K.l[q], fl); K.o[q] = Math.max(K.o[q], fl + 0.05); K.c[q] = Math.max(K.c[q], fl + 0.05); K.h[q] = Math.max(K.h[q], Math.max(K.o[q], K.c[q]) + 0.05); }
+  }
+}
 const show = ev => `${ev.type} ${ev.dir} @${ev.i} span=${ev.line.span} touches=${ev.line.touches} ${ev.line.kind}${ev.confirmed ? ' [đã gãy cấu trúc]' : ''}`;
 
 /* 1. Kháng cự giảm 200 nến, phá lên bằng nến thân dài */
@@ -48,7 +59,7 @@ const show = ev => `${ev.type} ${ev.dir} @${ev.i} span=${ev.line.span} touches=$
   const K = gen({ n: 200, seed: 7, amp: 0.5, wick: 0.35,
     keys: [[0, 125.5], [14, 130], [34, 118], [56, 124.14], [76, 112], [100, 118], [122, 107], [146, 111.58], [158, 105.5], [166, 107], [175, 114], [190, 118], [199, 119]],
     pin: [14, 56, 100, 146] });
-  for (const p of [14, 56, 100, 146]) sharpen(K, p, 'R', 0.6);
+  for (const p of [14, 56, 100, 146]) place(K, p, 'R', 130 - (p - 14) * (12 / 86), 0.7);
   // nến 168 là nến phá dứt khoát
   const y = 130 - (168 - 14) * (12 / 86);
   setBar(K, 168, K.c[167], y + 2.4, K.c[167] - 0.1, y + 2.1);
@@ -64,9 +75,10 @@ const show = ev => `${ev.type} ${ev.dir} @${ev.i} span=${ev.line.span} touches=$
 /* 2. Hỗ trợ tăng, phá xuống */
 {
   console.log('2. Hỗ trợ tăng — phá XUỐNG');
-  const K = gen({ n: 200, seed: 9, amp: 0.5, wick: 0.35,
+  const K = gen({ n: 200, seed: 9, amp: 0.3, wick: 0.35,
     keys: [[0, 110], [20, 106], [55, 116], [95, 112], [130, 125], [170, 118], [185, 124], [192, 121], [199, 116]],
     pin: [20, 95, 170] });
+  for (const p of [20, 95, 170]) place(K, p, 'S', 106 + (p - 20) * (6 / 75));
   const y = 106 + (192 - 20) * (6 / 75);
   setBar(K, 192, K.c[191], K.c[191] + 0.1, y - 2.6, y - 2.2);
   const { events } = analyze(K);
@@ -98,7 +110,10 @@ const show = ev => `${ev.type} ${ev.dir} @${ev.i} span=${ev.line.span} touches=$
     const r = analyze(load(coin));
     const used = [...r.events.map(e => e.line), ...r.lines].filter(L => L.ta === mid);
     ok(!used.length, `${coin}: không kẻ đường neo ở đáy nhỏ giữa vùng (${used.length} đường)`);
-    if (coin === 'ONDO') ok(r.events.some(e => e.type === 'BREAK' && e.dir === 'SHORT' && e.line.ta === bottom), 'ONDO: đường neo ở đáy thật 19/10 03:00 bị phá xuống được báo');
+    // (đường cũ từ đáy thật 19/10 03:00 đi qua râu dài lẻ loi 08:00 20/10 — thân cách xa 1,3 ATR — nay không còn là
+    //  một lần chạm: từ đáy thứ hai trở đi tính thân. Đường nào kẻ trong vùng này thì phải neo ở đáy thật.)
+    if (coin === 'ONDO') ok(r.all.filter(L => L.side === 'S' && r.W.t[L.ia] >= VN(19, 0) && r.W.t[L.ia] <= VN(20, 12)).every(L => r.W.t[L.ia] === bottom),
+      'ONDO: hỗ trợ trong vùng 19–20/10 (nếu có) neo ở đáy thật 19/10 03:00');
   }
 }
 
@@ -225,10 +240,11 @@ const show = ev => `${ev.type} ${ev.dir} @${ev.i} span=${ev.line.span} touches=$
     ok(breakClass(102, 102.2, 100.5, 101.6, 'LONG') === 'weak', 'phá lên mà nến đỏ → yếu');
     ok(breakClass(100, 100.1, 97, 97.3, 'SHORT') === 'clean', 'phá xuống bằng nến đỏ thân dài → đẹp');
     ok(breakClass(100, 100.2, 96, 99.4, 'SHORT') === 'weak', 'phá xuống nhưng râu dưới dài hơn thân → yếu');
-    const mk = () => gen({ n: 200, seed: 9, amp: 0.5, wick: 0.35,
+    let mk = () => gen({ n: 200, seed: 9, amp: 0.3, wick: 0.35,
       keys: [[0, 110], [20, 106], [55, 116], [95, 112], [130, 125], [170, 118], [185, 124], [192, 121], [199, 116]],
       pin: [20, 95, 170] });
     const y = i => 106 + (i - 20) * (6 / 75);
+    const mk0 = mk; mk = () => { const K = mk0(); for (const p of [20, 95, 170]) place(K, p, 'S', y(p)); return K; };
     // râu dưới giật rất dài, thân nhỏ → yếu; cây sau đóng tiếp dưới đường, nến đỏ → phá tiếp
     const K = mk();
     setBar(K, 192, y(192) + 0.3, y(192) + 0.4, y(192) - 4, y(192) - 0.4);
@@ -265,6 +281,44 @@ const show = ev => `${ev.type} ${ev.dir} @${ev.i} span=${ev.line.span} touches=$
     const sup = vv.all.find(L => L.side === 'S' && vv.W.t[L.ia] === VN(19, 3) && vv.W.t[L.ib] === VN(24, 23));
     ok(sup && sup.b >= 0 && vv.W.t[sup.b] === VN(28, 11), `VVV: hỗ trợ tăng từ đáy 19/10 bị phá lúc 11:00 28/10 (${sup ? new Date(vv.W.t[sup.b] + 7 * HOUR).toISOString().slice(5, 16) : 'không có'})`);
     ok(!lines(vv).some(L => L.side === 'R' && L.ta === VN(22, 8)), 'VVV: không kẻ kháng cự từ đỉnh râu 08:00 22/10 (đường vàng nhiều râu)');
+  }
+
+  console.log('13. Các ca bạn sửa ngày 29/10 (nến thật OKX, tới 15:00 29/10)');
+  {
+    const fx3 = JSON.parse(fs.readFileSync(new URL('./fixtures/okx-h1-1029.json', import.meta.url), 'utf8'));
+    const ld = c => { const { t0, rows } = fx3[c]; return { t: rows.map((_, i) => t0 + i * HOUR), o: rows.map(r => r[0]), h: rows.map(r => r[1]), l: rows.map(r => r[2]), c: rows.map(r => r[3]), v: rows.map(r => r[4]) }; };
+    const R = {}; for (const c of Object.keys(fx3)) R[c] = analyze(ld(c));
+    const at = (r, i) => (i >= 0 ? r.W.t[i] : null);
+    const lineFrom = (c, side, t) => R[c].all.filter(L => L.side === side && at(R[c], L.ia) === t);
+    // Hướng: hỗ trợ chỉ nối đáy thấp → đáy cao hơn (cả râu), kháng cự đỉnh cao → đỉnh thấp hơn; không còn đường "ngang" lệch hướng
+    let wrong = 0;
+    for (const c of Object.keys(R)) for (const L of R[c].all) {
+      if (L.range) continue;
+      if (L.kind !== (L.side === 'S' ? 'hỗ trợ tăng' : 'kháng cự giảm')) wrong++;
+      const X = L.side === 'S' ? R[c].W.l : R[c].W.h;
+      for (let k = 1; k < L.T.length; k++) if ((X[L.T[k]] - X[L.T[0]]) * L.s > 1e-12 && L.T[k] === L.ib) wrong++;
+    }
+    ok(wrong === 0, `mọi trendline đúng hướng: đáy sau cao hơn đáy đầu / đỉnh sau thấp hơn đỉnh đầu (${wrong} đường sai)`);
+    // DASH (hình 1): hỗ trợ từ đáy 46,23 (02:00 19/10, tính râu) chạm THÂN các đáy 24/10 22:00 và 26/10 10:00, bị phá sáng 29/10
+    const da = lineFrom('DASH', 'S', VN(19, 2)).find(L => L.T.map(i => at(R.DASH, i)).includes(VN(24, 22)));
+    ok(da && da.T.map(i => at(R.DASH, i)).includes(VN(26, 10)) && at(R.DASH, da.b) >= VN(29, 7) && at(R.DASH, da.b) <= VN(29, 9),
+      `DASH: hỗ trợ từ đáy 19/10 chạm thân đáy 24/10 và 26/10, phá ${da ? new Date(at(R.DASH, da.b) + 7 * HOUR).toISOString().slice(5, 16) : '—'}`);
+    ok(da && Math.abs((da.y0 + da.m * da.ib) - Math.min(R.DASH.W.o[da.ib], R.DASH.W.c[da.ib])) <= 0.35 * R.DASH.A[da.ib], 'DASH: đáy thứ hai tính THÂN (không tính râu)');
+    // APT (hình 2): không còn kháng cự 22/10 → 26/10 (đỉnh 26/10 không phải đỉnh của một sóng hồi), không có Retest 14:00 29/10
+    ok(!lineFrom('APT', 'R', VN(22, 1)).some(L => L.T.map(i => at(R.APT, i)).includes(VN(26, 22))) && !R.APT.events.some(e => e.type === 'RETEST' && e.t === VN(29, 14)), 'APT: bỏ kháng cự 22/10 không có 2 đỉnh sóng, không Retest 14:00 29/10');
+    // ETC (hình 3): hỗ trợ đáy thấp dần 19/10 → 26/10 không phải trendline
+    ok(!lineFrom('ETC', 'S', VN(19, 2)).some(L => L.T.map(i => at(R.ETC, i)).includes(VN(26, 8))) && !R.ETC.all.some(L => L.side === 'S' && L.kind !== 'hỗ trợ tăng' && !L.range), 'ETC: bỏ hỗ trợ đáy thấp dần');
+    // STX (hình 4): không neo ở 05:00 18/09 (đáy thật nằm dưới, trước cửa sổ); biên sideway 25–29/10 bị phá xuống có volume
+    ok(!R.STX.all.some(L => L.side === 'S' && at(R.STX, L.ia) < Date.UTC(2026, 8, 20)), 'STX: không còn hỗ trợ neo ở đáy giả sát mép trái (18/09)');
+    ok(R.STX.events.some(e => e.type === 'BREAK' && e.dir === 'SHORT' && e.line.range && e.vol >= CFG.VOL_K && e.t >= VN(29, 0)), 'STX: phá biên sideway xuống với volume lớn');
+    // PI (hình 5): không kẻ hỗ trợ 26/10 03:00 → 26/10 11:00 (cùng một vùng đáy, chạm bằng râu)
+    ok(!R.PI.all.some(L => L.side === 'S' && at(R.PI, L.ia) === VN(26, 3) && at(R.PI, L.ib) === VN(26, 11)), 'PI: bỏ hỗ trợ không có 2 đáy của 2 con sóng');
+    // POL (hình 6, đúng): hỗ trợ từ đáy 22:00 24/10 bị phá 08:00 29/10
+    ok(lineFrom('POL', 'S', VN(24, 22)).some(L => at(R.POL, L.b) === VN(29, 8)), 'POL: giữ hỗ trợ từ 24/10 bị phá 08:00 29/10');
+    // XRP (hình 7): hỗ trợ từ đáy 1,2539 chạm cả đáy trên 23:00 28/10
+    ok(lineFrom('XRP', 'S', VN(24, 22)).some(L => L.T.map(i => at(R.XRP, i)).includes(VN(28, 23)) && L.touches >= 4), 'XRP: hỗ trợ từ đáy 24/10 chạm cả đáy trên 28/10');
+    // Biên sideway: ATOM, ICP đi ngang 25–29/10 rồi phá xuống
+    for (const c of ['ATOM', 'ICP']) ok(R[c].all.some(L => L.range && L.side === 'S' && L.b >= 0 && at(R[c], L.b) >= VN(29, 0)), `${c}: có biên sideway (kháng cự + hỗ trợ ngang) bị phá xuống 29/10`);
   }
 
   console.log('11. Luật M30 trên 4 ca thật (OKX)');

@@ -56,7 +56,7 @@ export async function pickHost() {
  *   K       nến ĐÃ ĐÓNG, cũ → mới, tối đa `count` cây
  *   forming nến đang chạy (mảng thô của OKX) hoặc null
  */
-export async function candles(instId, bar = '1H', count = 1020) {
+export async function candles(instId, bar = '1H', count = 1200) {
   const seen = new Map();
   let after, forming = null;
   for (let page = 0; page < 6 && seen.size < count + 1; page++) {

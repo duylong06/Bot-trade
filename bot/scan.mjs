@@ -26,7 +26,7 @@ import webpush from 'web-push';
 import { analyze, CFG, HOUR, lineAt } from '../core/breakout.js';
 import { m30Verdict, m30CloseOf, M30 } from '../core/confirm.js';
 import * as okx from '../core/okx.js';
-import { PAGES_URL, TOP_N, PINNED, ALERTS, MIN_SPAN_ALERT, NTFY, EXCLUDE, CATEGORIES } from '../core/config.js';
+import { PAGES_URL, TOP_N, TOP_VOL, PINNED, ALERTS, MIN_SPAN_ALERT, NTFY, EXCLUDE, CATEGORIES } from '../core/config.js';
 import { hhmm, stamp, labelOf } from '../core/format.js';
 import { buildMessage, plan } from './plan.mjs';
 import { ranking } from './mcap.mjs';
@@ -60,7 +60,7 @@ state.sent ||= {}; state.devices ||= {}; state.pending ||= {}; state.follow ||= 
 for (const [id, at] of Object.entries(state.dead)) if (Date.now() - at > 30 * 24 * 3600e3) delete state.dead[id];
 delete state.lastBreak;
 const status = { version: 5, mode: MODE, stage: STAGE, trigger: TRIGGER, startedAt: t0,
-  cfg: { window: CFG.WINDOW, top: TOP_N, pinned: PINNED, alerts: ALERTS, minPattern: CFG.MIN_PATTERN } };
+  cfg: { window: CFG.WINDOW, top: TOP_N, topVol: TOP_VOL, pinned: PINNED, alerts: ALERTS, minPattern: CFG.MIN_PATTERN } };
 const signals = readJSON('signals.json', []);
 const changed = new Map();              // id → dòng tín hiệu thêm mới / đổi trong lượt này (để cập nhật dấu biểu đồ)
 
@@ -215,10 +215,19 @@ async function connectOkx() {
     universe = tickers.filter(x => !PINNED.includes(x.instId)).slice(0, TOP_N);
     src = 'khối lượng 24h (chưa lấy được vốn hoá)';
   }
+  // + top TOP_VOL theo khối lượng giao dịch 24h trên OKX (chưa có trong danh sách vốn hoá)
+  const have = new Set(universe.map(u => u.instId));
+  let addVol = 0;
+  for (const [k, tk] of tickers.entries()) {
+    if (k >= TOP_VOL) break;
+    if (have.has(tk.instId) || PINNED.includes(tk.instId) || !crypto1.has(tk.instId)) continue;
+    universe.push({ ...tk, volRank: k + 1 }); have.add(tk.instId); addVol++;
+  }
+  if (rank) src += ` + top ${TOP_VOL} khối lượng OKX (thêm ${addVol})`;
   const pins = PINNED.map(id => byInst.get(id)).filter(Boolean);
   universe.push(...pins.map(p => ({ ...p, pinned: true })));
   status.universe = { src, n: universe.length };
-  writeJSON('top.json', { at: Date.now(), src, list: universe.map(u => ({ instId: u.instId, coin: u.coin, rank: u.rank || null, mcap: u.mcap || null, name: u.name || null, pinned: !!u.pinned, volUsd: Math.round(u.volUsd), last: u.last, chg: +u.chg.toFixed(5) })) });
+  writeJSON('top.json', { at: Date.now(), src, list: universe.map(u => ({ instId: u.instId, coin: u.coin, rank: u.rank || null, volRank: u.volRank || null, mcap: u.mcap || null, name: u.name || null, pinned: !!u.pinned, volUsd: Math.round(u.volUsd), last: u.last, chg: +u.chg.toFixed(5) })) });
   log(`Theo dõi ${universe.length} mã theo ${src}: ${universe.filter(u => !u.pinned).slice(0, 12).map(u => u.coin).join(' ')} …` +
     (pins.length ? ` + ${pins.map(u => labelOf(u.coin)).join(', ')}` : ''));
   return { ticks, universe };
@@ -240,7 +249,7 @@ function rowOf(e, extra = {}) {
   return {
     id: e._key, instId: e.instId, coin: e.coin, type: e.type, dir: e.dir, side: e.side,
     t: e.t, close: e.close, atr: +e.atr.toPrecision(6), linePrice: e.linePrice, level: e.level, confirmed: e.confirmed,
-    others: e.others, tickSz: e.tickSz, line: e.line, bar: e.bar, tf: e.tf || '1H', cls: e.cls || null,
+    others: e.others, tickSz: e.tickSz, line: e.line, bar: e.bar, tf: e.tf || '1H', cls: e.cls || null, vol: typeof e.vol === 'number' ? +e.vol.toFixed(2) : null,
     sentAt: Date.now(), pushed: 0, pu: 0, why: null, ...extra,
   };
 }
@@ -588,7 +597,7 @@ async function main() {
   const fresh = list.filter(d => !state.hello[d.id]);
   if (MODE === 'scan' && fresh.length) {
     log(`Máy mới: ${fresh.map(d => d.name || d.id).join(', ')} — gửi lời chào`);
-    await pushAll({ title: 'Bot Trade đã nhận máy này ✓', body: `Từ giờ bot sẽ báo phá vỡ trendline H1 cho top ${TOP_N} đồng theo vốn hoá${PINNED.length ? ' + ' + PINNED.map(id => labelOf(id.split('-')[0])).join(', ') : ''}.`, url: './#tab=settings', tag: 'hello' }, fresh);
+    await pushAll({ title: 'Bot Trade đã nhận máy này ✓', body: `Từ giờ bot sẽ báo phá vỡ trendline H1, H4 cho top ${TOP_N} đồng theo vốn hoá + top ${TOP_VOL} khối lượng OKX${PINNED.length ? ' + ' + PINNED.map(id => labelOf(id.split('-')[0])).join(', ') : ''}.`, url: './#tab=settings', tag: 'hello' }, fresh);
     for (const d of fresh) if (state.devices[d.id] && state.devices[d.id].ok) state.hello[d.id] = Date.now();
   }
   for (const id of Object.keys(state.hello)) if (!list.some(d => d.id === id) && !state.dead[id]) delete state.hello[id];

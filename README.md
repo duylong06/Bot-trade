@@ -1,7 +1,8 @@
 # Bot Trade — báo phá vỡ trendline H1
 
 Bot quét **top 67 đồng crypto theo vốn hoá** (CoinGecko, cập nhật mỗi giờ; đồng nào không có hợp đồng USDT vĩnh cửu
-trên OKX, stablecoin hay token bọc thì lấy đồng vốn hoá kế tiếp) **cùng vàng (XAU) và dầu WTI (CL)**,
+trên OKX, stablecoin hay token bọc thì lấy đồng vốn hoá kế tiếp) **+ top 36 đồng có khối lượng giao dịch 24h lớn nhất
+trên OKX** (gộp, không trùng) **cùng vàng (XAU) và dầu WTI (CL)**,
 tìm các **đường xu hướng trên khung H1 và H4** (tối đa 1000 nến mỗi khung) và báo về iPhone khi có:
 
 - **Phá** — nến **đóng cửa** ra ngoài đường (râu không tính) bằng cây phá đẹp, rồi **giữ được qua cây M30 đầu tiên của giờ sau**
@@ -65,47 +66,53 @@ Không cài bước này bot vẫn chạy theo lịch GitHub, chỉ là trễ v�
 ## Luật phát hiện
 
 Toàn bộ nằm trong `core/breakout.js` và `core/confirm.js` (bot và app dùng chung, nên đường bot báo và đường app vẽ luôn khớp).
-Cách kẻ đường theo đúng các ca chủ repo chỉ (CL, HBAR, ALGO, VVV, kênh BTC tháng 7–8/2026 — có trong `bot/test-core.mjs`)
-và tài liệu kẻ trendline chuẩn: nối các đỉnh/đáy rõ ràng, 2 điểm là đường tiềm năng, điểm thứ 3 xác nhận; râu ngoại lệ bỏ qua;
-phá vỡ phải là giá đóng cửa dứt khoát; khung nhỏ nhiều nhiễu thì xem đường ở khung lớn hơn.
+Cách kẻ đường theo đúng các ca chủ repo chỉ (CL, HBAR, ALGO, VVV, kênh BTC tháng 7–8/2026, và DASH, APT, ETC, STX, PI,
+POL, XRP ngày 29/10 — có trong `bot/test-core.mjs`) và tài liệu kẻ trendline chuẩn: nối các đỉnh/đáy của các con sóng rõ ràng,
+2 điểm là đường tiềm năng, điểm thứ 3 xác nhận; râu ngoại lệ bỏ qua; phá vỡ phải là giá đóng cửa dứt khoát;
+khung nhỏ nhiều nhiễu thì xem đường ở khung lớn hơn.
 
 | | |
 |---|---|
 | Khung | **H1 và H4**. H1 nhiều râu thì đường rõ nằm ở H4 — bot kẻ và báo cả hai |
-| Cửa sổ | tối đa **1000 nến** mỗi khung (H1 ≈ 42 ngày, H4 ≈ 166 ngày); mô hình dài **≥ 45 nến** |
-| Hướng | downtrend → **kháng cự giảm** nối các đỉnh thấp dần; uptrend → **hỗ trợ tăng** nối các đáy cao dần; sideway → kháng cự / hỗ trợ **ngang**. Không kẻ kháng cự tăng, hỗ trợ giảm |
-| Điểm neo, điểm chạm | phải là **đỉnh/đáy đẹp, rõ ràng**: không phải **cây rút râu** (râu dài hơn 2 lần cây nến bình thường, hoặc chọc ra khỏi 3 nến mỗi bên hơn 1,2 lần cây bình thường); là cao/thấp nhất trong một khoảng đủ rộng; giữa hai lần chạm giá lùi khỏi đường ≥ 1,5 ATR và ≥ 30% bề rộng mô hình |
+| Cửa sổ | tối đa **1000 nến** mỗi khung (H1 ≈ 42 ngày, H4 ≈ 166 ngày) + 200 nến phía trước để kiểm tra đáy/đỉnh thật; mô hình dài **≥ 45 nến** |
+| Hướng (chặt) | **hỗ trợ tăng** nối đáy thấp → đáy **cao hơn** (bị phá xuống → SHORT); **kháng cự giảm** nối đỉnh cao → đỉnh **thấp hơn** (bị phá lên → LONG); so cả râu. Đáy thấp dần, đỉnh cao dần, đường gần như nằm ngang **không phải trendline** → bỏ |
+| Đáy/đỉnh đầu tiên | kẻ ở **đầu râu**; nến đẹp (không phải **cây rút râu**: râu dài hơn 2 lần cây nến bình thường, hoặc chọc ra khỏi 3 nến mỗi bên hơn 1,2 lần cây bình thường); là **đáy/đỉnh thật của cả xu hướng**: không có râu nào thấp hơn/cao hơn từ đó tới cây phá, và phía trước (≥ nửa chiều dài mô hình, tối đa 120 nến) không có đáy thấp hơn/đỉnh cao hơn (bỏ qua cây rút râu, cây giật ở xa như ALGO 08/10) |
+| Từ đáy/đỉnh thứ hai | **tính thân, không tính râu**: đường chạm **thân** nến (cách ≤ 0,6 ATR), râu được xuyên qua; hoặc đi qua râu bình thường của vùng đáy/đỉnh. Cây râu dài chọc ra một mình chạm đường mà thân còn xa **không tính** (kẻ theo râu là kẻ bừa) |
+| Hai con sóng | mỗi lần chạm là đáy/đỉnh của **một con sóng riêng**: giữa hai lần chạm giá chạy ra xa đường ≥ 1,5 ATR và ≥ 30% bề rộng mô hình, sóng hồi về sâu ≥ 25% sóng trước; đáy/đỉnh thứ hai cách đáy/đỉnh đầu ≥ 20% chiều dài mô hình (sát nhau là cùng một vùng đáy) |
+| Đẹp, không thiếu | đường được xoay từ điểm neo đầu tới khi chạm thân các đáy/đỉnh sau; chọn đường **chạm nhiều đáy/đỉnh nhất**, không bỏ sót đáy/đỉnh nào nằm trên đường; đáy/đỉnh không thẳng hàng thì đường đi giữa thân và râu |
 | Số chạm | ≥ 3; hoặc 2 nếu cả hai là đỉnh/đáy lớn (cao/thấp nhất ±24 nến, đã được nến thật xác nhận) |
-| Đường sạch | từ điểm neo đầu tới cây phá: không thân nến nào vượt đường; râu chỉ được chạm — quá 2 râu xuyên đường (> 0,35 ATR) là đường kẻ sai, bỏ |
-| Đỉnh/đáy thật | điểm neo đầu là đỉnh cao nhất / đáy thấp nhất của vùng phía trước (bỏ qua cây bất thường như cây giật ALGO 08/10) |
-| Một đỉnh nhiều đường | một đỉnh/đáy được làm điểm neo cho nhiều đường; app chỉ vẽ đường rõ nhất mỗi vùng giá (2 đường cùng phía cách nhau ≤ 3 ATR) |
-| Vùng nhiều râu ngắn | đỉnh/đáy là vùng đi ngang nhiều râu ngắn (≥ 4 cây trong ±4 nến) → đường qua **trung bình các đầu râu**, không thấp hơn thân nến cao nhất (kháng cự) / không cao hơn thân thấp nhất (hỗ trợ); đỉnh/đáy nhọn kẻ ở đầu râu. Râu ngắn mà thân vẫn trong đường không tính là cắt râu |
+| Đường sạch | từ điểm neo đầu tới cây phá: không thân nến nào vượt đường; râu của nến khác (ngoài cụm nến các lần chạm) xuyên đường > 0,35 ATR quá 2 cây là kẻ bừa → bỏ |
+| Biên sideway | giá đi ngang giữa **kháng cự ngang** và **hỗ trợ ngang** của cùng một vùng (mỗi biên ≥ 2 lần chạm, cao 1,5–8 ATR). Chỉ báo khi cây nến **phá biên với khối lượng ≥ 2 lần trung bình 20 nến** — phá mà volume nhỏ thì không báo |
+| Một đỉnh nhiều đường | một đỉnh/đáy được làm điểm neo cho nhiều đường (mỗi đáy/đỉnh thứ hai một đường); app chỉ vẽ đường rõ nhất mỗi vùng giá (2 đường cùng phía cách nhau ≤ 3 ATR) |
+| Vùng nhiều râu ngắn | đỉnh/đáy đầu là vùng đi ngang nhiều râu ngắn (≥ 4 cây trong ±4 nến) → kẻ qua **trung bình các đầu râu**, không thấp hơn thân nến cao nhất (kháng cự) / không cao hơn thân thấp nhất (hỗ trợ) |
 | Kênh giá | chỉ khi **phía bên kia cũng có một trendline thật** (đủ luật) gần song song (hai biên lệch nhau ≤ 25% bề rộng kênh), cùng cỡ mô hình. Không tự kẻ song song qua một đỉnh/đáy lẻ. App vẽ tối đa 1 kênh: biên kênh + đường giữa đứt |
 | Phá | cây nến **đóng cửa** ngoài đường (râu không tính) |
-| Cây phá đẹp | phá lên **nến xanh**, phá xuống **nến đỏ**, **thân dài hơn cả hai râu**, đóng xa đường ≥ 0,15 ATR |
+| Cây phá đẹp | phá lên **nến xanh**, phá xuống **nến đỏ**, **thân dài hơn cả hai râu**, đóng xa đường ≥ 0,15 ATR. Tin báo ghi khối lượng cây phá so với trung bình 20 nến |
 | H1 phá đẹp → **luật M30** | chờ cây M30 đầu tiên của giờ sau (phút :30). LONG: M30 chạm về ≤ đáy cây phá → không báo, trừ khi M30 đóng xanh. SHORT: ngược lại |
 | Cây phá chưa đẹp | sai màu / râu dài hơn thân / đóng sát đường → **không xét M30**, chờ cây kế tiếp: đóng tiếp ngoài đường và đúng màu thì báo; quay lại trong đường là phá giả, đường vẫn còn |
 | H4 | phá đẹp → báo ngay khi cây H4 đóng (03, 07, 11, 15, 19, 23 giờ VN); chưa đẹp → chờ cây H4 sau |
 | Xác nhận, Retest | gãy cấu trúc / quay về chạm đường rồi giữ — báo ngay khi nến đóng |
 | Đúng lúc | chỉ báo tín hiệu của cây nến **vừa đóng**, không báo bù tín hiệu cũ |
-| Thông báo | mỗi cú phá một tin, không giới hạn; chỉ gộp khi cùng đồng, cùng chiều, cùng cây nến, cùng khung |
+| Thông báo | mỗi cú phá một tin, không giới hạn; chỉ gộp khi cùng đồng, cùng chiều, cùng cây nến, cùng khung (hoặc hai đường gần trùng nhau thủng cách nhau ≤ 3 nến) |
 
 **Biểu đồ trong app:** kháng cự đỏ, hỗ trợ xanh dương; nét liền + nhãn **KC/HT** = còn hiệu lực, nét đứt = vừa bị phá;
-đường H4 dày hơn, nhãn **H4**; kênh giá: biên đối diện + đường giữa đứt. Có thêm khung **30m** để xem cây M30.
+đường H4 dày hơn, nhãn **H4**; kênh giá: biên đối diện + đường giữa đứt; biên sideway: nhãn **đỉnh biên / đáy biên**.
+Có thêm khung **30m** để xem cây M30.
 
 **Lịch chạy mỗi giờ** (`.github/workflows/scan.yml`): phút :58 bot bắt đầu, chờ nến H1 đóng → báo Retest/Xác nhận ngay,
 cú Phá đẹp ghi “chờ M30”, cú phá chưa đẹp ghi “chờ cây sau” → bot ở lại tới phút :30 → xét cây M30 → báo hoặc bỏ (app ghi lý do).
 Giờ nào cây H4 cũng đóng thì bot xét thêm khung H4.
 
-Đo trên nến thật 30 ngày (11 đồng top, tới 27/10/2026), quy ra 69 mã: khoảng **65 thông báo/ngày**
-(phá H1 ~31 — trong đó ~8 là cây phá chưa đẹp nhưng cây sau phá tiếp; xác nhận ~13; retest ~13; H4 ~9).
-Khoảng 37% cây phá là cây chưa đẹp, phải chờ cây sau. Muốn bớt: đặt `MIN_SPAN_ALERT` hoặc bỏ `CONFIRM`/`RETEST` khỏi `ALERTS`.
+Mô phỏng 48 giờ (27–29/10/2026) trên 69 mã: ~95 sự kiện H1/ngày trước luật M30 (phá ~55, trong đó phá biên sideway
+có volume ~8; xác nhận ~21; retest ~18), tương đương bản trước. Thêm top 36 khối lượng thì nhiều mã hơn, số tin tăng theo.
+Muốn bớt: đặt `MIN_SPAN_ALERT` hoặc bỏ `CONFIRM`/`RETEST` khỏi `ALERTS`.
 
 ## Chỉnh nhanh — `core/config.js`
 
 | Biến | Ý nghĩa |
 |---|---|
 | `TOP_N` | số đồng crypto theo dõi theo vốn hoá (mặc định 67) |
+| `TOP_VOL` | cộng thêm top N đồng khối lượng giao dịch 24h lớn nhất trên OKX (mặc định 36; đồng đã có thì không tính lại) |
 | `PINNED` | mã luôn theo dõi ngoài top: `XAU-USDT-SWAP` (vàng), `CL-USDT-SWAP` (dầu WTI); thêm `BZ-USDT-SWAP` (dầu Brent), `XAG-USDT-SWAP` (bạc) nếu muốn |
 | `CATEGORIES` | loại được xếp hạng vào top: `['1']` chỉ crypto · `'3'` cổ phiếu |
 | `ALERTS` | bỏ loại nào khỏi `['BREAK','CONFIRM','RETEST']` là thôi báo loại đó |
@@ -130,7 +137,7 @@ bot/replay.mjs                             phát lại bot trên nến thật đ
 .github/workflows/scan.yml                 lịch chạy
 ```
 
-Bot lưu tín hiệu, trạng thái, danh sách top 67 (`top.json`) và bộ nhớ chống trùng ở nhánh `data` (app đọc từ đây).
+Bot lưu tín hiệu, trạng thái, danh sách đồng theo dõi (`top.json`) và bộ nhớ chống trùng ở nhánh `data` (app đọc từ đây).
 Bản cũ (`quet-tin-hieu.html` + bot Telegram) vẫn còn nguyên ở nhánh `legacy`.
 
 ## Thêm mô hình mới

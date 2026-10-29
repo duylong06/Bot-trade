@@ -7,6 +7,10 @@ export const PAGES_URL = 'https://duylong06.github.io/Bot-trade/';
 // Đồng nào không có hợp đồng USDT vĩnh cửu trên OKX (hoặc là stablecoin, token bọc) thì lấy đồng kế tiếp.
 export const TOP_N = 67;
 
+// Cộng thêm top N đồng có KHỐI LƯỢNG GIAO DỊCH 24h lớn nhất trên OKX (hợp đồng USDT vĩnh cửu), gộp với danh sách
+// vốn hoá ở trên (đồng nào đã có thì không tính lại).
+export const TOP_VOL = 36;
+
 // Luôn theo dõi thêm các mã này, ngoài top N: vàng, dầu WTI.
 // Thêm 'BZ-USDT-SWAP' (dầu Brent) hoặc 'XAG-USDT-SWAP' (bạc) nếu muốn.
 export const PINNED = ['XAU-USDT-SWAP', 'CL-USDT-SWAP'];

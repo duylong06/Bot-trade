@@ -1,7 +1,7 @@
 // app/app.js — điều khiển giao diện: tab, biểu đồ, tín hiệu, top 67 theo vốn hoá, thông báo, tình trạng bot.
 import * as okx from '../core/okx.js';
 import { CFG, HOUR, lineAt } from '../core/breakout.js';
-import { REPO, TOP_N, PINNED, DATA_API, DATA_RAW, ALERTS, MIN_SPAN_ALERT } from '../core/config.js';
+import { REPO, TOP_N, TOP_VOL, PINNED, DATA_API, DATA_RAW, ALERTS, MIN_SPAN_ALERT } from '../core/config.js';
 import { fmtPrice, fmtVol, fmtPct, hhmm, ddmm, coinOf, labelOf, nameOf } from '../core/format.js';
 import { ChartView, TFS } from './chart.js';
 import { businessWS, publicWS } from './ws.js';
@@ -86,7 +86,7 @@ function subscribeTickers() {
   for (const id of want) if (!S.tickSubs.has(id)) { pws.sub({ channel: 'tickers', instId: id }, onTicker); S.tickSubs.add(id); }
 }
 
-// Danh sách bot đang theo dõi: top.json bot ghi mỗi giờ (top 67 theo vốn hoá có trên OKX + vàng, dầu).
+// Danh sách bot đang theo dõi: top.json bot ghi mỗi giờ (top 67 theo vốn hoá + top 36 khối lượng OKX + vàng, dầu).
 // Chưa có file đó thì tạm xếp theo khối lượng OKX.
 function universe() {
   if (S.top && S.top.list && S.top.list.length) {
@@ -244,7 +244,7 @@ function renderLines(shown, fm) {
     }
     html += `<button class="lrow${isF ? ' focus' : ''}${broken ? ' br' : ''}" data-ta="${ln.ta}" data-tb="${ln.tb}" data-side="${ln.side}">
       <span class="ic"><i class="sw ${isF ? 'F' : ln.side}${broken ? ' d' : ''}"></i></span>
-      <span class="t1">${h4 ? '<i class="tfh4">H4</i>' : ''}<b class="${ln.side}">${R ? 'Kháng cự' : 'Hỗ trợ'}</b> ${esc(ln.kind.replace(/^(kháng cự|hỗ trợ)\s*/, ''))} · ${ln.span} nến · ${ln.touches} chạm${ln.ch && !broken ? ` · <span class="chn">kênh: ${R ? 'đáy' : 'đỉnh'} ${p(lineAt(ln.ch.line, now))}</span>` : ''}</span>
+      <span class="t1">${h4 ? '<i class="tfh4">H4</i>' : ''}${ln.range ? `<b class="${ln.side}">Biên sideway</b> ${R ? 'đỉnh' : 'đáy'}` : `<b class="${ln.side}">${R ? 'Kháng cự' : 'Hỗ trợ'}</b> ${esc(ln.kind.replace(/^(kháng cự|hỗ trợ)\s*/, ''))}`} · ${ln.span} nến · ${ln.touches} chạm${ln.ch && !broken ? ` · <span class="chn">${ln.range ? 'biên' : 'kênh'}: ${R ? 'đáy' : 'đỉnh'} ${p(lineAt(ln.ch.line, now))}</span>` : ''}</span>
       <span class="pr ${ln.side}">${pr}</span>
       <span class="t2">${t2}</span>
     </button>`;
@@ -363,12 +363,12 @@ function m30Chip(s) {
   }
 }
 
-/* ======================= TOP 67 THEO VỐN HOÁ + VÀNG, DẦU ======================= */
+/* ======================= TOP VỐN HOÁ + TOP KHỐI LƯỢNG + VÀNG, DẦU ======================= */
 
 function marketRow(m, sigDir) {
   const tick = S.ticks[m.instId];
   const t = S.topMap.get(m.instId);
-  const rank = t ? (t.pinned ? '★' : t.rank ? '#' + t.rank : '') : '';
+  const rank = t ? (t.pinned ? '★' : t.rank ? '#' + t.rank : t.volRank ? 'KL#' + t.volRank : '') : '';
   const sub = t && t.mcap ? `Vốn hoá ${fmtVol(t.mcap)}` : `KL ${fmtVol(m.volUsd)}`;
   const nm = nameOf(m.coin) || (t && t.name && t.name.toUpperCase() !== m.coin ? t.name : '');
   return `<button class="mrow" data-inst="${m.instId}">
@@ -532,19 +532,20 @@ function renderBot() {
 function renderRules() {
   const pins = PINNED.map(id => nameOf(coinOf(id)) || coinOf(id));
   const items = [
-    `Theo dõi <b>top ${TOP_N} đồng theo vốn hoá</b> (CoinGecko, cập nhật mỗi giờ). Đồng nào không có hợp đồng USDT vĩnh cửu trên OKX, stablecoin, token bọc → lấy đồng vốn hoá kế tiếp${pins.length ? `. Luôn theo dõi thêm ${pins.join(', ')}` : ''}.`,
+    `Theo dõi <b>top ${TOP_N} đồng theo vốn hoá</b> (CoinGecko) <b>+ top ${TOP_VOL} khối lượng giao dịch 24h trên OKX</b>, cập nhật mỗi giờ. Đồng không có hợp đồng USDT vĩnh cửu trên OKX, stablecoin, token bọc → bỏ qua${pins.length ? `. Luôn theo dõi thêm ${pins.join(', ')}` : ''}.`,
     `Kẻ đường trên <b>H1</b> và <b>H4</b> (H1 nhiều râu thì đường rõ nằm ở H4). Mỗi khung xét tối đa ${CFG.WINDOW} nến; mô hình dài <b>từ ${CFG.MIN_PATTERN} nến</b> trở lên.`,
-    `<span class="sw R"></span><b>Kháng cự giảm</b> nối các đỉnh thấp dần (downtrend), <span class="sw S"></span><b>hỗ trợ tăng</b> nối các đáy cao dần (uptrend), đi ngang thì nối các đỉnh/đáy tương đương. Không kẻ kháng cự tăng, hỗ trợ giảm.`,
-    `Điểm neo và mỗi lần chạm phải là <b>đỉnh/đáy đẹp, rõ ràng</b>: không phải cây rút râu (râu dài gấp đôi cây nến bình thường, hoặc chọc hẳn ra khỏi các nến xung quanh rồi quay về). Giữa hai lần chạm giá phải lùi khỏi đường rõ rệt. Cần ≥ ${CFG.MIN_TOUCH} lần chạm, hoặc 2 nếu cả hai là đỉnh/đáy lớn (cao/thấp nhất ±${CFG.MAJOR} nến).`,
-    `Đỉnh/đáy là <b>vùng đi ngang nhiều râu ngắn</b> → đường đi qua <b>trung bình các đầu râu</b>, không thấp hơn thân nến cao nhất (kháng cự) / không cao hơn thân thấp nhất (hỗ trợ). Đỉnh/đáy nhọn thì kẻ ở đầu râu.`,
-    `Từ điểm neo đầu tới cây phá: <b>không thân nến nào vượt đường</b>; râu chỉ được chạm — quá ${CFG.POKE_TOTAL} râu xuyên đường là đường kẻ sai, bỏ. Một đỉnh/đáy có thể là điểm neo của nhiều đường.`,
-    `<b>Kênh giá</b>: chỉ vẽ khi phía bên kia cũng có một trendline thật (đủ luật) chạy gần song song, cùng cỡ mô hình — không tự kẻ song song qua một đỉnh/đáy lẻ. Vẽ biên kênh + đường giữa đứt, tối đa 1 kênh.`,
-    `<b>Phá</b> = cây nến đóng cửa ra ngoài đường (râu không tính). Cây phá <b>đẹp</b>: phá lên nến xanh, phá xuống nến đỏ, thân dài hơn râu, đóng xa đường ≥ ${CFG.BREAK_MIN} ATR.`,
+    `<b>Hướng đúng</b>: <span class="sw S"></span><b>hỗ trợ tăng</b> nối từ đáy thấp lên đáy CAO HƠN (bị phá xuống → SHORT); <span class="sw R"></span><b>kháng cự giảm</b> nối từ đỉnh cao xuống đỉnh THẤP HƠN (bị phá lên → LONG). Đáy thấp dần / đỉnh cao dần không phải trendline → bỏ.`,
+    `<b>Đáy/đỉnh đầu tiên kẻ ở đầu râu</b> (nến đẹp, không rút râu) và phải là đáy/đỉnh thật của cả xu hướng — không có râu nào thấp hơn/cao hơn nó, kể cả phía trước. <b>Từ đáy/đỉnh thứ hai trở đi tính THÂN</b>: đường chạm thân nến, râu được xuyên qua.`,
+    `Mỗi lần chạm là đáy/đỉnh của <b>một con sóng riêng</b>: giữa hai lần chạm giá phải chạy ra xa đường rõ rệt (≥ ${CFG.REACT} ATR) và sóng hồi về phải sâu ≥ ${Math.round(CFG.RETR * 100)}% sóng trước; đáy/đỉnh thứ hai cách đáy/đỉnh đầu ≥ ${Math.round(CFG.ANCHOR_GAP * 100)}% mô hình. Cần ≥ ${CFG.MIN_TOUCH} lần chạm, hoặc 2 nếu cả hai là đỉnh/đáy lớn (±${CFG.MAJOR} nến).`,
+    `Chọn đường <b>chạm được nhiều đáy/đỉnh nhất</b>, không bỏ sót: khi đáy/đỉnh không thẳng hàng, đường đi qua trung bình thân–râu. Từ điểm neo đầu tới cây phá không thân nến nào vượt đường; râu của nến khác cắt qua quá ${CFG.POKE_TOTAL} cây là kẻ bừa → bỏ.`,
+    `<b>Biên sideway</b>: giá đi ngang giữa kháng cự ngang và hỗ trợ ngang (mỗi biên ≥ 2 lần chạm, cùng một vùng, cao ≤ ${CFG.RANGE_MAX} ATR). Chỉ báo khi cây nến <b>phá biên với khối lượng ≥ ${CFG.VOL_K} lần trung bình ${CFG.VOL_N} nến</b>; phá mà volume nhỏ thì không báo.`,
+    `<b>Kênh giá</b>: chỉ vẽ khi phía bên kia cũng có một trendline thật (đủ luật) chạy gần song song, cùng cỡ mô hình — không tự kẻ song song qua một đỉnh/đáy lẻ.`,
+    `<b>Phá</b> = cây nến đóng cửa ra ngoài đường (râu không tính). Cây phá <b>đẹp</b>: phá lên nến xanh, phá xuống nến đỏ, thân dài hơn râu, đóng xa đường ≥ ${CFG.BREAK_MIN} ATR. Tin báo kèm khối lượng cây phá so với trung bình.`,
     `<b>H1 phá đẹp → luật M30</b>: chờ cây M30 đầu tiên của giờ sau đóng (phút :30). LONG: M30 chạm về ≤ đáy cây phá → không báo, trừ khi M30 đóng xanh. SHORT: M30 chạm ≥ đỉnh cây phá → không báo, trừ khi đóng đỏ.`,
     `<b>Cây phá chưa đẹp</b> (sai màu, râu dài hơn thân, đóng sát đường) → không xét M30, chờ cây kế tiếp: đóng tiếp ngoài đường, đúng màu thì báo; quay lại trong đường là phá giả, đường vẫn còn.`,
     `<b>H4 phá đẹp</b> → báo ngay khi cây H4 đóng (03, 07, 11, 15, 19, 23 giờ); chưa đẹp → chờ cây H4 sau.`,
     `<b>Xác nhận</b> = đóng cửa vượt đỉnh/đáy cuối cùng nằm trên đường (gãy cấu trúc). <b>Retest</b> = giá chạy xa ≥ ${CFG.AWAY} ATR rồi quay về chạm đường, đóng cửa giữ được. Báo ngay khi nến đóng.`,
-    `Chỉ báo tín hiệu của cây nến VỪA đóng (đúng lúc), không báo bù tín hiệu cũ. Mỗi cú phá một tin, không giới hạn.`,
+    `Chỉ báo tín hiệu của cây nến VỪA đóng (đúng lúc), không báo bù tín hiệu cũ. Mỗi cú phá một tin, không giới hạn; hai đường cùng phía thủng cách nhau ≤ 3 nến là một tin.`,
   ];
   $('#rules').innerHTML = items.map(x => `<li>${x}</li>`).join('');
 }

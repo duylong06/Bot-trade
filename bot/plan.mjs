@@ -13,18 +13,25 @@ export function buildMessage(e) {
   const lvl = up ? 'đỉnh' : 'đáy';
   let title, body;
   const tf = e.tf === '4H' ? ' H4' : '';
-  if (e.type === 'BREAK') {
+  const volTxt = typeof e.vol === 'number' ? `Volume x${e.vol.toFixed(1)} so với trung bình 20 nến${e.vol >= 2 ? ' — volume lớn ✓' : ''}.` : '';
+  if (e.type === 'BREAK' && L.range) {
+    title = `${arrow} ${e.dir} ${name} · phá biên sideway${tf}`;
+    body = `Đóng cửa ${p(e.close)} ${up ? 'trên đỉnh' : 'dưới đáy'} biên ${p(e.linePrice)} · đi ngang ${L.span} nến, ${L.touches} chạm.`;
+    if (volTxt) body += '\n' + volTxt;
+    if (e.others) body += ` Cùng lúc phá thêm ${e.others} đường.`;
+  } else if (e.type === 'BREAK') {
     title = `${arrow} ${e.dir} ${name} · phá ${L.kind}${tf}`;
     body = `Đóng cửa ${p(e.close)} ${up ? 'trên' : 'dưới'} đường ${p(e.linePrice)} · mô hình ${L.span} nến, ${L.touches} chạm.`;
+    if (volTxt) body += ' ' + volTxt;
     body += e.confirmed ? `\nĐã ${up ? 'vượt' : 'thủng'} ${lvl} cũ ${p(e.level)} ✓` : `\nChưa ${up ? 'vượt' : 'thủng'} ${lvl} cũ ${p(e.level)}.`;
     if (L.steep) body += ' Đường dốc — thường không có retest.';
     if (e.others) body += ` Cùng lúc phá thêm ${e.others} đường.`;
   } else if (e.type === 'CONFIRM') {
     title = `✓ Xác nhận ${e.dir} ${name}${tf}`;
-    body = `Đóng cửa ${p(e.close)} ${up ? 'vượt' : 'thủng'} ${lvl} cũ ${p(e.level)} — cấu trúc đã gãy. Phá ${L.kind} ${L.span} nến lúc ${hhmm(L.tBreak)}.`;
+    body = `Đóng cửa ${p(e.close)} ${up ? 'vượt' : 'thủng'} ${lvl} cũ ${p(e.level)} — cấu trúc đã gãy. Phá ${L.range ? 'biên sideway' : L.kind} ${L.span} nến lúc ${hhmm(L.tBreak)}.`;
   } else {
     title = `↺ Retest ${e.dir} ${name}${tf}`;
-    body = `Giá quay về chạm ${L.kind} ${L.span} nến vừa phá (${p(e.linePrice)}) và đóng cửa giữ được ở ${p(e.close)}.`;
+    body = `Giá quay về chạm ${L.range ? 'biên sideway' : L.kind} ${L.span} nến vừa phá (${p(e.linePrice)}) và đóng cửa giữ được ở ${p(e.close)}.`;
   }
   if (e.m30 && typeof e.m30 === 'object') body += e.m30.touch
     ? `\nNến M30 sau đó có rút râu về ${up ? 'đáy' : 'đỉnh'} cây phá nhưng đóng ${up ? 'xanh' : 'đỏ'} — vẫn giữ.`
