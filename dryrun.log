@@ -1,0 +1,7 @@
+[  0.1s] Chế độ dry-run · kích hoạt bởi push · 1 máy nhận thông báo
+[  0.1s] Nến cần xử lý: H1 15:00 29/10 (đóng lúc 16:00)
+[  0.4s] OKX: https://www.okx.com
+[  1.1s] Theo dõi 78 mã theo vốn hoá CoinGecko + top 36 khối lượng OKX (thêm 9): BTC ETH BNB XRP SOL TRX ZEC HYPE DOGE LINK ADA XLM … + Vàng XAU, Dầu WTI CL
+[ 46.3s] Đã tải 78 đồng (cả nến H4)
+[ 47.5s] Phân tích 78 đồng: 1656 đường H1, 1338 đường H4, 211 sự kiện mới
+[ 47.5s] Thử 48 giờ: {"CONFIRM":44,"BREAK":106,"RETEST":36,"BREAK H4":13,"RETEST H4":5,"CONFIRM H4":7} (cây phá yếu phải chờ cây sau: 24) → khoảng 106 tín hiệu/ngày

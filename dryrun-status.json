@@ -1,0 +1,98 @@
+{
+ "version": 5,
+ "mode": "dry-run",
+ "stage": "dry-run",
+ "trigger": "push",
+ "startedAt": 1793267669561,
+ "cfg": {
+  "window": 1000,
+  "top": 67,
+  "topVol": 36,
+  "pinned": [
+   "XAU-USDT-SWAP",
+   "CL-USDT-SWAP"
+  ],
+  "alerts": [
+   "BREAK",
+   "CONFIRM",
+   "RETEST"
+  ],
+  "minPattern": 45
+ },
+ "target": 1793260800000,
+ "closeAt": 1793264400000,
+ "host": "https://www.okx.com",
+ "universe": {
+  "src": "vốn hoá CoinGecko + top 36 khối lượng OKX (thêm 9)",
+  "n": 78
+ },
+ "prefetchMs": 46306,
+ "readyAfterCloseMs": 3315867,
+ "analyzeMs": 1197,
+ "counts": {
+  "coins": 78,
+  "lines": 1656,
+  "lines4": 1338,
+  "events": 211,
+  "h4": true
+ },
+ "result": "dry-run",
+ "finishedAt": 1793267717182,
+ "devices": [
+  {
+   "id": "f7c42102ff92",
+   "at": 1793262601966,
+   "name": "iPhone 2026-10-27",
+   "src": "secret",
+   "ok": true,
+   "status": 201
+  }
+ ],
+ "push": {
+  "configured": 1,
+  "ids": [
+   "f7c42102ff92"
+  ],
+  "dead": [],
+  "vapidPub": "BCEL0t7GnY2eHjF8Sx6ksoWfm-bJ_-kd37uWJNQNk-mABtMzBPyIP6vcnFE__EdG-Gyoh_hk68-XYS7X6Dqlo-w",
+  "ntfy": "https://ntfy.sh/bottrade-duylong06-7f3k9q2m",
+  "fromApp": 0
+ },
+ "pending": [],
+ "following": [],
+ "lastScan": {
+  "at": 1793264406470,
+  "target": 1793260800000,
+  "closeAt": 1793264400000,
+  "trigger": "workflow_dispatch",
+  "host": "https://www.okx.com",
+  "readyAfterCloseMs": 5957,
+  "pushDoneAfterCloseMs": 6457,
+  "counts": {
+   "coins": 69,
+   "lines": 1809,
+   "lines4": 0,
+   "events": 0,
+   "h4": false
+  },
+  "signals": 0,
+  "pushes": 0,
+  "sent": 0,
+  "skipped": 0,
+  "waiting": 0,
+  "followN": 0,
+  "universe": {
+   "src": "vốn hoá CoinGecko",
+   "n": 69
+  }
+ },
+ "m30": {
+  "at": 1793262602220,
+  "closeAt": 1793262600000,
+  "checked": 3,
+  "pushed": 2,
+  "skipped": 1,
+  "sent": 2,
+  "doneAfterCloseMs": 2220
+ }
+}

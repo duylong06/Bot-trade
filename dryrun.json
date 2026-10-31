@@ -1,0 +1,1238 @@
+{
+ "at": 1793267717081,
+ "host": "https://www.okx.com",
+ "universe": {
+  "src": "vốn hoá CoinGecko + top 36 khối lượng OKX (thêm 9)",
+  "n": 78
+ },
+ "target": "15:00 29/10",
+ "hours": 48,
+ "byType": {
+  "CONFIRM": 44,
+  "BREAK": 106,
+  "RETEST": 36,
+  "BREAK H4": 13,
+  "RETEST H4": 5,
+  "CONFIRM H4": 7
+ },
+ "bySize": {
+  "100-249": {
+   "BREAK": 50,
+   "CONFIRM": 23,
+   "RETEST": 10
+  },
+  "45-99": {
+   "BREAK": 49,
+   "CONFIRM": 22,
+   "RETEST": 21
+  },
+  "500+": {
+   "BREAK": 12,
+   "CONFIRM": 2,
+   "RETEST": 6
+  },
+  "250-499": {
+   "BREAK": 8,
+   "CONFIRM": 4,
+   "RETEST": 4
+  }
+ },
+ "weak": 24,
+ "perDay": 105.5,
+ "perCoin": [
+  {
+   "coin": "BTC",
+   "lines": 23,
+   "shown": 1,
+   "events": 0
+  },
+  {
+   "coin": "ETH",
+   "lines": 23,
+   "shown": 3,
+   "events": 3
+  },
+  {
+   "coin": "BNB",
+   "lines": 23,
+   "shown": 3,
+   "events": 5
+  },
+  {
+   "coin": "XRP",
+   "lines": 11,
+   "shown": 2,
+   "events": 5
+  },
+  {
+   "coin": "SOL",
+   "lines": 19,
+   "shown": 2,
+   "events": 4
+  },
+  {
+   "coin": "TRX",
+   "lines": 32,
+   "shown": 3,
+   "events": 2
+  },
+  {
+   "coin": "ZEC",
+   "lines": 25,
+   "shown": 4,
+   "events": 4
+  },
+  {
+   "coin": "HYPE",
+   "lines": 21,
+   "shown": 1,
+   "events": 0
+  },
+  {
+   "coin": "DOGE",
+   "lines": 20,
+   "shown": 1,
+   "events": 1
+  },
+  {
+   "coin": "LINK",
+   "lines": 11,
+   "shown": 1,
+   "events": 2
+  },
+  {
+   "coin": "ADA",
+   "lines": 26,
+   "shown": 2,
+   "events": 6
+  },
+  {
+   "coin": "XLM",
+   "lines": 13,
+   "shown": 2,
+   "events": 3
+  },
+  {
+   "coin": "NEAR",
+   "lines": 28,
+   "shown": 2,
+   "events": 3
+  },
+  {
+   "coin": "BCH",
+   "lines": 17,
+   "shown": 2,
+   "events": 4
+  },
+  {
+   "coin": "LTC",
+   "lines": 25,
+   "shown": 4,
+   "events": 6
+  },
+  {
+   "coin": "UNI",
+   "lines": 21,
+   "shown": 2,
+   "events": 6
+  },
+  {
+   "coin": "AVAX",
+   "lines": 28,
+   "shown": 3,
+   "events": 3
+  },
+  {
+   "coin": "CC",
+   "lines": 21,
+   "shown": 2,
+   "events": 4
+  },
+  {
+   "coin": "SUI",
+   "lines": 25,
+   "shown": 2,
+   "events": 1
+  },
+  {
+   "coin": "GRAM",
+   "lines": 10,
+   "shown": 1,
+   "events": 2
+  },
+  {
+   "coin": "HBAR",
+   "lines": 16,
+   "shown": 2,
+   "events": 5
+  },
+  {
+   "coin": "TAO",
+   "lines": 41,
+   "shown": 3,
+   "events": 5
+  },
+  {
+   "coin": "SHIB",
+   "lines": 26,
+   "shown": 2,
+   "events": 6
+  },
+  {
+   "coin": "BTW",
+   "lines": 2,
+   "shown": 0,
+   "events": 0
+  },
+  {
+   "coin": "CRO",
+   "lines": 19,
+   "shown": 2,
+   "events": 0
+  },
+  {
+   "coin": "ENA",
+   "lines": 27,
+   "shown": 4,
+   "events": 7
+  },
+  {
+   "coin": "OKB",
+   "lines": 14,
+   "shown": 0,
+   "events": 0
+  },
+  {
+   "coin": "PEPE",
+   "lines": 15,
+   "shown": 1,
+   "events": 1
+  },
+  {
+   "coin": "AAVE",
+   "lines": 12,
+   "shown": 0,
+   "events": 0
+  },
+  {
+   "coin": "ONDO",
+   "lines": 28,
+   "shown": 4,
+   "events": 5
+  },
+  {
+   "coin": "PUMP",
+   "lines": 23,
+   "shown": 5,
+   "events": 4
+  },
+  {
+   "coin": "ASTER",
+   "lines": 35,
+   "shown": 3,
+   "events": 4
+  },
+  {
+   "coin": "DOT",
+   "lines": 30,
+   "shown": 0,
+   "events": 0
+  },
+  {
+   "coin": "WLFI",
+   "lines": 35,
+   "shown": 1,
+   "events": 0
+  },
+  {
+   "coin": "WLD",
+   "lines": 19,
+   "shown": 0,
+   "events": 0
+  },
+  {
+   "coin": "MORPHO",
+   "lines": 13,
+   "shown": 1,
+   "events": 1
+  },
+  {
+   "coin": "SKY",
+   "lines": 8,
+   "shown": 0,
+   "events": 0
+  },
+  {
+   "coin": "ICP",
+   "lines": 25,
+   "shown": 2,
+   "events": 4
+  },
+  {
+   "coin": "ETC",
+   "lines": 21,
+   "shown": 3,
+   "events": 6
+  },
+  {
+   "coin": "VVV",
+   "lines": 27,
+   "shown": 2,
+   "events": 4
+  },
+  {
+   "coin": "ARB",
+   "lines": 30,
+   "shown": 1,
+   "events": 3
+  },
+  {
+   "coin": "POL",
+   "lines": 23,
+   "shown": 3,
+   "events": 4
+  },
+  {
+   "coin": "ALGO",
+   "lines": 26,
+   "shown": 2,
+   "events": 5
+  },
+  {
+   "coin": "JUP",
+   "lines": 16,
+   "shown": 0,
+   "events": 0
+  },
+  {
+   "coin": "PI",
+   "lines": 26,
+   "shown": 2,
+   "events": 6
+  },
+  {
+   "coin": "ATOM",
+   "lines": 30,
+   "shown": 2,
+   "events": 1
+  },
+  {
+   "coin": "RENDER",
+   "lines": 21,
+   "shown": 2,
+   "events": 4
+  },
+  {
+   "coin": "INJ",
+   "lines": 45,
+   "shown": 4,
+   "events": 4
+  },
+  {
+   "coin": "FIL",
+   "lines": 26,
+   "shown": 1,
+   "events": 1
+  },
+  {
+   "coin": "LIT",
+   "lines": 24,
+   "shown": 1,
+   "events": 3
+  },
+  {
+   "coin": "NIGHT",
+   "lines": 21,
+   "shown": 3,
+   "events": 5
+  },
+  {
+   "coin": "ZRO",
+   "lines": 16,
+   "shown": 3,
+   "events": 1
+  },
+  {
+   "coin": "DASH",
+   "lines": 32,
+   "shown": 3,
+   "events": 5
+  },
+  {
+   "coin": "ETHFI",
+   "lines": 24,
+   "shown": 2,
+   "events": 1
+  },
+  {
+   "coin": "APT",
+   "lines": 22,
+   "shown": 0,
+   "events": 0
+  },
+  {
+   "coin": "AERO",
+   "lines": 17,
+   "shown": 0,
+   "events": 0
+  },
+  {
+   "coin": "PYTH",
+   "lines": 24,
+   "shown": 2,
+   "events": 3
+  },
+  {
+   "coin": "STX",
+   "lines": 19,
+   "shown": 3,
+   "events": 8
+  },
+  {
+   "coin": "TIA",
+   "lines": 22,
+   "shown": 2,
+   "events": 3
+  },
+  {
+   "coin": "CRV",
+   "lines": 30,
+   "shown": 1,
+   "events": 2
+  },
+  {
+   "coin": "STABLE",
+   "lines": 18,
+   "shown": 2,
+   "events": 0
+  },
+  {
+   "coin": "PENGU",
+   "lines": 13,
+   "shown": 2,
+   "events": 6
+  },
+  {
+   "coin": "AKE",
+   "lines": 12,
+   "shown": 1,
+   "events": 1
+  },
+  {
+   "coin": "GRASS",
+   "lines": 19,
+   "shown": 3,
+   "events": 3
+  },
+  {
+   "coin": "TRUMP",
+   "lines": 44,
+   "shown": 2,
+   "events": 3
+  },
+  {
+   "coin": "RAY",
+   "lines": 24,
+   "shown": 2,
+   "events": 9
+  },
+  {
+   "coin": "FET",
+   "lines": 21,
+   "shown": 2,
+   "events": 4
+  },
+  {
+   "coin": "INIT",
+   "lines": 11,
+   "shown": 0,
+   "events": 0
+  },
+  {
+   "coin": "APR",
+   "lines": 13,
+   "shown": 0,
+   "events": 0
+  },
+  {
+   "coin": "DOS",
+   "lines": 23,
+   "shown": 0,
+   "events": 0
+  },
+  {
+   "coin": "CAP",
+   "lines": 12,
+   "shown": 1,
+   "events": 1
+  },
+  {
+   "coin": "AXIS",
+   "lines": 4,
+   "shown": 2,
+   "events": 4
+  },
+  {
+   "coin": "STRK",
+   "lines": 10,
+   "shown": 0,
+   "events": 0
+  },
+  {
+   "coin": "BEAT",
+   "lines": 11,
+   "shown": 0,
+   "events": 0
+  },
+  {
+   "coin": "DOOD",
+   "lines": 11,
+   "shown": 1,
+   "events": 0
+  },
+  {
+   "coin": "PONS",
+   "lines": 20,
+   "shown": 2,
+   "events": 3
+  },
+  {
+   "coin": "XAU",
+   "lines": 22,
+   "shown": 2,
+   "events": 0
+  },
+  {
+   "coin": "CL",
+   "lines": 16,
+   "shown": 3,
+   "events": 2
+  }
+ ],
+ "sample": [
+  {
+   "at": "14:00 29/10",
+   "tf": "1H",
+   "coin": "DOGE",
+   "type": "BREAK",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 112,
+   "touches": 4,
+   "cls": "clean",
+   "follow": false,
+   "msg": {
+    "title": "▼ SHORT DOGE · phá hỗ trợ tăng",
+    "body": "Đóng cửa 0.07767 dưới đường 0.07787 · mô hình 112 nến, 4 chạm. Volume x0.7 so với trung bình 20 nến.\nChưa thủng đáy cũ 0.07737.\nNến H1 14:00",
+    "url": "./#s=DOGE-USDT-SWAP&ev=BREAK&t=1793257200000",
+    "tag": "DOGE-USDT-SWAP|BREAK|1793257200000|1H"
+   }
+  },
+  {
+   "at": "14:00 29/10",
+   "tf": "1H",
+   "coin": "TAO",
+   "type": "BREAK",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 112,
+   "touches": 2,
+   "cls": "clean",
+   "follow": false,
+   "msg": {
+    "title": "▼ SHORT TAO · phá hỗ trợ tăng",
+    "body": "Đóng cửa 246.83 dưới đường 247.34 · mô hình 112 nến, 2 chạm. Volume x0.6 so với trung bình 20 nến.\nChưa thủng đáy cũ 245.51.\nNến H1 14:00",
+    "url": "./#s=TAO-USDT-SWAP&ev=BREAK&t=1793257200000",
+    "tag": "TAO-USDT-SWAP|BREAK|1793257200000|1H"
+   }
+  },
+  {
+   "at": "14:00 29/10",
+   "tf": "1H",
+   "coin": "SHIB",
+   "type": "CONFIRM",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 65,
+   "touches": 3,
+   "cls": null,
+   "follow": null,
+   "msg": {
+    "title": "✓ Xác nhận SHORT SHIB",
+    "body": "Đóng cửa 0.000004828 thủng đáy cũ 0.000004843 — cấu trúc đã gãy. Phá hỗ trợ tăng 65 nến lúc 08:00.\nNến H1 14:00",
+    "url": "./#s=SHIB-USDT-SWAP&ev=CONFIRM&t=1793257200000",
+    "tag": "SHIB-USDT-SWAP|CONFIRM|1793257200000|1H"
+   }
+  },
+  {
+   "at": "14:00 29/10",
+   "tf": "1H",
+   "coin": "SHIB",
+   "type": "BREAK",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 71,
+   "touches": 2,
+   "cls": "clean",
+   "follow": false,
+   "msg": {
+    "title": "▼ SHORT SHIB · phá hỗ trợ tăng",
+    "body": "Đóng cửa 0.000004828 dưới đường 0.000004849 · mô hình 71 nến, 2 chạm. Volume x0.6 so với trung bình 20 nến.\nChưa thủng đáy cũ 0.000004793.\nNến H1 14:00",
+    "url": "./#s=SHIB-USDT-SWAP&ev=BREAK&t=1793257200000",
+    "tag": "SHIB-USDT-SWAP|BREAK|1793257200000|1H"
+   }
+  },
+  {
+   "at": "14:00 29/10",
+   "tf": "1H",
+   "coin": "NIGHT",
+   "type": "CONFIRM",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 55,
+   "touches": 3,
+   "cls": null,
+   "follow": null,
+   "msg": {
+    "title": "✓ Xác nhận SHORT NIGHT",
+    "body": "Đóng cửa 0.038858 thủng đáy cũ 0.039262 — cấu trúc đã gãy. Phá hỗ trợ tăng 55 nến lúc 17:00.\nNến H1 14:00",
+    "url": "./#s=NIGHT-USDT-SWAP&ev=CONFIRM&t=1793257200000",
+    "tag": "NIGHT-USDT-SWAP|CONFIRM|1793257200000|1H"
+   }
+  },
+  {
+   "at": "13:00 29/10",
+   "tf": "1H",
+   "coin": "NEAR",
+   "type": "CONFIRM",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 107,
+   "touches": 2,
+   "cls": null,
+   "follow": null,
+   "msg": {
+    "title": "✓ Xác nhận SHORT NEAR",
+    "body": "Đóng cửa 4.341 thủng đáy cũ 4.385 — cấu trúc đã gãy. Phá hỗ trợ tăng 107 nến lúc 08:00.\nNến H1 13:00",
+    "url": "./#s=NEAR-USDT-SWAP&ev=CONFIRM&t=1793253600000",
+    "tag": "NEAR-USDT-SWAP|CONFIRM|1793253600000|1H"
+   }
+  },
+  {
+   "at": "13:00 29/10",
+   "tf": "1H",
+   "coin": "RAY",
+   "type": "BREAK",
+   "dir": "SHORT",
+   "kind": "hỗ trợ ngang",
+   "span": 251,
+   "touches": 2,
+   "cls": "clean",
+   "follow": false,
+   "msg": {
+    "title": "▼ SHORT RAY · phá biên sideway",
+    "body": "Đóng cửa 1.6472 dưới đáy biên 1.7030 · đi ngang 251 nến, 2 chạm.\nVolume x2.7 so với trung bình 20 nến — volume lớn ✓.\nNến H1 13:00",
+    "url": "./#s=RAY-USDT-SWAP&ev=BREAK&t=1793253600000",
+    "tag": "RAY-USDT-SWAP|BREAK|1793253600000|1H"
+   }
+  },
+  {
+   "at": "12:00 29/10",
+   "tf": "1H",
+   "coin": "CRV",
+   "type": "RETEST",
+   "dir": "SHORT",
+   "kind": "hỗ trợ ngang",
+   "span": 45,
+   "touches": 3,
+   "cls": null,
+   "follow": null,
+   "msg": {
+    "title": "↺ Retest SHORT CRV",
+    "body": "Giá quay về chạm biên sideway 45 nến vừa phá (0.3307) và đóng cửa giữ được ở 0.3269.\nNến H1 12:00",
+    "url": "./#s=CRV-USDT-SWAP&ev=RETEST&t=1793250000000",
+    "tag": "CRV-USDT-SWAP|RETEST|1793250000000|1H"
+   }
+  },
+  {
+   "at": "11:00 29/10",
+   "tf": "1H",
+   "coin": "BCH",
+   "type": "RETEST",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 554,
+   "touches": 3,
+   "cls": null,
+   "follow": null,
+   "msg": {
+    "title": "↺ Retest LONG BCH",
+    "body": "Giá quay về chạm kháng cự giảm 554 nến vừa phá (277.87) và đóng cửa giữ được ở 279.98.\nNến H1 11:00",
+    "url": "./#s=BCH-USDT-SWAP&ev=RETEST&t=1793246400000",
+    "tag": "BCH-USDT-SWAP|RETEST|1793246400000|1H"
+   }
+  },
+  {
+   "at": "10:00 29/10",
+   "tf": "1H",
+   "coin": "BCH",
+   "type": "CONFIRM",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 106,
+   "touches": 4,
+   "cls": null,
+   "follow": null,
+   "msg": {
+    "title": "✓ Xác nhận SHORT BCH",
+    "body": "Đóng cửa 277.33 thủng đáy cũ 282.08 — cấu trúc đã gãy. Phá hỗ trợ tăng 106 nến lúc 08:00.\nNến H1 10:00",
+    "url": "./#s=BCH-USDT-SWAP&ev=CONFIRM&t=1793242800000",
+    "tag": "BCH-USDT-SWAP|CONFIRM|1793242800000|1H"
+   }
+  },
+  {
+   "at": "10:00 29/10",
+   "tf": "1H",
+   "coin": "UNI",
+   "type": "CONFIRM",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 63,
+   "touches": 5,
+   "cls": null,
+   "follow": null,
+   "msg": {
+    "title": "✓ Xác nhận SHORT UNI",
+    "body": "Đóng cửa 6.981 thủng đáy cũ 6.990 — cấu trúc đã gãy. Phá hỗ trợ tăng 63 nến lúc 13:00.\nNến H1 10:00",
+    "url": "./#s=UNI-USDT-SWAP&ev=CONFIRM&t=1793242800000",
+    "tag": "UNI-USDT-SWAP|CONFIRM|1793242800000|1H"
+   }
+  },
+  {
+   "at": "10:00 29/10",
+   "tf": "1H",
+   "coin": "ETC",
+   "type": "CONFIRM",
+   "dir": "SHORT",
+   "kind": "hỗ trợ ngang",
+   "span": 107,
+   "touches": 2,
+   "cls": null,
+   "follow": null,
+   "msg": {
+    "title": "✓ Xác nhận SHORT ETC",
+    "body": "Đóng cửa 7.368 thủng đáy cũ 7.378 — cấu trúc đã gãy. Phá biên sideway 107 nến lúc 09:00.\nNến H1 10:00",
+    "url": "./#s=ETC-USDT-SWAP&ev=CONFIRM&t=1793242800000",
+    "tag": "ETC-USDT-SWAP|CONFIRM|1793242800000|1H"
+   }
+  },
+  {
+   "at": "10:00 29/10",
+   "tf": "1H",
+   "coin": "ETHFI",
+   "type": "BREAK",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 90,
+   "touches": 3,
+   "cls": "clean",
+   "follow": false,
+   "msg": {
+    "title": "▼ SHORT ETHFI · phá hỗ trợ tăng",
+    "body": "Đóng cửa 0.6530 dưới đường 0.6582 · mô hình 90 nến, 3 chạm. Volume x1.0 so với trung bình 20 nến.\nChưa thủng đáy cũ 0.6448.\nNến H1 10:00",
+    "url": "./#s=ETHFI-USDT-SWAP&ev=BREAK&t=1793242800000",
+    "tag": "ETHFI-USDT-SWAP|BREAK|1793242800000|1H"
+   }
+  },
+  {
+   "at": "09:00 29/10",
+   "tf": "1H",
+   "coin": "AVAX",
+   "type": "RETEST",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 141,
+   "touches": 2,
+   "cls": null,
+   "follow": null,
+   "msg": {
+    "title": "↺ Retest LONG AVAX",
+    "body": "Giá quay về chạm kháng cự giảm 141 nến vừa phá (8.546) và đóng cửa giữ được ở 8.671.\nNến H1 09:00",
+    "url": "./#s=AVAX-USDT-SWAP&ev=RETEST&t=1793239200000",
+    "tag": "AVAX-USDT-SWAP|RETEST|1793239200000|1H"
+   }
+  },
+  {
+   "at": "09:00 29/10",
+   "tf": "1H",
+   "coin": "GRAM",
+   "type": "CONFIRM",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 46,
+   "touches": 3,
+   "cls": null,
+   "follow": null,
+   "msg": {
+    "title": "✓ Xác nhận SHORT GRAM",
+    "body": "Đóng cửa 1.211 thủng đáy cũ 1.216 — cấu trúc đã gãy. Phá hỗ trợ tăng 46 nến lúc 08:00.\nNến H1 09:00",
+    "url": "./#s=GRAM-USDT-SWAP&ev=CONFIRM&t=1793239200000",
+    "tag": "GRAM-USDT-SWAP|CONFIRM|1793239200000|1H"
+   }
+  },
+  {
+   "at": "09:00 29/10",
+   "tf": "1H",
+   "coin": "ASTER",
+   "type": "CONFIRM",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 58,
+   "touches": 2,
+   "cls": null,
+   "follow": null,
+   "msg": {
+    "title": "✓ Xác nhận SHORT ASTER",
+    "body": "Đóng cửa 0.6952 thủng đáy cũ 0.6960 — cấu trúc đã gãy. Phá hỗ trợ tăng 58 nến lúc 08:00.\nNến H1 09:00",
+    "url": "./#s=ASTER-USDT-SWAP&ev=CONFIRM&t=1793239200000",
+    "tag": "ASTER-USDT-SWAP|CONFIRM|1793239200000|1H"
+   }
+  },
+  {
+   "at": "09:00 29/10",
+   "tf": "1H",
+   "coin": "ETC",
+   "type": "BREAK",
+   "dir": "SHORT",
+   "kind": "hỗ trợ ngang",
+   "span": 107,
+   "touches": 2,
+   "cls": "weak",
+   "follow": true,
+   "msg": {
+    "title": "▼ SHORT ETC · phá biên sideway",
+    "body": "Đóng cửa 7.394 dưới đáy biên 7.408 · đi ngang 107 nến, 2 chạm.\nVolume x4.4 so với trung bình 20 nến — volume lớn ✓.\nNến H1 09:00",
+    "url": "./#s=ETC-USDT-SWAP&ev=BREAK&t=1793239200000",
+    "tag": "ETC-USDT-SWAP|BREAK|1793239200000|1H"
+   }
+  },
+  {
+   "at": "09:00 29/10",
+   "tf": "1H",
+   "coin": "INJ",
+   "type": "BREAK",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 106,
+   "touches": 3,
+   "cls": "clean",
+   "follow": false,
+   "msg": {
+    "title": "▼ SHORT INJ · phá hỗ trợ tăng",
+    "body": "Đóng cửa 7.576 dưới đường 7.690 · mô hình 106 nến, 3 chạm. Volume x2.3 so với trung bình 20 nến — volume lớn ✓.\nĐã thủng đáy cũ 7.685 ✓\nNến H1 09:00",
+    "url": "./#s=INJ-USDT-SWAP&ev=BREAK&t=1793239200000",
+    "tag": "INJ-USDT-SWAP|BREAK|1793239200000|1H"
+   }
+  },
+  {
+   "at": "09:00 29/10",
+   "tf": "1H",
+   "coin": "DASH",
+   "type": "BREAK",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 247,
+   "touches": 3,
+   "cls": "weak",
+   "follow": true,
+   "msg": {
+    "title": "▼ SHORT DASH · phá hỗ trợ tăng",
+    "body": "Đóng cửa 51.89 dưới đường 51.93 · mô hình 247 nến, 3 chạm. Volume x2.2 so với trung bình 20 nến — volume lớn ✓.\nChưa thủng đáy cũ 50.04.\nNến H1 09:00",
+    "url": "./#s=DASH-USDT-SWAP&ev=BREAK&t=1793239200000",
+    "tag": "DASH-USDT-SWAP|BREAK|1793239200000|1H"
+   }
+  },
+  {
+   "at": "09:00 29/10",
+   "tf": "1H",
+   "coin": "GRASS",
+   "type": "BREAK",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 246,
+   "touches": 2,
+   "cls": "clean",
+   "follow": true,
+   "msg": {
+    "title": "▼ SHORT GRASS · phá hỗ trợ tăng",
+    "body": "Đóng cửa 0.6517 dưới đường 0.6601 · mô hình 246 nến, 2 chạm. Volume x2.0 so với trung bình 20 nến.\nChưa thủng đáy cũ 0.6072.\nNến H1 09:00",
+    "url": "./#s=GRASS-USDT-SWAP&ev=BREAK&t=1793239200000",
+    "tag": "GRASS-USDT-SWAP|BREAK|1793239200000|1H"
+   }
+  },
+  {
+   "at": "08:00 29/10",
+   "tf": "1H",
+   "coin": "ETH",
+   "type": "BREAK",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 70,
+   "touches": 3,
+   "cls": "clean",
+   "follow": true,
+   "msg": {
+    "title": "▼ SHORT ETH · phá hỗ trợ tăng",
+    "body": "Đóng cửa 2,313.16 dưới đường 2,323.80 · mô hình 70 nến, 3 chạm. Volume x2.2 so với trung bình 20 nến — volume lớn ✓.\nĐã thủng đáy cũ 2,321.31 ✓\nNến H1 08:00",
+    "url": "./#s=ETH-USDT-SWAP&ev=BREAK&t=1793235600000",
+    "tag": "ETH-USDT-SWAP|BREAK|1793235600000|1H"
+   }
+  },
+  {
+   "at": "08:00 29/10",
+   "tf": "1H",
+   "coin": "BNB",
+   "type": "BREAK",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 106,
+   "touches": 2,
+   "cls": "clean",
+   "follow": false,
+   "msg": {
+    "title": "▼ SHORT BNB · phá hỗ trợ tăng",
+    "body": "Đóng cửa 745.30 dưới đường 746.27 · mô hình 106 nến, 2 chạm. Volume x1.2 so với trung bình 20 nến.\nChưa thủng đáy cũ 733.49.\nNến H1 08:00",
+    "url": "./#s=BNB-USDT-SWAP&ev=BREAK&t=1793235600000",
+    "tag": "BNB-USDT-SWAP|BREAK|1793235600000|1H"
+   }
+  },
+  {
+   "at": "08:00 29/10",
+   "tf": "1H",
+   "coin": "XRP",
+   "type": "BREAK",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 106,
+   "touches": 5,
+   "cls": "clean",
+   "follow": true,
+   "msg": {
+    "title": "▼ SHORT XRP · phá hỗ trợ tăng",
+    "body": "Đóng cửa 1.2975 dưới đường 1.3167 · mô hình 106 nến, 5 chạm. Volume x2.3 so với trung bình 20 nến — volume lớn ✓.\nĐã thủng đáy cũ 1.3073 ✓\nNến H1 08:00",
+    "url": "./#s=XRP-USDT-SWAP&ev=BREAK&t=1793235600000",
+    "tag": "XRP-USDT-SWAP|BREAK|1793235600000|1H"
+   }
+  },
+  {
+   "at": "08:00 29/10",
+   "tf": "1H",
+   "coin": "SOL",
+   "type": "BREAK",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 106,
+   "touches": 2,
+   "cls": "clean",
+   "follow": false,
+   "msg": {
+    "title": "▼ SHORT SOL · phá hỗ trợ tăng",
+    "body": "Đóng cửa 99.81 dưới đường 100.21 · mô hình 106 nến, 2 chạm. Volume x2.0 so với trung bình 20 nến.\nChưa thủng đáy cũ 99.11.\nNến H1 08:00",
+    "url": "./#s=SOL-USDT-SWAP&ev=BREAK&t=1793235600000",
+    "tag": "SOL-USDT-SWAP|BREAK|1793235600000|1H"
+   }
+  },
+  {
+   "at": "08:00 29/10",
+   "tf": "1H",
+   "coin": "ZEC",
+   "type": "BREAK",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 106,
+   "touches": 4,
+   "cls": "clean",
+   "follow": true,
+   "msg": {
+    "title": "▼ SHORT ZEC · phá hỗ trợ tăng",
+    "body": "Đóng cửa 1,255.72 dưới đường 1,287.78 · mô hình 106 nến, 4 chạm. Volume x1.9 so với trung bình 20 nến.\nĐã thủng đáy cũ 1,263.00 ✓\nNến H1 08:00",
+    "url": "./#s=ZEC-USDT-SWAP&ev=BREAK&t=1793235600000",
+    "tag": "ZEC-USDT-SWAP|BREAK|1793235600000|1H"
+   }
+  },
+  {
+   "at": "08:00 29/10",
+   "tf": "1H",
+   "coin": "ADA",
+   "type": "RETEST",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 138,
+   "touches": 2,
+   "cls": null,
+   "follow": null,
+   "msg": {
+    "title": "↺ Retest LONG ADA",
+    "body": "Giá quay về chạm kháng cự giảm 138 nến vừa phá (0.1977) và đóng cửa giữ được ở 0.1980.\nNến H1 08:00",
+    "url": "./#s=ADA-USDT-SWAP&ev=RETEST&t=1793235600000",
+    "tag": "ADA-USDT-SWAP|RETEST|1793235600000|1H"
+   }
+  },
+  {
+   "at": "08:00 29/10",
+   "tf": "1H",
+   "coin": "ADA",
+   "type": "BREAK",
+   "dir": "SHORT",
+   "kind": "hỗ trợ ngang",
+   "span": 106,
+   "touches": 3,
+   "cls": "clean",
+   "follow": true,
+   "msg": {
+    "title": "▼ SHORT ADA · phá biên sideway",
+    "body": "Đóng cửa 0.1980 dưới đáy biên 0.2003 · đi ngang 106 nến, 3 chạm.\nVolume x4.8 so với trung bình 20 nến — volume lớn ✓.\nNến H1 08:00",
+    "url": "./#s=ADA-USDT-SWAP&ev=BREAK&t=1793235600000",
+    "tag": "ADA-USDT-SWAP|BREAK|1793235600000|1H"
+   }
+  },
+  {
+   "at": "08:00 29/10",
+   "tf": "1H",
+   "coin": "XLM",
+   "type": "BREAK",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 70,
+   "touches": 3,
+   "cls": "clean",
+   "follow": false,
+   "msg": {
+    "title": "▼ SHORT XLM · phá hỗ trợ tăng",
+    "body": "Đóng cửa 0.16801 dưới đường 0.16849 · mô hình 70 nến, 3 chạm. Volume x1.7 so với trung bình 20 nến.\nĐã thủng đáy cũ 0.16850 ✓\nNến H1 08:00",
+    "url": "./#s=XLM-USDT-SWAP&ev=BREAK&t=1793235600000",
+    "tag": "XLM-USDT-SWAP|BREAK|1793235600000|1H"
+   }
+  },
+  {
+   "at": "08:00 29/10",
+   "tf": "1H",
+   "coin": "NEAR",
+   "type": "BREAK",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 107,
+   "touches": 2,
+   "cls": "clean",
+   "follow": true,
+   "msg": {
+    "title": "▼ SHORT NEAR · phá hỗ trợ tăng",
+    "body": "Đóng cửa 4.481 dưới đường 4.534 · mô hình 107 nến, 2 chạm. Volume x2.1 so với trung bình 20 nến — volume lớn ✓.\nChưa thủng đáy cũ 4.385.\nNến H1 08:00",
+    "url": "./#s=NEAR-USDT-SWAP&ev=BREAK&t=1793235600000",
+    "tag": "NEAR-USDT-SWAP|BREAK|1793235600000|1H"
+   }
+  },
+  {
+   "at": "08:00 29/10",
+   "tf": "1H",
+   "coin": "BCH",
+   "type": "BREAK",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 106,
+   "touches": 4,
+   "cls": "clean",
+   "follow": false,
+   "msg": {
+    "title": "▼ SHORT BCH · phá hỗ trợ tăng",
+    "body": "Đóng cửa 282.52 dưới đường 285.29 · mô hình 106 nến, 4 chạm. Volume x1.6 so với trung bình 20 nến.\nChưa thủng đáy cũ 282.08.\nNến H1 08:00",
+    "url": "./#s=BCH-USDT-SWAP&ev=BREAK&t=1793235600000",
+    "tag": "BCH-USDT-SWAP|BREAK|1793235600000|1H"
+   }
+  },
+  {
+   "at": "08:00 29/10",
+   "tf": "1H",
+   "coin": "GRAM",
+   "type": "BREAK",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 46,
+   "touches": 3,
+   "cls": "clean",
+   "follow": true,
+   "msg": {
+    "title": "▼ SHORT GRAM · phá hỗ trợ tăng",
+    "body": "Đóng cửa 1.216 dưới đường 1.227 · mô hình 46 nến, 3 chạm. Volume x3.2 so với trung bình 20 nến — volume lớn ✓.\nChưa thủng đáy cũ 1.216.\nNến H1 08:00",
+    "url": "./#s=GRAM-USDT-SWAP&ev=BREAK&t=1793235600000",
+    "tag": "GRAM-USDT-SWAP|BREAK|1793235600000|1H"
+   }
+  },
+  {
+   "at": "08:00 29/10",
+   "tf": "1H",
+   "coin": "HBAR",
+   "type": "BREAK",
+   "dir": "SHORT",
+   "kind": "hỗ trợ ngang",
+   "span": 106,
+   "touches": 2,
+   "cls": "clean",
+   "follow": false,
+   "msg": {
+    "title": "▼ SHORT HBAR · phá biên sideway",
+    "body": "Đóng cửa 0.07347 dưới đáy biên 0.07487 · đi ngang 106 nến, 2 chạm.\nVolume x2.9 so với trung bình 20 nến — volume lớn ✓.\nNến H1 08:00",
+    "url": "./#s=HBAR-USDT-SWAP&ev=BREAK&t=1793235600000",
+    "tag": "HBAR-USDT-SWAP|BREAK|1793235600000|1H"
+   }
+  },
+  {
+   "at": "08:00 29/10",
+   "tf": "1H",
+   "coin": "TAO",
+   "type": "BREAK",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 106,
+   "touches": 3,
+   "cls": "clean",
+   "follow": true,
+   "msg": {
+    "title": "▼ SHORT TAO · phá hỗ trợ tăng",
+    "body": "Đóng cửa 249.06 dưới đường 250.49 · mô hình 106 nến, 3 chạm. Volume x2.3 so với trung bình 20 nến — volume lớn ✓.\nĐã thủng đáy cũ 250.34 ✓\nNến H1 08:00",
+    "url": "./#s=TAO-USDT-SWAP&ev=BREAK&t=1793235600000",
+    "tag": "TAO-USDT-SWAP|BREAK|1793235600000|1H"
+   }
+  },
+  {
+   "at": "08:00 29/10",
+   "tf": "1H",
+   "coin": "SHIB",
+   "type": "BREAK",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 65,
+   "touches": 3,
+   "cls": "clean",
+   "follow": true,
+   "msg": {
+    "title": "▼ SHORT SHIB · phá hỗ trợ tăng",
+    "body": "Đóng cửa 0.000004859 dưới đường 0.000004870 · mô hình 65 nến, 3 chạm. Volume x2.3 so với trung bình 20 nến — volume lớn ✓.\nChưa thủng đáy cũ 0.000004843. Cùng lúc phá thêm 1 đường.\nNến H1 08:00",
+    "url": "./#s=SHIB-USDT-SWAP&ev=BREAK&t=1793235600000",
+    "tag": "SHIB-USDT-SWAP|BREAK|1793235600000|1H"
+   }
+  },
+  {
+   "at": "08:00 29/10",
+   "tf": "1H",
+   "coin": "ETC",
+   "type": "BREAK",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 72,
+   "touches": 3,
+   "cls": "clean",
+   "follow": true,
+   "msg": {
+    "title": "▼ SHORT ETC · phá hỗ trợ tăng",
+    "body": "Đóng cửa 7.420 dưới đường 7.555 · mô hình 72 nến, 3 chạm. Volume x2.2 so với trung bình 20 nến — volume lớn ✓.\nĐã thủng đáy cũ 7.490 ✓\nNến H1 08:00",
+    "url": "./#s=ETC-USDT-SWAP&ev=BREAK&t=1793235600000",
+    "tag": "ETC-USDT-SWAP|BREAK|1793235600000|1H"
+   }
+  },
+  {
+   "at": "08:00 29/10",
+   "tf": "1H",
+   "coin": "POL",
+   "type": "BREAK",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 106,
+   "touches": 3,
+   "cls": "clean",
+   "follow": false,
+   "msg": {
+    "title": "▼ SHORT POL · phá hỗ trợ tăng",
+    "body": "Đóng cửa 0.08995 dưới đường 0.09074 · mô hình 106 nến, 3 chạm. Volume x2.5 so với trung bình 20 nến — volume lớn ✓.\nChưa thủng đáy cũ 0.08901.\nNến H1 08:00",
+    "url": "./#s=POL-USDT-SWAP&ev=BREAK&t=1793235600000",
+    "tag": "POL-USDT-SWAP|BREAK|1793235600000|1H"
+   }
+  },
+  {
+   "at": "08:00 29/10",
+   "tf": "1H",
+   "coin": "ATOM",
+   "type": "BREAK",
+   "dir": "SHORT",
+   "kind": "hỗ trợ ngang",
+   "span": 106,
+   "touches": 3,
+   "cls": "clean",
+   "follow": false,
+   "msg": {
+    "title": "▼ SHORT ATOM · phá biên sideway",
+    "body": "Đóng cửa 1.589 dưới đáy biên 1.600 · đi ngang 106 nến, 3 chạm.\nVolume x3.4 so với trung bình 20 nến — volume lớn ✓.\nNến H1 08:00",
+    "url": "./#s=ATOM-USDT-SWAP&ev=BREAK&t=1793235600000",
+    "tag": "ATOM-USDT-SWAP|BREAK|1793235600000|1H"
+   }
+  },
+  {
+   "at": "08:00 29/10",
+   "tf": "1H",
+   "coin": "DASH",
+   "type": "CONFIRM",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 105,
+   "touches": 3,
+   "cls": null,
+   "follow": null,
+   "msg": {
+    "title": "✓ Xác nhận SHORT DASH",
+    "body": "Đóng cửa 52.11 thủng đáy cũ 52.67 — cấu trúc đã gãy. Phá hỗ trợ tăng 105 nến lúc 07:00.\nNến H1 08:00",
+    "url": "./#s=DASH-USDT-SWAP&ev=CONFIRM&t=1793235600000",
+    "tag": "DASH-USDT-SWAP|CONFIRM|1793235600000|1H"
+   }
+  },
+  {
+   "at": "08:00 29/10",
+   "tf": "1H",
+   "coin": "STX",
+   "type": "BREAK",
+   "dir": "SHORT",
+   "kind": "hỗ trợ ngang",
+   "span": 106,
+   "touches": 4,
+   "cls": "clean",
+   "follow": true,
+   "msg": {
+    "title": "▼ SHORT STX · phá biên sideway",
+    "body": "Đóng cửa 0.2865 dưới đáy biên 0.2962 · đi ngang 106 nến, 4 chạm.\nVolume x3.9 so với trung bình 20 nến — volume lớn ✓.\nNến H1 08:00",
+    "url": "./#s=STX-USDT-SWAP&ev=BREAK&t=1793235600000",
+    "tag": "STX-USDT-SWAP|BREAK|1793235600000|1H"
+   }
+  },
+  {
+   "at": "08:00 29/10",
+   "tf": "1H",
+   "coin": "CRV",
+   "type": "BREAK",
+   "dir": "SHORT",
+   "kind": "hỗ trợ ngang",
+   "span": 45,
+   "touches": 3,
+   "cls": "clean",
+   "follow": true,
+   "msg": {
+    "title": "▼ SHORT CRV · phá biên sideway",
+    "body": "Đóng cửa 0.3263 dưới đáy biên 0.3307 · đi ngang 45 nến, 3 chạm.\nVolume x3.7 so với trung bình 20 nến — volume lớn ✓.\nNến H1 08:00",
+    "url": "./#s=CRV-USDT-SWAP&ev=BREAK&t=1793235600000",
+    "tag": "CRV-USDT-SWAP|BREAK|1793235600000|1H"
+   }
+  }
+ ],
+ "timing": {
+  "prefetchMs": 46306,
+  "analyzeMs": 1197
+ }
+}
