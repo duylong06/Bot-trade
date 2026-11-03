@@ -192,8 +192,10 @@ export async function marketContext(state, { log = () => {}, now = Date.now(), b
     if (w.kind === 'in') { if (age <= 12 * HOUR) o.in12 += w.usd; if (age <= 24 * HOUR) o.in24 += w.usd; }
     if (w.kind === 'out') { if (age <= 12 * HOUR) o.out12 += w.usd; if (age <= 24 * HOUR) o.out24 += w.usd; }
     if (STABLE.has(w.coin)) {
-      if (w.kind === 'in' && age <= 2 * HOUR) stableIn2h += w.usd;
-      if (w.kind === 'in' && age <= 24 * HOUR) stableIn24 += w.usd;
+      // dòng RÒNG vào sàn = vào − ra (Tether Treasury ↔ Bitfinex chuyển qua lại liên tục, phải trừ chiều ngược)
+      const sg = w.kind === 'in' ? 1 : w.kind === 'out' ? -1 : 0;
+      if (age <= 2 * HOUR) stableIn2h += sg * w.usd;
+      if (age <= 24 * HOUR) stableIn24 += sg * w.usd;
       if (w.kind === 'mint' && age <= 24 * HOUR) mint24 += w.usd;
       if (w.kind === 'mint' && age <= 2 * HOUR) stableIn2h += w.usd;
     }
@@ -224,7 +226,7 @@ export async function marketContext(state, { log = () => {}, now = Date.now(), b
   };
   let bias = 0;
   const stIn = Math.max(stable2hWallet || 0, stableIn2h);
-  if (stIn >= 200e6) bias += 2; else if ((stable2hWallet || 0) <= -200e6) bias -= 2;
+  if (stIn >= 200e6) bias += 2; else if (Math.min(stable2hWallet || 0, stableIn2h) <= -200e6) bias -= 2;
   const btcNet = Math.max(btcEx2h != null ? btcEx2h * px : -Infinity, btcIn2h - btcOut2h);
   if (btcNet >= 150e6) bias -= 2; else if (Math.min(btcEx2h != null ? btcEx2h * px : Infinity, btcIn2h - btcOut2h) <= -150e6) bias += 2;
   flow.bias = bias;
@@ -284,7 +286,7 @@ export function flowReport(M) {
   const lines = [];
   if (d) lines.push(`BTC.D ${d.btc}% (${d.dBtc == null ? '—' : (d.dBtc >= 0 ? '+' : '') + d.dBtc}) · USDT.D ${d.usdt}% (${d.dUsdt == null ? '—' : (d.dUsdt >= 0 ? '+' : '') + d.dUsdt}) · 24h`);
   lines.push(`Kịch bản: ${M.scenario ? M.scenario.text : '—'}`);
-  lines.push(`Stablecoin ví 28c + TDqSq: 24h ${usd(f.stable24hWallet)} · 7 ngày ${usd(f.stable7dWallet)} · whale alert vào sàn 24h ${usd(f.stableIn24)}, mint ${usd(f.mint24)}`);
+  lines.push(`Stablecoin ví 28c + TDqSq: 24h ${usd(f.stable24hWallet)} · 7 ngày ${usd(f.stable7dWallet)} · whale alert ròng vào sàn 24h ${usd(f.stableIn24)}, mint ${usd(f.mint24)}`);
   lines.push(`BTC ví sàn (Binance, Bitfinex): 24h ${usd(f.btcEx24)}${f.btcEx24 != null ? (f.btcEx24 > 0 ? ' (nạp lên sàn — áp lực bán)' : ' (rút khỏi sàn — tích trữ)') : ''}`);
   const big = Object.entries(M.whale || {}).filter(([c]) => !STABLE.has(c)).map(([c, o]) => [c, o.in24 - o.out24]).filter(([, v]) => Math.abs(v) >= 25e6).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 4);
   if (big.length) lines.push('Cá voi ròng 24h: ' + big.map(([c, v]) => `${c} ${usd(v)} ${v > 0 ? 'vào sàn' : 'ra sàn'}`).join(', '));
@@ -297,7 +299,7 @@ export function flowReport(M) {
 export function flowAlerts(M) {
   const f = M.flow || {}, out = [];
   const st = Math.max(f.stable2hWallet || 0, f.stableIn2h || 0);
-  if (st >= 200e6) out.push({ key: 'stable-in', title: '💵 Stablecoin đổ vào sàn', body: `${usd(st)} USDT/USDC vào ví sàn trong 2 giờ (ví 28c / TDqSq / whale alert) — tiền mặt sẵn sàng mua, nghiêng TĂNG (+2 điểm).` });
+  if (st >= 200e6) out.push({ key: 'stable-in', title: '💵 Stablecoin đổ vào sàn', body: `${usd(st)} USDT/USDC ròng vào sàn (gồm mint mới) trong 2 giờ (ví 28c / TDqSq / whale alert) — tiền mặt sẵn sàng mua, nghiêng TĂNG (+2 điểm).` });
   const btcIn = Math.max(f.btcEx2h || 0, (f.btcIn2h || 0) - (f.btcOut2h || 0));
   if (btcIn >= 150e6) out.push({ key: 'btc-in', title: '🐋 Cá mập nạp BTC lên sàn', body: `${usd(btcIn)} BTC vào sàn trong 2 giờ — chuẩn bị xả, áp lực GIẢM (−2 điểm, chặn LONG BTC).` });
   const btcOut = Math.min(f.btcEx2h || 0, (f.btcIn2h || 0) - (f.btcOut2h || 0));

@@ -435,7 +435,7 @@ function renderContext() {
   html += `<dl class="ctxl">`;
   if (d) html += `<dt>BTC.D · USDT.D</dt><dd>${d.btc}%${pp(d.dBtc)} · ${d.usdt}%${pp(d.dUsdt)} <span class="muted">(24h)</span></dd>`;
   html += `<dt>Stablecoin ví 28c + TDqSq</dt><dd>${usd(f.stable24hWallet)} 24h · ${usd(f.stable7dWallet)} 7 ngày</dd>`;
-  html += `<dt>Whale alert</dt><dd>stablecoin vào sàn ${usd(f.stableIn24)} · mint ${usd(f.mint24)} (24h)</dd>`;
+  html += `<dt>Whale alert</dt><dd>stablecoin ròng vào sàn ${usd(f.stableIn24)} · mint ${usd(f.mint24)} (24h)</dd>`;
   html += `<dt>BTC ví sàn</dt><dd>${usd(f.btcEx24)} 24h${f.btcEx24 != null ? (f.btcEx24 > 0 ? ' · nạp lên sàn' : ' · rút khỏi sàn') : ''}</dd>`;
   html += `<dt>Điểm dòng tiền</dt><dd>${f.bias > 0 ? '<span class="up">nghiêng tăng</span>' : f.bias < 0 ? '<span class="down">nghiêng giảm</span>' : 'trung tính'} (${f.bias > 0 ? '+' : ''}${f.bias ?? 0})</dd>`;
   html += `<dt>TOTAL vs BTC</dt><dd>${esc(m.totalVsBtc || '—')}</dd>`;
