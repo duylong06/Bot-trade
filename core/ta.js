@@ -277,19 +277,17 @@ export function volumeProfile(K, n = 120, bins = 48) {
  */
 export function purpleBoxes(K, A, look = 120) {
   const N = K.c.length, pv = pivots(K, 2, 2), a = A[N - 1] || 0;
-  const pts = [...pv.hi.map(i => K.h[i]), ...pv.lo.map(i => K.l[i])].filter((_, k, arr) => true);
-  const idx = [...pv.hi, ...pv.lo];
-  const P = pts.map((p, k) => ({ p, i: idx[k] })).filter(x => x.i >= N - look).sort((x, y) => x.p - y.p);
+  const P = [...pv.hi.map(i => ({ p: K.h[i], i })), ...pv.lo.map(i => ({ p: K.l[i], i }))].filter(x => x.i >= N - look).sort((x, y) => x.p - y.p);
   const boxes = [];
   for (let s = 0; s < P.length;) {
     let e = s; while (e + 1 < P.length && P[e + 1].p - P[s].p <= 0.6 * a) e++;
-    if (e - s + 1 >= 3) boxes.push({ bot: P[s].p, top: P[e].p, n: e - s + 1 });
+    if (e - s + 1 >= 3) boxes.push({ bot: P[s].p, top: P[e].p, n: e - s + 1, i: Math.min(...P.slice(s, e + 1).map(x => x.i)) });
     s = e + 1;
   }
   const vp = volumeProfile(K, look);
   if (vp) {
     for (const b of boxes) if (vp.poc >= b.bot - 0.3 * a && vp.poc <= b.top + 0.3 * a) b.poc = true;
-    if (!boxes.some(b => b.poc)) boxes.push({ bot: vp.poc - 0.3 * a, top: vp.poc + 0.3 * a, n: 0, poc: true });
+    if (!boxes.some(b => b.poc)) boxes.push({ bot: vp.poc - 0.3 * a, top: vp.poc + 0.3 * a, n: 0, poc: true, i: Math.max(0, N - look) });
   }
   return boxes;
 }
@@ -327,7 +325,7 @@ export function fibOfLastLeg(K, dir, look = 120) {
   if (!(rng > 0)) return null;
   const p = K.c[N - 1];
   // LONG: sóng đẩy lên từ đáy (trước) lên đỉnh (sau), giá hồi về → thoái lui = (đỉnh − giá) / biên độ
-  if (dir > 0 && loI < hiI) return { retr: (hi - p) / rng, hi, lo, amp: rng };
-  if (dir < 0 && hiI < loI) return { retr: (p - lo) / rng, hi, lo, amp: rng };
+  if (dir > 0 && loI < hiI) return { retr: (hi - p) / rng, hi, lo, amp: rng, hiI, loI };
+  if (dir < 0 && hiI < loI) return { retr: (p - lo) / rng, hi, lo, amp: rng, hiI, loI };
   return null;
 }

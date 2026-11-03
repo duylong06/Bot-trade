@@ -4,6 +4,9 @@ import { analyze, lineAt, HOUR, fromRows, CFG } from '../core/breakout.js';
 import * as okx from '../core/okx.js';
 import { fmtPrice, hhmm, stamp, decimalsOf } from '../core/format.js';
 import { ema, stoch } from './indicators.js';
+import { Overlay } from './overlay.js';
+import { purpleBoxes, orderBlocks, fvgs, liquidityPools, fibOfLastLeg, volumeProfile, structure, atr as atrTA, rhythm, macroTrend, dualStoch, adx } from '../core/ta.js';
+import { liqMap } from '../core/liqmap.js';
 
 const L = window.LightweightCharts;
 const TZ = -new Date().getTimezoneOffset() * 60;            // lệch giờ so với UTC, tính bằng giây
@@ -39,7 +42,8 @@ export class ChartView {
     this.el = el; this.ws = ws; this.hooks = hooks;
     this.inst = null; this.tf = '1H'; this.tickSz = null;
     this.bars = null; this.h1 = null; this.h4 = null; this.res = null; this.res4 = null; this.res30 = null;
-    this.lineSeries = []; this.focus = null; this.show = { lines: true, ema: true, stoch: true };
+    this.lineSeries = []; this.focus = null; this.show = { lines: true, ema: true, stoch: true, zones: true, liq: true };
+    this.extra = {}; this.extraFor = null;
     this.unsub = null; this.seq = 0;
     this.build();
     this.scheduleHourly();
@@ -58,7 +62,12 @@ export class ChartView {
       rightPriceScale: { borderColor: COLORS.line, scaleMargins: { top: 0.08, bottom: 0.12 } },
       timeScale: { borderColor: COLORS.line, timeVisible: true, secondsVisible: false, rightOffset: 6, barSpacing: 4.5, minBarSpacing: 0.3 },
       // vuốt dọc trên vùng nến không kéo trục giá (dễ vô tình làm mất tự căn giá); muốn kéo thì kéo ở trục giá
-      handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false },
+      // co giãn như TradingView: chụm 2 ngón phóng to/thu nhỏ, kéo trục giá = kéo dãn nến theo chiều dọc,
+      // kéo trục thời gian = dãn nến theo chiều ngang, chạm đúp trục = về mặc định, vuốt có quán tính.
+      // Vuốt dọc trên vùng nến = kéo giá lên/xuống (tắt tự căn — bấm "Tự căn" để bật lại).
+      handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: true },
+      handleScale: { mouseWheel: true, pinch: true, axisPressedMouseMove: { time: true, price: true }, axisDoubleClickReset: { time: true, price: true } },
+      kineticScroll: { touch: true, mouse: true },
       crosshair: { mode: L.CrosshairMode.Normal, vertLine: { color: '#5d6067', labelBackgroundColor: '#2a2c31' }, horzLine: { color: '#5d6067', labelBackgroundColor: '#2a2c31' } },
       localization: { locale: 'en-US' },
     });
@@ -71,6 +80,11 @@ export class ChartView {
     c.priceScale('vol', 0).applyOptions({ scaleMargins: { top: 0.82, bottom: 0 }, visible: false });
     this.ema = c.addSeries(L.LineSeries, { color: COLORS.ema, lineWidth: 1, lastValueVisible: false, priceLineVisible: false, crosshairMarkerVisible: false }, 0);
     this.markers = L.createSeriesMarkers(this.candles, []);
+    // lớp phủ: bản đồ thanh lý + vùng mua/bán (Hộp Tím, OB, FVG, 💧, OTE, POC)
+    this.T = T; this.fmt = p => fmtPrice(p, this.tickSz);
+    this.overlay = new Overlay(this);
+    this.candles.attachPrimitive(this.overlay);
+    this.planLines = [];
 
     const fixed = () => ({ priceRange: { minValue: 0, maxValue: 100 } });
     const st = (color, width) => ({ color, lineWidth: width, lastValueVisible: true, priceLineVisible: false, crosshairMarkerVisible: false, autoscaleInfoProvider: fixed, priceFormat: { type: 'price', precision: 2, minMove: 0.01 } });
@@ -109,6 +123,7 @@ export class ChartView {
       this.render(true);
       this.analyze();
       this.subscribe();
+      this.refreshExtras();
       if (!focus) this.chart.timeScale().scrollToRealTime();
       this.hooks.onStatus && this.hooks.onStatus('ok');
     } catch (e) {
@@ -262,6 +277,10 @@ export class ChartView {
     // trendline M30 (≤ 60 nến) — chỉ khi đang xem khung 30m
     const k30 = this.tf === '30m' && this.bars ? fromRows(this.bars.all.filter(r => r[8] === '1')) : null;
     this.res30 = k30 && k30.c.length >= 100 ? analyze(k30, '30m') : null;
+    this.computeZones();
+    if (this.extraFor === this.inst) this.computeLiq();
+    this.overlay.update();
+    if (this.extraFor === this.inst) this.hooks.onDash && this.hooks.onDash(this.dashboard());
     this.drawLines();
     this.hooks.onLines && this.hooks.onLines(this.shownLines || [], this.focusMatch);
   }
@@ -312,6 +331,14 @@ export class ChartView {
       }
     }
     this.shownLines = lines;
+    // kế hoạch lệnh (Entry/SL/TP) của tín hiệu đang xem
+    let planSc = null;
+    if (this.focusMatch && this.focusMatch.line) {
+      const f = this.focus || {}, ln = this.focusMatch.line, etf = f.tf || '1H';
+      const rec = (this.hooks.eventInfo || (() => null))(`${this.inst}|${f.ev}|${ln.side}|${ln.tBreak}` + (etf !== '1H' ? '|' + etf : ''));
+      planSc = rec && rec.sc;
+    }
+    this.setPlan(planSc);
 
     // Đường: kháng cự đỏ, hỗ trợ xanh dương. Còn hiệu lực = nét liền đậm + nhãn KC/HT ở trục giá.
     // Đã phá = nét đứt mờ, chỉ kéo tới sau cú phá 24 giờ (hoặc retest + 6 giờ). Đang xem = vàng.
@@ -398,6 +425,8 @@ export class ChartView {
     for (const s of [this.candles, this.vol, this.ema, this.kY, this.dY, this.kR, this.dR]) s.setData([]);
     this.markers.setMarkers([]);
     this.bars = null; this.res = null; this.res4 = null; this.res30 = null; this.h1 = null; this.h4 = null;
+    this.overlay.data = { zones: null, liq: null }; this.overlay.update();
+    this.setPlan(null);
   }
 
   zoomTo(ln) {
@@ -414,7 +443,130 @@ export class ChartView {
 
   setShow(k, v) {
     this.show[k] = v;
+    if (k === 'zones' || k === 'liq') { this.overlay.show[k] = v; this.overlay.update(); return; }
     if (k === 'lines') this.drawLines(); else this.indicators(true);
+  }
+
+  /* ---------- vùng mua / bán + bản đồ thanh lý + bảng phân tích nhanh ---------- */
+
+  // Vùng trên khung đang xem (nến đã đóng): Hộp Tím, Order Block, FVG chưa lấp, ổ thanh khoản, OTE, POC.
+  computeZones() {
+    if (!this.bars) return;
+    const K = fromRows(this.bars.all.filter(r => r[8] === '1'));
+    const N = K.c.length;
+    if (N < 60) { this.overlay.data.zones = null; return; }
+    const A = atrTA(K, 14), a = A[N - 1] || 0, px = K.c[N - 1];
+    const near = z => Math.min(Math.abs(z.top - px), Math.abs(z.bot - px), z.top >= px && z.bot <= px ? 0 : Infinity) <= 6 * a;
+    const byDist = (x, y) => Math.abs((x.top + x.bot) / 2 - px) - Math.abs((y.top + y.bot) / 2 - px);
+    const boxes = purpleBoxes(K, A).filter(near).sort(byDist).slice(0, 3).map(b => ({ ...b, t: K.t[b.i ?? Math.max(0, N - 120)] }));
+    const obsAll = orderBlocks(K, A).filter(near);
+    const obs = [...obsAll.filter(o => o.dir > 0).sort(byDist).slice(0, 2), ...obsAll.filter(o => o.dir < 0).sort(byDist).slice(0, 2)].map(o => ({ ...o, t: K.t[o.i] }));
+    const fv = fvgs(K).filter(near).sort(byDist).slice(0, 2).map(f => ({ ...f, t: K.t[Math.max(0, f.i - 1)] }));
+    const pools = liquidityPools(K, A).filter(p => p.alive && Math.abs(p.level - px) <= 6 * a).sort((x, y) => Math.abs(x.level - px) - Math.abs(y.level - px)).slice(0, 3).map(p => ({ ...p, t: K.t[Math.min(...p.idx)] }));
+    const st = structure(K, 5);
+    let ote = null;
+    if (st.trend) {
+      const f = fibOfLastLeg(K, st.trend, 120);
+      if (f) ote = st.trend > 0
+        ? { top: f.hi - 0.618 * f.amp, bot: f.hi - 0.79 * f.amp, dir: 1, t: K.t[f.hiI] }
+        : { top: f.lo + 0.79 * f.amp, bot: f.lo + 0.618 * f.amp, dir: -1, t: K.t[f.loI] };
+    }
+    const vp = volumeProfile(K, 120);
+    this.overlay.data.zones = { boxes, obs, fvgs: fv, pools, ote, poc: vp ? vp.poc : null, trend: st.trend, lastBreak: st.lastBreak ? { ...st.lastBreak, t: K.t[st.lastBreak.i] } : null };
+  }
+
+  // Tải thêm cho bảng phân tích + bản đồ thanh lý: nến 1D, 1W; OI 1H (~200 giờ); taker volume; funding.
+  async loadExtra(inst) {
+    if (this.extraFor === inst && Date.now() - (this.extra.at || 0) < 5 * 60e3) return;
+    const seq = this.seq;
+    const get = (path, q) => okx.api(path, q).catch(() => null);
+    const [d1, w1, oiA, tk, fr] = await Promise.all([
+      okx.candles(inst, '1Dutc', 300).catch(() => null), okx.candles(inst, '1Wutc', 200).catch(() => null),
+      get('/api/v5/rubik/stat/contracts/open-interest-history', { instId: inst, period: '1H', limit: '100' }),
+      get('/api/v5/rubik/stat/taker-volume-contract', { instId: inst, period: '1H', unit: '2', limit: '24' }),
+      get('/api/v5/public/funding-rate', { instId: inst }),
+    ]);
+    let oiB = null;
+    if (oiA && oiA.length) oiB = await get('/api/v5/rubik/stat/contracts/open-interest-history', { instId: inst, period: '1H', limit: '100', end: oiA[oiA.length - 1][0] });
+    if (seq !== this.seq && inst !== this.inst) return;
+    const m = new Map(); for (const r of [...(oiA || []), ...(oiB || [])]) m.set(+r[0], +r[3]);
+    this.extra = {
+      at: Date.now(), d1: d1 && d1.K, w1: w1 && w1.K, oi: [...m.entries()].sort((x, y) => x[0] - y[0]),
+      taker: (tk || []).map(r => [+r[0], +r[2], +r[1]]).sort((x, y) => x[0] - y[0]),
+      funding: fr && fr[0] ? +fr[0].fundingRate : null,
+    };
+    this.extraFor = inst;
+  }
+
+  computeLiq() {
+    const K1 = this.h1, oi = this.extra.oi;
+    if (!K1 || !oi || oi.length < 30) { this.overlay.data.liq = null; return null; }
+    const lm = liqMap(K1, oi, 168, { segments: true });
+    // cột bên phải: cụm còn sống gom theo dải 0,25% giá
+    const px = lm.price, step = px * 0.0025, bins = new Map();
+    for (const s of lm.segs) {
+      if (s.t1 != null || Math.abs(s.px / px - 1) > 0.08) continue;
+      const k = Math.floor(s.px / step);
+      const b = bins.get(k) || { lo: k * step, hi: (k + 1) * step, amt: 0, side: s.px < px ? 'L' : 'S' };
+      b.amt += s.amt; bins.set(k, b);
+    }
+    lm.bins = [...bins.values()];
+    this.overlay.data.liq = lm;
+    return lm;
+  }
+
+  // Bảng phân tích nhanh của đồng đang xem (prompt module 3, 4, 2.2): đa khung, Dual Stoch, Giá × OI, thanh lý.
+  dashboard() {
+    const X = this.extra, out = { tf: this.tf };
+    const K = this.bars ? fromRows(this.bars.all.filter(r => r[8] === '1')) : null;
+    const fr = { '1W': X.w1, '1D': X.d1, '4H': this.h4, '1H': this.h1 };
+    if (this.tf === '30m' && K) fr['30m'] = K;
+    out.rhythm = Object.entries(fr).filter(([, k]) => k && k.c && k.c.length > 60).map(([k, v]) => [k, rhythm(v)]);
+    for (const [k, v] of [['4H', this.h4], ['1D', X.d1]]) if (v && v.c.length > 150) { const m = macroTrend(v); out['mt' + k] = { bias: m.bias, g1: m.g1, above200: m.above200, adx: (() => { const a = adx(v).adx; return a[a.length - 1]; })() }; }
+    if (K && K.c.length > 60) {
+      const ds = dualStoch(K), n = K.c.length - 1, a = adx(K).adx[n];
+      const sk = ds.slowK[n], fk = ds.fastK[n], aF = ds.angFast[n], aS = ds.angSlow[n];
+      const run = c => [n - 2, n - 1, n].every(j => j >= 0 && c(j));
+      const top = run(j => ds.slowK[j] >= 80 && ds.fastK[j] >= 75), bot = run(j => ds.slowK[j] <= 20 && ds.fastK[j] <= 25);
+      const chop = sk >= 35 && sk <= 65 && Math.abs(aS) < 20 && Math.abs(aF) < 30 && a < 20;
+      const vert = Math.abs(aF) >= 70;
+      out.stoch = { sk, sd: ds.slowD[n], fk, fd: ds.fastD[n], aF, aS, adx: a,
+        state: top ? 'Ghim đỉnh — khoá Short chặn tàu, không Long đuổi' : bot ? 'Ghim đáy — khoá Long bắt đáy' : chop ? 'Lờ đờ giữa + ADX < 20 — nhiễu, đứng ngoài' : vert ? `Lao thẳng đứng ${aF > 0 ? 'lên' : 'xuống'} — cấm đánh ngược` : 'Bình thường' };
+    }
+    const K1 = this.h1;
+    if (X.oi && X.oi.length > 13 && K1 && K1.c.length > 13) {
+      const o1 = X.oi[X.oi.length - 1][1], o0 = X.oi[X.oi.length - 13][1], p1 = K1.c[K1.c.length - 1], p0 = K1.c[K1.c.length - 13];
+      const dOi = (o1 - o0) / o0, dP = (p1 - p0) / p0;
+      out.oi = { dOi, dP, usd: o1, quad: dP >= 0 ? (dOi > 0.003 ? 'LONG_BUILD' : dOi < -0.003 ? 'SHORT_COVER' : 'FLAT') : (dOi > 0.003 ? 'SHORT_BUILD' : dOi < -0.003 ? 'LONG_LIQ' : 'FLAT') };
+    }
+    if (X.taker && X.taker.length) { const t6 = X.taker.slice(-6); out.cvd = t6.reduce((s, r) => s + r[1] - r[2], 0); }
+    out.funding = X.funding;
+    const lm = this.overlay.data.liq;
+    if (lm) out.liq = { magnet: lm.magnet, up: lm.upPeakAt, dn: lm.dnPeakAt, sweptLong: lm.sweptLong, sweptShort: lm.sweptShort };
+    const Z = this.overlay.data.zones;
+    if (Z) out.struct = { trend: Z.trend, lastBreak: Z.lastBreak };
+    return out;
+  }
+
+  async refreshExtras() {
+    const inst = this.inst;
+    try { await this.loadExtra(inst); } catch {}
+    if (inst !== this.inst) return;
+    this.computeLiq();
+    this.overlay.update();
+    this.hooks.onDash && this.hooks.onDash(this.dashboard());
+  }
+
+  // Đường Entry / SL / TP1 / TP2 của tín hiệu đang xem (điểm prompt V8.0).
+  setPlan(sc) {
+    for (const l of this.planLines) { try { this.candles.removePriceLine(l); } catch {} }
+    this.planLines = [];
+    if (!sc || sc.s == null || sc.err) return;
+    const mk = (price, color, title, style = L.LineStyle.Solid) => this.planLines.push(this.candles.createPriceLine({ price, color, lineWidth: 1, lineStyle: style, axisLabelVisible: true, title }));
+    mk(sc.en, '#e6e6e6', 'Entry');
+    mk(sc.sl, COLORS.down, 'SL');
+    mk(sc.tp1, COLORS.up, 'TP1', L.LineStyle.Dashed);
+    mk(sc.tp2, COLORS.up, 'TP2', L.LineStyle.Dotted);
   }
 
   /* ---------- mỗi giờ: cập nhật lại đường khi nến H1 đóng ---------- */
@@ -433,6 +585,7 @@ export class ChartView {
         const [a, b] = await Promise.all([okx.candles(this.inst, '1H', H1N), okx.candles(this.inst, '4H', H1N).catch(() => null)]);
         this.h1 = a.K; if (b) this.h4 = b.K;
         this.analyze();
+        this.extra.at = 0; this.refreshExtras();          // OI mới của giờ vừa đóng → vẽ lại bản đồ thanh lý
       } catch {}
     }, 1500);
   }

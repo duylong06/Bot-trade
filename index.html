@@ -15,15 +15,18 @@
 <link rel="apple-touch-icon" href="app/icons/icon-180.png">
 <link rel="preconnect" href="https://www.okx.com" crossorigin>
 <link rel="preconnect" href="https://api.github.com" crossorigin>
-<link rel="stylesheet" href="app/style.css?v=13">
+<link rel="stylesheet" href="app/style.css?v=14">
 <script defer src="app/lib/lightweight-charts.standalone.production.js"></script>
-<script type="module" src="app/app.js?v=13"></script>
+<script type="module" src="app/app.js?v=14"></script>
 <link rel="modulepreload" href="app/chart.js">
 <link rel="modulepreload" href="core/breakout.js">
 <link rel="modulepreload" href="core/okx.js">
 <link rel="modulepreload" href="core/config.js">
 <link rel="modulepreload" href="core/format.js">
 <link rel="modulepreload" href="app/indicators.js">
+<link rel="modulepreload" href="app/overlay.js">
+<link rel="modulepreload" href="core/ta.js">
+<link rel="modulepreload" href="core/liqmap.js">
 <link rel="modulepreload" href="app/ws.js">
 <link rel="modulepreload" href="app/push.js">
 </head>
@@ -50,7 +53,12 @@
     <section class="view" id="v-chart">
       <div class="tfbar">
         <div class="tfs" id="tfs" role="tablist"></div>
+        <button class="pill full" id="tgFull" aria-pressed="false" aria-label="Phóng to biểu đồ">⤢</button>
+      </div>
+      <div class="layers" id="layers">
         <button class="pill on" id="tgLines" aria-pressed="true">Trendline</button>
+        <button class="pill on" id="tgZones" aria-pressed="true">Vùng mua/bán</button>
+        <button class="pill on" id="tgLiq" aria-pressed="true">Bản đồ thanh lý</button>
       </div>
       <div class="legend" id="legend"></div>
       <div class="chartwrap">
@@ -59,6 +67,7 @@
         <button class="autobtn" id="autoBtn" hidden aria-label="Tự căn trục giá">Tự căn</button>
         <div class="cstatus" id="chartStatus" hidden></div>
       </div>
+      <div class="dash" id="dash"></div>
       <div class="lines" id="lines"></div>
     </section>
 

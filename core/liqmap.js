@@ -15,11 +15,12 @@ const LEV = [10, 25, 50, 100], W = [0.30, 0.30, 0.25, 0.15], MMR = 0.005;
  * K: nến 1H { t, o, h, l, c } cũ → mới. oi: [[ts, oiUsd], …] cũ → mới (mốc giờ trùng K.t).
  * hours: cửa sổ (24 Scalp · 72 Intraday · 168 Swing).
  */
-export function liqMap(K, oi, hours = 72) {
+export function liqMap(K, oi, hours = 72, { segments = false } = {}) {
   const byT = new Map(oi.map(([t, v]) => [t, v]));
   const N = K.c.length, from = Math.max(1, N - hours);
   let clusters = [];               // { px, amt, side: 'L' | 'S' }
   let swept = [];                  // cụm bị quét ở nến cuối
+  const segs = [];                 // (để vẽ) mọi cụm: giá, phía, lúc sinh, lúc bị quét (null = còn sống)
   for (let i = from; i < N; i++) {
     // quét các cụm bị giá chạm trong nến i
     const last = i === N - 1;
@@ -30,6 +31,7 @@ export function liqMap(K, oi, hours = 72) {
     for (const c of clusters) {
       const hit = c.side === 'L' ? K.l[i] <= c.px : K.h[i] >= c.px;
       if (!hit) { keep.push(c); continue; }
+      if (c.seg) { c.seg.t1 = K.t[i]; c.seg.amt = c.amt; }
       if (last) swept.push({ ...c, big: c.amt >= 0.5 * (c.side === 'L' ? peakL : peakS) && c.amt >= 0.001 * Math.max(totalBefore, 1) });
     }
     clusters = keep;
@@ -42,8 +44,10 @@ export function liqMap(K, oi, hours = 72) {
       const ls = Math.min(0.85, Math.max(0.15, 0.5 + 0.3 * Math.tanh(ret / 0.004)));
       const px = (K.h[i] + K.l[i] + K.c[i]) / 3;
       LEV.forEach((L, k) => {
-        clusters.push({ side: 'L', px: px * (1 - 1 / L + MMR), amt: d * W[k] * ls, t: K.t[i] });
-        clusters.push({ side: 'S', px: px * (1 + 1 / L - MMR), amt: d * W[k] * (1 - ls), t: K.t[i] });
+        for (const c of [{ side: 'L', px: px * (1 - 1 / L + MMR), amt: d * W[k] * ls, t: K.t[i] }, { side: 'S', px: px * (1 + 1 / L - MMR), amt: d * W[k] * (1 - ls), t: K.t[i] }]) {
+          if (segments) { c.seg = { side: c.side, px: c.px, t0: K.t[i], t1: null, amt: c.amt, lev: L }; segs.push(c.seg); }
+          clusters.push(c);
+        }
       });
     } else if (d < 0) {
       const tot = clusters.reduce((s, c) => s + c.amt, 0);
@@ -73,5 +77,6 @@ export function liqMap(K, oi, hours = 72) {
     sweptLong: bigSwept.some(c => c.side === 'L'), sweptShort: bigSwept.some(c => c.side === 'S'),
     sweptUsd: bigSwept.reduce((s, c) => s + c.amt, 0),
     alive: clusters.length,
+    ...(segments ? { segs: (() => { for (const c of clusters) if (c.seg) c.seg.amt = c.amt; return segs; })(), price } : {}),
   };
 }

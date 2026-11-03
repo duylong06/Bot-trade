@@ -140,17 +140,26 @@ function initChart() {
     for (const x of document.querySelectorAll('.tf')) x.classList.toggle('on', x === b);
     chart.open(S.inst, S.ticks[S.inst], S.tf, chart.focus);
   });
-  $('#tgLines').addEventListener('click', e => {
-    const on = !e.currentTarget.classList.contains('on');
-    e.currentTarget.classList.toggle('on', on);
-    e.currentTarget.setAttribute('aria-pressed', on);
-    chart.setShow('lines', on);
+  // Lớp trên biểu đồ: trendline · vùng mua/bán (Hộp Tím, OB, FVG, 💧, OTE, POC) · bản đồ thanh lý — nhớ lựa chọn
+  for (const [id, k] of [['tgLines', 'lines'], ['tgZones', 'zones'], ['tgLiq', 'liq']]) {
+    const b = $('#' + id), saved = LS.get('show.' + k, true);
+    const set = on => { b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); LS.set('show.' + k, on); if (chart) chart.setShow(k, on); };
+    b.addEventListener('click', () => set(!b.classList.contains('on')));
+    b.classList.toggle('on', saved); b.setAttribute('aria-pressed', saved);
+    setTimeout(() => chart && chart.setShow(k, saved));
+  }
+  // Phóng to: ẩn thanh trên, danh sách đường, thanh tab — biểu đồ chiếm cả màn hình (xoay ngang càng rộng)
+  $('#tgFull').addEventListener('click', e => {
+    const on = !$('#app').classList.contains('full');
+    $('#app').classList.toggle('full', on);
+    e.currentTarget.classList.toggle('on', on); e.currentTarget.textContent = on ? '✕' : '⤢';
   });
 
   chart = new ChartView($('#chart'), bws, {
     onPrice: p => { const m = S.mkMap.get(S.inst); if (m) { m.last = p; if (m.open24h) m.chg = (p - m.open24h) / m.open24h; setHeader(); } },
     onLegend: renderLegend,
     onLines: (res, fm) => renderLines(res, fm),
+    onDash: d => renderDash(d),
     // mũi tên trên biểu đồ: tín hiệu này bot đã đẩy chưa, kết quả ra sao
     eventInfo: id => S.sigMap.get(id) || S.markMap.get(id) || null,
     onStatus: (st, msg) => {
@@ -183,6 +192,33 @@ function openSymbol(inst, focus = null) {
     setLines(`<div class="lrow"><span></span><span class="t1 muted">Đang tìm trendline của ${esc(coinOf(inst))}…</span></div>`);
   }
   chart.open(inst, S.ticks[inst], S.tf, focus);
+}
+
+// Bảng phân tích nhanh của đồng đang xem: đa khung, Dual Stoch, Giá × OI, funding, CVD, bản đồ thanh lý.
+function renderDash(d) {
+  const el = $('#dash'); if (!el || !d) return;
+  const tick = S.ticks[S.inst], p = v => fmtPrice(v, tick);
+  const ar = v => (v > 0 ? '<b class="up">↑</b>' : v < 0 ? '<b class="down">↓</b>' : '<b>→</b>');
+  const Q = { LONG_BUILD: ['🟢', 'Giá↑ OI↑ tiền mới vào mua'], SHORT_BUILD: ['🔴', 'Giá↓ OI↑ tiền mới vào bán'], SHORT_COVER: ['🟡', 'Giá↑ OI↓ short cover — đừng Long đuổi'], LONG_LIQ: ['⚪', 'Giá↓ OI↓ tiền rút — đừng Short đuổi đáy'], FLAT: ['', 'OI đi ngang'] };
+  const chips = [];
+  if (d.rhythm && d.rhythm.length) chips.push(`<span class="chipx">Nhịp ${d.rhythm.map(([k, v]) => `${k.replace('1W', 'W').replace('1D', 'D')}${ar(v)}`).join(' ')}</span>`);
+  if (d.stoch) chips.push(`<span class="chipx">Stoch <b>${d.stoch.state.split(' — ')[0]}</b></span>`);
+  if (d.oi) chips.push(`<span class="chipx">${Q[d.oi.quad][0]} <b>${Q[d.oi.quad][1].split(' ').slice(0, 2).join(' ')}</b></span>`);
+  if (d.liq) chips.push(`<span class="chipx">🧲 <b>${d.liq.magnet === 'up' ? 'hút lên ' + p(d.liq.up) : d.liq.magnet === 'down' ? 'hút xuống ' + p(d.liq.dn) : 'cân bằng'}</b></span>`);
+  const mk = S.status && S.status.market;
+  if (mk && mk.scenario) chips.push(`<span class="chipx">${mk.scenario.riskOff ? '<b class="down">RISK-OFF</b>' : 'Vĩ mô ' + (mk.scenario.id ? '<b>' + esc(mk.scenario.text.split(':')[0].split('—')[0]) + '</b>' : 'trung tính')}</span>`);
+  const row = (k, v) => `<span>${k}</span><span>${v}</span>`;
+  let dd = '';
+  for (const k of ['mt4H', 'mt1D']) if (d[k]) { const m = d[k]; dd += row(`Xu hướng ${k.slice(2)}`, `EMA21/55/144 ${m.bias > 0 ? '<b class="up">xếp tầng tăng</b>' : m.bias < 0 ? '<b class="down">xếp tầng giảm</b>' : 'chưa xếp tầng'} · sức mạnh ${m.g1}/3 · giá ${m.above200 ? 'trên' : 'dưới'} EMA200 · ADX ${m.adx != null ? m.adx.toFixed(0) : '—'}`); }
+  if (d.stoch) { const s = d.stoch; dd += row(`Dual Stoch ${TFL(d.tf) || d.tf}`, `32/13/5 <b>${s.sk.toFixed(0)}</b> (góc ${s.aS.toFixed(0)}°) · 10/5/5 <b>${s.fk.toFixed(0)}</b> (góc ${s.aF.toFixed(0)}°) · ADX ${s.adx != null ? s.adx.toFixed(0) : '—'}<br><b>${esc(s.state)}</b>`); }
+  if (d.struct && d.struct.lastBreak) { const b = d.struct.lastBreak; dd += row('Cấu trúc', `${b.kind} ${b.dir > 0 ? '<b class="up">tăng</b>' : '<b class="down">giảm</b>'} lúc ${hhmm(b.t)} ${ddmm(b.t)} (mốc ${p(b.level)})`); }
+  if (d.oi) dd += row('Giá × OI 12h', `${Q[d.oi.quad][0]} ${Q[d.oi.quad][1]} · giá ${fmtPct(d.oi.dP)}, OI ${fmtPct(d.oi.dOi)} (${fmtVol(d.oi.usd)}$)`);
+  if (d.cvd != null || d.funding != null) dd += row('Dòng lệnh', `${d.cvd != null ? `CVD 6h ${d.cvd >= 0 ? '<b class="up">mua chủ động</b>' : '<b class="down">bán chủ động</b>'} ${fmtVol(Math.abs(d.cvd))}$` : ''}${d.funding != null ? ` · funding ${(d.funding * 100).toFixed(4)}%` : ''}`);
+  if (d.liq) dd += row('Thanh lý', `cụm Short lớn nhất trên ${d.liq.up ? p(d.liq.up) : '—'} · cụm Long lớn nhất dưới ${d.liq.dn ? p(d.liq.dn) : '—'}${d.liq.sweptLong ? ' · <b>vừa quét cụm Long lớn</b>' : ''}${d.liq.sweptShort ? ' · <b>vừa quét cụm Short lớn</b>' : ''}`);
+  const legend = `<div class="legendz"><i style="background:rgba(170,110,255,.5)"></i>Hộp Tím<i style="background:rgba(195,242,63,.5)"></i>OB cầu<i style="background:rgba(242,57,139,.5)"></i>OB cung<i style="background:rgba(46,168,255,.4)"></i>FVG<i style="background:rgba(255,214,10,.45)"></i>OTE<i style="background:rgb(32,208,255)"></i>thanh lý Long<i style="background:rgb(255,176,32)"></i>thanh lý Short · 💧 ổ thanh khoản</div>`;
+  const open = LS.get('dashOpen', false);
+  el.innerHTML = `<details${open ? ' open' : ''}><summary>${chips.join('') || 'Đang tải phân tích…'}</summary><div class="dbody"><div class="dd">${dd}</div>${legend}</div></details>`;
+  el.firstElementChild.addEventListener('toggle', e => LS.set('dashOpen', e.currentTarget.open));
 }
 
 // Chỉ ghi lại khi nội dung đổi — không làm khung đường nhảy/giật mỗi 2 giây.
