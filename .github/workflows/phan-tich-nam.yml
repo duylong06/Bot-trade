@@ -1,0 +1,33 @@
+# Nhánh tạm: lấy nến lịch sử nhiều năm (4H/1H/30m) để đo độ dài trendline. Không ảnh hưởng bot (bot chạy trên main).
+name: Lịch sử nhiều năm (tạm)
+on:
+  push:
+    branches: [phan-tich-nam]
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [0, 1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node research/fetch-nam.mjs
+        env:
+          GROUP: ${{ matrix.group }}
+          GROUPS: 4
+      - name: Lưu vào nhánh pt-nam-${{ matrix.group }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd research-out
+          git init -q -b pt-nam-${{ matrix.group }}
+          git add -A
+          git -c user.name="bot-trade" -c user.email="bot-trade@users.noreply.github.com" commit -qm "nến lịch sử nhiều năm $(date -u +%F)"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" pt-nam-${{ matrix.group }}
