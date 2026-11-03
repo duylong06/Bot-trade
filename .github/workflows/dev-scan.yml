@@ -39,6 +39,9 @@ jobs:
           STAGE: h1
           TRIGGER: dev
         run: node bot/scan.mjs
+      - name: Tạo vài cú phá H1 chờ M30 đã tới hạn (để thử bước M30)
+        if: always()
+        run: node .github/dev/inject.mjs
       - name: Bước M30 (không chờ)
         if: always()
         env:
@@ -46,6 +49,7 @@ jobs:
           STAGE: m30
           TRIGGER: dev
           M30_WAIT_MAX: '0'
+          M30_LATE: '86400000'
         run: node bot/scan.mjs
       - name: Lưu kết quả vào nhánh dev-data
         if: always()

@@ -8,16 +8,16 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Bot Trade">
-<meta name="description" content="Báo phá vỡ trendline H1 cho top 67 đồng crypto theo vốn hoá, vàng và dầu trên OKX">
+<meta name="description" content="Báo phá vỡ trendline M30/H1/H4 kèm điểm /100, TP/SL cho top đồng crypto, vàng và dầu trên OKX">
 <title>Bot Trade</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="app/icons/icon-192.png">
 <link rel="apple-touch-icon" href="app/icons/icon-180.png">
 <link rel="preconnect" href="https://www.okx.com" crossorigin>
 <link rel="preconnect" href="https://api.github.com" crossorigin>
-<link rel="stylesheet" href="app/style.css?v=12">
+<link rel="stylesheet" href="app/style.css?v=13">
 <script defer src="app/lib/lightweight-charts.standalone.production.js"></script>
-<script type="module" src="app/app.js?v=12"></script>
+<script type="module" src="app/app.js?v=13"></script>
 <link rel="modulepreload" href="app/chart.js">
 <link rel="modulepreload" href="core/breakout.js">
 <link rel="modulepreload" href="core/okx.js">
@@ -76,7 +76,11 @@
         <button class="chip" data-f="BREAK">Phá</button>
         <button class="chip" data-f="RETEST">Retest</button>
         <button class="chip" data-f="CONFIRM">Xác nhận</button>
+        <button class="chip" data-f="enter">Kèo S+</button>
+        <button class="chip" data-f="30m">M30</button>
+        <button class="chip" data-f="4H">H4</button>
       </div>
+      <div id="sigTrades"></div>
       <div class="list" id="sigList"></div>
     </section>
 
@@ -86,6 +90,7 @@
         <h2 class="topN">Top 67</h2>
         <span class="vmeta" id="mkMeta">+ vàng, dầu</span>
       </div>
+      <div id="mkCtx"></div>
       <div class="search"><input id="search" type="search" placeholder="Tìm đồng…" autocomplete="off" autocapitalize="characters" spellcheck="false"></div>
       <div class="mhead"><span>Hạng · Đồng / Vốn hoá</span><span>Giá</span><span>24h</span></div>
       <div class="list" id="mkList"></div>

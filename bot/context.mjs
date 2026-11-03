@@ -195,7 +195,11 @@ export async function marketContext(state, { log = () => {}, now = Date.now(), b
   M.whale = whale;
   // Kênh on-chain: bài báo cá voi/đội dự án xả coin trong 12 giờ qua → chặn LONG coin đó
   M.insight = {};
-  for (const x of mk.insight) if (x.dump && now - x.t <= 12 * HOUR) for (const c of x.coins) if (!M.insight[c] || M.insight[c].t < x.t) M.insight[c] = { t: x.t, text: x.text };
+  // (BTC, ETH, stablecoin không chặn theo kênh này — kênh viết về altcoin; BTC/ETH xét bằng ví sàn + whale alert)
+  for (const x of mk.insight) if (x.dump && now - x.t <= 12 * HOUR) for (const c of x.coins) {
+    if (c === 'BTC' || c === 'ETH' || STABLE.has(c)) continue;
+    if (!M.insight[c] || M.insight[c].t < x.t) M.insight[c] = { t: x.t, text: x.text };
+  }
 
   // Ví sàn: biến động 2 giờ / 24 giờ / 7 ngày
   const ch = mk.chain.length ? mk.chain[mk.chain.length - 1] : {};

@@ -214,3 +214,32 @@ details summary { cursor: pointer; color: #8fb6ff; font-size: 13.5px; padding: 4
   .toast { animation: rise 0.18s ease-out; }
   @keyframes rise { from { opacity: 0; transform: translate(-50%, 6px); } }
 }
+
+/* ---- lớp chấm điểm (prompt V8.0) ---- */
+.tfh4.m30t { background: #7fd1ff; }
+.scc { font: 700 11px/1.3 var(--mono); padding: 2px 7px; border-radius: 5px; background: var(--panel2); color: var(--dim); white-space: nowrap; }
+.scc.gSS { color: #000; background: var(--gold); }
+.scc.gS { color: #000; background: var(--up); }
+.scc.gA { color: #8fb6ff; background: rgba(47, 125, 255, 0.14); }
+.scc.gB { color: var(--warn); background: rgba(246, 165, 26, 0.12); }
+.srow.kv-in { background: rgba(195, 242, 63, 0.05); box-shadow: inset 3px 0 0 var(--up); }
+.scard { margin: 8px var(--sr) 10px var(--sl); padding: 10px 12px; border: 1px solid var(--line2); border-radius: 10px; background: var(--panel); font-size: 12.5px; }
+.scard.gSS { border-color: rgba(255, 214, 10, 0.6); }
+.scard.gS { border-color: rgba(195, 242, 63, 0.5); }
+.scard .sh { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.scard .scn { font: 800 26px/1 var(--mono); color: var(--dim); }
+.scard .scn.gSS { color: var(--gold); } .scard .scn.gS { color: var(--up); } .scard .scn.gA { color: #8fb6ff; } .scard .scn.gB { color: var(--warn); }
+.scard ul.why { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 3px; color: var(--ink); }
+.scard .plan { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); font-family: var(--mono); font-size: 12px; line-height: 1.6; }
+.scard details { margin-top: 8px; }
+.scard summary { color: var(--blue); cursor: pointer; }
+.scard .lys { display: grid; gap: 8px; margin-top: 8px; }
+.scard .ly { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; position: relative; }
+.scard .ly i { grid-column: 1 / 3; height: 3px; background: var(--blue); border-radius: 2px; opacity: 0.8; }
+.scard .ly small { grid-column: 1 / 3; color: var(--dim); font-size: 11.5px; }
+.scard ul.mg { margin: 6px 0 0; padding-left: 18px; color: var(--dim); }
+.ok { color: var(--up); } .bad { color: var(--down); }
+.card.trades, .card.ctx { margin: 10px var(--sr) 6px var(--sl); }
+.trow { display: grid; gap: 2px; width: 100%; text-align: left; padding: 8px 0; border-top: 1px solid var(--line); font-size: 12.5px; }
+.tlog { font-size: 12px; padding: 4px 0; border-top: 1px solid var(--line); color: var(--dim); }
+.card.ctx dd { word-break: break-word; }

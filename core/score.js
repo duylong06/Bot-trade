@@ -294,7 +294,10 @@ export function scoreEvent(e, D, M = {}, asOf = Date.now()) {
   if (styleKey === 'SCALP') {
     const K15 = K['15m'], e20 = K15 ? last(ema(K15.c, 20)) : null;
     if (fin(e20) && Math.abs(entry - e20) / e20 > 0.02) flags.push({ code: 'LATE_ENTRY', text: `Vào trễ: giá cách EMA20 khung 15m ${pct(Math.abs(entry - e20) / e20)} > 2%` });
-  } else if (fin(lineNow) && Math.abs(entry - lineNow) > 1.2 * a) flags.push({ code: 'LATE_ENTRY', text: `Vào trễ: giá cách điểm phá ${(Math.abs(entry - lineNow) / a).toFixed(1)} ATR > 1,2 ATR` });
+  } else {
+    const ref = e.type === 'CONFIRM' && fin(e.level) ? e.level : lineNow, what = e.type === 'CONFIRM' ? `${s > 0 ? 'đỉnh' : 'đáy'} cũ vừa vượt` : 'điểm phá';
+    if (fin(ref) && Math.abs(entry - ref) > 1.2 * a) flags.push({ code: 'LATE_ENTRY', text: `Vào trễ: giá cách ${what} ${(Math.abs(entry - ref) / a).toFixed(1)} ATR > 1,2 ATR` });
+  }
   const slCap = tf === '4H' ? 0.064 : 0.032;
   if (P.riskPct > slCap) flags.push({ code: 'WIDE_SL', text: `SL rộng ${pct(P.riskPct)} > ${pct(slCap)}` });
   if (P.wall) flags.push({ code: 'WALL', text: `Sổ lệnh OKX có tường ${s > 0 ? 'bán' : 'mua'} lớn ~${P.wall.usd >= 1e6 ? (P.wall.usd / 1e6).toFixed(1) + 'M$' : (P.wall.usd / 1e3).toFixed(0) + 'K$'} tại ${P.wall.px.toPrecision(6)}, chặn trước TP1` });
@@ -330,13 +333,15 @@ function planTrade(e, Kc, ie, n, a, s, entry, K, D, M, styleKey) {
   const X = s > 0 ? Kc.l : Kc.h;
   let ext = X[ie];
   for (let j = ie; j <= n; j++) ext = s > 0 ? Math.min(ext, X[j]) : Math.max(ext, X[j]);
-  if (e.type !== 'RETEST' && fin(e.linePrice)) ext = s > 0 ? Math.min(ext, e.linePrice) : Math.max(ext, e.linePrice);
+  // PHÁ: SL ngoài đường vừa phá · XÁC NHẬN: ngoài đỉnh/đáy cũ vừa vượt (mốc cấu trúc) · RETEST: ngoài cây retest
+  if (e.type === 'BREAK' && fin(e.linePrice)) ext = s > 0 ? Math.min(ext, e.linePrice) : Math.max(ext, e.linePrice);
+  if (e.type === 'CONFIRM' && fin(e.level)) ext = s > 0 ? Math.min(ext, e.level) : Math.max(ext, e.level);
   let sl = ext - s * ST.buf * a;
   if ((entry - sl) * s < ST.minRisk * a) sl = entry - s * ST.minRisk * a;
   const R = (entry - sl) * s;
   // TP1: mốc cấu trúc gần nhất phía trước (đỉnh/đáy swing chưa bị vượt, ổ thanh khoản, đỉnh/đáy ngày & tuần trước, nam châm thanh lý)
   const cands = [];
-  const pv = pivots(Kc, 3, 3), Y = s > 0 ? Kc.h : Kc.l;
+  const pv = pivots(Kc, 5, 5), Y = s > 0 ? Kc.h : Kc.l;          // đỉnh/đáy swing của cấu trúc (swLen 5)
   for (const i of (s > 0 ? pv.hi : pv.lo)) {
     if (i < Kc.c.length - 300) continue;
     let alive = true;

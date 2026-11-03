@@ -38,7 +38,7 @@ export class ChartView {
   constructor(el, ws, hooks = {}) {
     this.el = el; this.ws = ws; this.hooks = hooks;
     this.inst = null; this.tf = '1H'; this.tickSz = null;
-    this.bars = null; this.h1 = null; this.h4 = null; this.res = null; this.res4 = null;
+    this.bars = null; this.h1 = null; this.h4 = null; this.res = null; this.res4 = null; this.res30 = null;
     this.lineSeries = []; this.focus = null; this.show = { lines: true, ema: true, stoch: true };
     this.unsub = null; this.seq = 0;
     this.build();
@@ -206,6 +206,7 @@ export class ChartView {
     this.legend(null);
     this.hooks.onPrice && this.hooks.onPrice(+r[4]);
     if (r[8] === '1' && this.tf === '1H') this.onH1Close();
+    if (r[8] === '1' && this.tf === '30m') this.analyze();          // trendline M30: tính lại khi nến M30 đóng
   }
 
   /* ---------- vẽ ---------- */
@@ -258,13 +259,17 @@ export class ChartView {
     if (!this.h1 || this.h1.c.length < 60) { this.res = null; this.res4 = null; this.drawLines(); return; }
     this.res = analyze(this.h1, '1H');
     this.res4 = this.h4 && this.h4.c.length >= 60 ? analyze(this.h4, '4H') : null;
+    // trendline M30 (≤ 60 nến) — chỉ khi đang xem khung 30m
+    const k30 = this.tf === '30m' && this.bars ? fromRows(this.bars.all.filter(r => r[8] === '1')) : null;
+    this.res30 = k30 && k30.c.length >= 100 ? analyze(k30, '30m') : null;
     this.drawLines();
     this.hooks.onLines && this.hooks.onLines(this.shownLines || [], this.focusMatch);
   }
 
   // Đường H1 + đường H4 (H4: mỗi phía 1 đường còn hiệu lực gần giá nhất, cộng 1 đường vừa phá).
   allLines() {
-    const a = this.res ? this.res.lines.map(x => ({ ...x, tf: '1H' })) : [];
+    const a = this.res30 ? this.res30.lines.map(x => ({ ...x, tf: '30m' })) : [];
+    if (this.res) a.push(...this.res.lines.map(x => ({ ...x, tf: '1H' })));
     if (this.res4) {
       const l4 = this.res4.lines.map(x => ({ ...x, tf: '4H' }));
       const act = side => l4.filter(x => x.tBreak == null && x.side === side).slice(0, 1);
@@ -272,7 +277,7 @@ export class ChartView {
     }
     return a;
   }
-  allEvents() { return [...(this.res ? this.res.events : []), ...(this.res4 ? this.res4.events : [])]; }
+  allEvents() { return [...(this.res30 ? this.res30.events : []), ...(this.res ? this.res.events : []), ...(this.res4 ? this.res4.events : [])]; }
 
   barTimes() { return this.bars.all.map(r => +r[0]); }
 
@@ -318,7 +323,7 @@ export class ChartView {
       s.setData(pts); this.lineSeries.push(s);
     };
     for (const ln of lines) {
-      const broken = ln.tBreak != null, h4 = ln.tf === '4H', step = h4 ? 4 * HOUR : HOUR;
+      const broken = ln.tBreak != null, h4 = ln.tf === '4H', m30 = ln.tf === '30m', step = h4 ? 4 * HOUR : m30 ? HOUR / 2 : HOUR;
       // đường đã phá: kéo quá cây phá 6 nến (có retest thì tới retest + 3 nến) — đủ thấy giá đóng ngoài đường
       const tEnd = broken ? Math.min(lastT, ln.tRetest ? ln.tRetest + 3 * step : ln.tBreak + 6 * step) : lastT;
       const t0 = this.snap(ln.ta, times), t1 = this.snap(tEnd, times);
@@ -327,7 +332,7 @@ export class ChartView {
       const R = ln.side === 'R';
       const fresh = broken && lastT - ln.tBreak <= 24 * HOUR;
       const color = ln._focus ? COLORS.focus : broken ? roleColor(ln.side, fresh ? 0.9 : 0.6) : roleColor(ln.side);
-      const tag = h4 ? ' H4' : '';
+      const tag = h4 ? ' H4' : m30 ? ' M30' : '';
       seg([{ time: T(t0), value: lineAt(ln, t0) }, { time: T(t1), value: lineAt(ln, t1) }], {
         color, lineWidth: (ln._focus || !broken || fresh ? 2 : 1) + (h4 ? 1 : 0),
         lineStyle: broken && !ln._focus ? L.LineStyle.Dashed : L.LineStyle.Solid,
@@ -357,17 +362,17 @@ export class ChartView {
     for (const e of this.allEvents()) {
       if (e.t < firstT) continue;
       const isFocus = this.focusMatch && this.focusMatch.ev === e;
-      const etf = e.tf || '1H', step = etf === '4H' ? 4 * HOUR : HOUR;
+      const etf = e.tf || '1H', step = etf === '4H' ? 4 * HOUR : etf === '30m' ? HOUR / 2 : HOUR;
       if (!isFocus && !drawn.has(`${etf}|${e.line.side}|${e.line.ta}|${e.line.tb}`)) continue;
       // dấu đặt ở cây nến hiển thị chứa lúc cây phá ĐÓNG (H4: cuối cây H4)
       const at = this.snap(tf.ms < step ? e.t + step - 1 : e.t, times);
       const up = e.dir === 'LONG';
-      const rec = info(`${this.inst}|${e.type}|${e.side}|${e.line.tBreak}` + (etf === '4H' ? '|4H' : ''));
-      const pushed = rec && (rec.pu > 0 || rec.m30 === 'wait' || rec.m30 === 'follow');
+      const rec = info(`${this.inst}|${e.type}|${e.side}|${e.line.tBreak}` + (etf !== '1H' ? '|' + etf : ''));
+      const pushed = rec && (rec.pu > 0 || rec.m30 === 'wait' || rec.m30 === 'follow' || rec.m30 === 'follow2');
       const base = e.type === 'RETEST' ? [roleColor(e.side), roleColor(e.side, 0.4)]
         : up ? [COLORS.up, 'rgba(195,242,63,0.38)'] : [COLORS.down, 'rgba(242,57,139,0.38)'];
       const color = isFocus ? COLORS.focus : pushed ? base[0] : base[1];
-      const word = (e.type === 'BREAK' ? 'Phá' : e.type === 'RETEST' ? 'Retest' : 'XN') + (etf === '4H' ? ' H4' : '');
+      const word = (e.type === 'BREAK' ? 'Phá' : e.type === 'RETEST' ? 'Retest' : 'XN') + (etf === '4H' ? ' H4' : etf === '30m' ? ' M30' : '') + (rec && rec.sc && rec.sc.s != null ? ` ${rec.sc.s}đ` : '');
       mk.push({
         time: T(at), position: up ? 'belowBar' : 'aboveBar', color,
         shape: e.type === 'BREAK' ? (up ? 'arrowUp' : 'arrowDown') : e.type === 'RETEST' ? 'circle' : 'square',
@@ -392,7 +397,7 @@ export class ChartView {
     this.lineSeries = [];
     for (const s of [this.candles, this.vol, this.ema, this.kY, this.dY, this.kR, this.dR]) s.setData([]);
     this.markers.setMarkers([]);
-    this.bars = null; this.res = null; this.res4 = null; this.h1 = null; this.h4 = null;
+    this.bars = null; this.res = null; this.res4 = null; this.res30 = null; this.h1 = null; this.h4 = null;
   }
 
   zoomTo(ln) {

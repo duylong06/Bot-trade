@@ -1,7 +1,7 @@
 // app/app.js — điều khiển giao diện: tab, biểu đồ, tín hiệu, top 67 theo vốn hoá, thông báo, tình trạng bot.
 import * as okx from '../core/okx.js';
 import { CFG, HOUR, lineAt } from '../core/breakout.js';
-import { REPO, TOP_N, TOP_VOL, PINNED, DATA_API, DATA_RAW, ALERTS, MIN_SPAN_ALERT } from '../core/config.js';
+import { REPO, TOP_N, TOP_VOL, PINNED, DATA_API, DATA_RAW, ALERTS, MIN_SPAN_ALERT, TF_RULES } from '../core/config.js';
 import { fmtPrice, fmtVol, fmtPct, hhmm, ddmm, coinOf, labelOf, nameOf } from '../core/format.js';
 import { ChartView, TFS } from './chart.js';
 import { businessWS, publicWS } from './ws.js';
@@ -16,6 +16,10 @@ const LS = {
 const TYPE = { BREAK: 'Phá', RETEST: 'Retest', CONFIRM: 'Xác nhận' };
 const cap = s => (s ? s[0].toUpperCase() + s.slice(1) : '');
 const pushedOf = s => (s.pu ?? (s.pushed > 0 ? 1 : 0)) > 0;
+const TFL = tf => (tf === '4H' ? 'H4' : tf === '30m' ? 'M30' : tf === '1H' || !tf ? '' : tf);     // nhãn khung (H1 không ghi)
+const sufOf = tf => (tf && tf !== '1H' ? '|' + tf : '');
+const gcls = g => ({ 'S++': 'gSS', 'S+': 'gS', A: 'gA', B: 'gB', C: 'gC' }[g] || 'gC');
+const waitingOf = s => s.m30 === 'wait' || s.m30 === 'follow' || s.m30 === 'follow2';
 const ago = ms => { const m = Math.round((Date.now() - ms) / 60000); return m < 1 ? 'vừa xong' : m < 60 ? `${m} phút trước` : m < 1440 ? `${Math.floor(m / 60)} giờ ${m % 60} phút trước` : `${Math.floor(m / 1440)} ngày trước`; };
 
 const S = {
@@ -167,9 +171,10 @@ function initChart() {
 
 function openSymbol(inst, focus = null) {
   S.inst = inst; LS.set('inst', inst);
-  if (focus && S.tf !== '1H') {
-    S.tf = '1H'; LS.set('tf', '1H');
-    for (const x of document.querySelectorAll('.tf')) x.classList.toggle('on', x.dataset.tf === '1H');
+  const want = focus ? (focus.tf === '30m' ? '30m' : '1H') : null;     // tín hiệu M30 mở ở khung 30m, còn lại ở 1H
+  if (want && S.tf !== want) {
+    S.tf = want; LS.set('tf', want);
+    for (const x of document.querySelectorAll('.tf')) x.classList.toggle('on', x.dataset.tf === want);
   }
   setHeader();
   subscribeTickers();
@@ -213,10 +218,12 @@ function renderLines(shown, fm) {
   const now = Date.now();
   let html = '';
   if (fm) {
-    const e = fm.ev, ln = fm.line;
+    const e = fm.ev, ln = fm.line, f = chart.focus || {};
     html += `<div class="banner">${fm.found
-      ? `Đang xem: ${TYPE[e.type]} ${e.dir}${e.tf === '4H' ? ' H4' : ''} · ${esc(cap(ln.kind))} ${ln.span} nến · nến ${e.tf === '4H' ? 'H4' : 'H1'} ${hhmm(e.t)} ${ddmm(e.t)}`
+      ? `Đang xem: ${TYPE[e.type]} ${e.dir}${TFL(e.tf) ? ' ' + TFL(e.tf) : ''} · ${esc(cap(ln.kind))} ${ln.span} nến · nến ${TFL(e.tf) || 'H1'} ${hhmm(e.t)} ${ddmm(e.t)}`
       : `Tín hiệu này đã ra khỏi ${CFG.WINDOW} nến gần nhất — đang vẽ lại theo dữ liệu bot đã lưu.`}</div>`;
+    const sig = ln && S.sigMap.get(`${S.inst}|${f.ev || (e && e.type)}|${ln.side}|${ln.tBreak}` + sufOf(f.tf || (e && e.tf)));
+    if (sig && sig.sc) html += scoreCard(sig, price);
   }
   const lines = [...shown];
   // còn hiệu lực trước (kháng cự rồi hỗ trợ, gần giá trước), đã phá sau (mới nhất trước)
@@ -227,30 +234,53 @@ function renderLines(shown, fm) {
     const isF = !!ln._focus;
     const broken = ln.tBreak != null;
     const nowLine = lineAt(ln, now);
-    const R = ln.side === 'R', h4 = ln.tf === '4H';
+    const R = ln.side === 'R', h4 = ln.tf === '4H', tft = TFL(ln.tf);
     let t2, pr;
     if (broken) {
-      const sig = S.sigMap.get(`${S.inst}|BREAK|${ln.side}|${ln.tBreak}` + (h4 ? '|4H' : ''));
-      const m = sig ? (sig.m30 === 'wait' ? ' · chờ M30' : sig.m30 === 'follow' ? ' · chờ cây sau' : pushedOf(sig) ? ' · đã báo' : sig.why ? ' · không báo' : '') : '';
+      const sig = S.sigMap.get(`${S.inst}|BREAK|${ln.side}|${ln.tBreak}` + sufOf(ln.tf));
+      const m = sig ? (sig.m30 === 'wait' ? ' · chờ M30' : sig.m30 === 'follow' ? ' · chờ cây sau' : sig.m30 === 'follow2' ? ' · chờ nến M30 thứ 2' : pushedOf(sig) ? ' · đã báo' : sig.why ? ' · không báo' : '') + (sig.sc && sig.sc.s != null ? ` · ${sig.sc.s}đ ${sig.sc.g}` : '') : '';
       t2 = `<span class="${R ? 'up' : 'down'}">${R ? '▲ Phá lên' : '▼ Phá xuống'}</span> ${hhmm(ln.tBreak)} ${ddmm(ln.tBreak)}${m}`
         + (ln.tConfirm ? ' · gãy cấu trúc' : '') + (ln.tRetest ? ` · retest ${hhmm(ln.tRetest)}` : '');
       pr = p(lineAt(ln, ln.tBreak));
     } else {
       const dist = price ? (price - nowLine) / nowLine : 0;
       const beyond = price && (R ? price > nowLine : price < nowLine);
-      t2 = beyond ? `<span class="${R ? 'up' : 'down'}">Giá đang vượt đường — chờ nến H1 đóng</span>`
+      t2 = beyond ? `<span class="${R ? 'up' : 'down'}">Giá đang vượt đường — chờ nến ${tft || 'H1'} đóng</span>`
         : `Đang giữ · giá ${R ? 'dưới' : 'trên'} đường ${(Math.abs(dist) * 100).toFixed(2)}%`;
       pr = p(nowLine);
     }
     html += `<button class="lrow${isF ? ' focus' : ''}${broken ? ' br' : ''}" data-ta="${ln.ta}" data-tb="${ln.tb}" data-side="${ln.side}">
       <span class="ic"><i class="sw ${isF ? 'F' : ln.side}${broken ? ' d' : ''}"></i></span>
-      <span class="t1">${h4 ? '<i class="tfh4">H4</i>' : ''}${ln.range ? `<b class="${ln.side}">Biên sideway</b> ${R ? 'đỉnh' : 'đáy'}` : `<b class="${ln.side}">${R ? 'Kháng cự' : 'Hỗ trợ'}</b> ${esc(ln.kind.replace(/^(kháng cự|hỗ trợ)\s*/, ''))}`} · ${ln.span} nến · ${ln.touches} chạm${ln.ch && !broken ? ` · <span class="chn">${ln.range ? 'biên' : 'kênh'}: ${R ? 'đáy' : 'đỉnh'} ${p(lineAt(ln.ch.line, now))}</span>` : ''}</span>
+      <span class="t1">${tft ? `<i class="tfh4${ln.tf === '30m' ? ' m30t' : ''}">${tft}</i>` : ''}${ln.range ? `<b class="${ln.side}">Biên sideway</b> ${R ? 'đỉnh' : 'đáy'}` : `<b class="${ln.side}">${R ? 'Kháng cự' : 'Hỗ trợ'}</b> ${esc(ln.kind.replace(/^(kháng cự|hỗ trợ)\s*/, ''))}`} · ${ln.span} nến · ${ln.touches} chạm${ln.ch && !broken ? ` · <span class="chn">${ln.range ? 'biên' : 'kênh'}: ${R ? 'đáy' : 'đỉnh'} ${p(lineAt(ln.ch.line, now))}</span>` : ''}</span>
       <span class="pr ${ln.side}">${pr}</span>
       <span class="t2">${t2}</span>
     </button>`;
   }
-  if (!lines.length) html += `<div class="lrow"><span></span><span class="t1 muted">Chưa thấy đường xu hướng đủ chuẩn (≥ ${CFG.MIN_PATTERN} nến, ≥ ${CFG.MIN_TOUCH} chạm) gần giá hiện tại.</span></div>`;
+  if (!lines.length) html += `<div class="lrow"><span></span><span class="t1 muted">Chưa thấy đường xu hướng đủ chuẩn (${CFG.MIN_PATTERN}–${S.tf === '30m' ? TF_RULES['30m'].MAX_PATTERN : S.tf === '4H' ? TF_RULES['4H'].MAX_PATTERN : TF_RULES['1H'].MAX_PATTERN} nến) gần giá hiện tại.</span></div>`;
   setLines(html);
+}
+
+// Thẻ điểm /100 của một tín hiệu (prompt V8.0): hạng, cờ đỏ, khoá, kế hoạch vào lệnh, R:R nếu vào ngay, 6 lớp điểm.
+function scoreCard(s, livePx) {
+  const sc = s.sc, p = v => fmtPrice(v, s.tickSz);
+  if (sc.err || sc.s == null) return `<div class="scard"><p class="muted">Chưa chấm được điểm: ${esc(sc.err || '')}</p></div>`;
+  const up = s.dir === 'LONG', k = up ? 1 : -1;
+  const verdict = sc.in ? (sc.g === 'S++' ? '🔥 KÈO S++ — vào' : '🎯 KÈO S+ — vào') : '⚖️ Đứng ngoài';
+  let rrNow = '';
+  if (livePx && isFinite(livePx)) {
+    const risk = (livePx - sc.sl) * k, reward = (sc.tp1 - livePx) * k;
+    const v = risk > 0 ? Math.max(reward, 0) / risk : 0;
+    rrNow = ` · <b class="${v >= 1.5 ? 'ok' : 'bad'}">R:R nếu vào ngay ${v.toFixed(2)}</b> (giá ${p(livePx)})`;
+  }
+  const li = (arr, ic) => arr && arr.length ? arr.map(x => `<li>${ic} ${esc(x)}</li>`).join('') : '';
+  const layers = (sc.L || []).map(([pts, max, notes], i) => `<div class="ly"><span>${['Đa khung', 'Dual Stoch', 'Trendline & Hộp Tím', 'SMC & nến', 'Dòng tiền phái sinh', 'On-chain & vĩ mô'][i]}</span><b>${pts}/${max}</b><i style="width:${Math.round(100 * pts / max)}%"></i><small>${notes.map(esc).join('<br>')}</small></div>`).join('');
+  return `<div class="scard ${gcls(sc.g)}">
+    <div class="sh"><b class="scn ${gcls(sc.g)}">${sc.s}</b><span>/100 · hạng <b>${esc(sc.g)}</b> · ${esc(sc.st)} · ${verdict}${sc.in ? ` ${sc.rk}% rủi ro` : ''} · tự tin ${sc.cf}/10</span></div>
+    ${(sc.f || []).length || (sc.k || []).length || (sc.dn || []).length || (sc.w || []).length ? `<ul class="why">${li(sc.f, '🚩')}${li(sc.k, '🔒')}${(sc.dn || []).length ? `<li>⬇️ Hạ 1 hạng: ${esc(sc.dn.join(', '))}</li>` : ''}${li(sc.w, '⚠️')}${li(sc.n, 'ℹ️')}</ul>` : ''}
+    <div class="plan">Entry <b>${p(sc.en)}</b> · SL <b class="down">${p(sc.sl)}</b> (${sc.rp}%) · TP1 <b class="up">${p(sc.tp1)}</b> <span class="muted">(${esc(sc.tw || '')})</span> · TP2 <b class="up">${p(sc.tp2)}</b> · R:R <b>${sc.rr}</b>${rrNow}</div>
+    <details><summary>Chi tiết 6 lớp điểm · khung xu hướng ${esc(sc.ttf || '')}, xác nhận ${esc(sc.ctf || '')}</summary><div class="lys">${layers}</div></details>
+    <details><summary>Quản lý lệnh (tầng hậu kiểm)</summary><ul class="mg">${(sc.mg || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul></details>
+  </div>`;
 }
 
 /* ======================= DỮ LIỆU BOT ======================= */
@@ -322,7 +352,8 @@ function markSeen() {
 
 function renderSignals() {
   const f = S.sigFilter;
-  const list = S.signals.filter(s => f === 'all' || (f === 'pushed' ? pushedOf(s) : s.dir === f || s.type === f));
+  const list = S.signals.filter(s => f === 'all' || (f === 'pushed' ? pushedOf(s) : f === 'enter' ? s.sc && s.sc.in : f === '30m' || f === '4H' ? s.tf === f : s.dir === f || s.type === f));
+  renderTrades();
   const ls = S.status && S.status.lastScan;
   $('#sigMeta').textContent = ls ? `bot quét lúc ${hhmm(ls.at)} · ${ls.counts ? ls.counts.coins : '?'} đồng` : '';
   if (!list.length) {
@@ -335,11 +366,14 @@ function renderSignals() {
     if (d !== day) { day = d; html += `<div class="dayhead">${d === ddmm(Date.now()) ? 'Hôm nay' : d}</div>`; }
     const up = s.dir === 'LONG', ln = s.line || {};
     const ds = `${esc(cap(ln.kind || ''))} · ${ln.span || '?'} nến · ${ln.touches || '?'} chạm` + (s.type === 'BREAK' ? (s.confirmed ? ' · đã gãy cấu trúc' : '') : '') + (ln.steep ? ' · dốc' : '');
-    const pushed = pushedOf(s), wait = s.m30 === 'wait' || s.m30 === 'follow';
-    const ex = m30Chip(s) + (pushed || wait ? '' : `<span class="why">không báo: ${esc(s.why || (s.pu == null ? 'trước khi bot chạy' : 'chưa có máy nhận'))}</span>`);
-    html += `<button class="srow${pushed || wait ? '' : ' skip'}" data-id="${esc(s.id)}">
+    const pushed = pushedOf(s), wait = waitingOf(s);
+    const sc = s.sc && s.sc.s != null ? s.sc : null;
+    const scChip = sc ? `<span class="scc ${gcls(sc.g)}">${sc.s}đ · ${esc(sc.g)}${sc.in ? ' · VÀO' : ''}</span>${!sc.in && ((sc.f || []).length || (sc.k || []).length) ? `<span class="why">${esc(((sc.f || [])[0] || (sc.k || [])[0]).slice(0, 70))}</span>` : ''}` : '';
+    const ex = scChip + m30Chip(s) + (pushed || wait ? '' : `<span class="why">không báo: ${esc(s.why || (s.pu == null ? 'trước khi bot chạy' : 'chưa có máy nhận'))}</span>`);
+    const tft = TFL(s.tf);
+    html += `<button class="srow${pushed || wait ? '' : ' skip'}${sc && sc.in ? ' kv-in' : ''}" data-id="${esc(s.id)}">
       <span class="tm">${hhmm(s.t)}</span>
-      <span class="ti"><span class="co">${esc(labelOf(s.coin))}</span>${s.tf === '4H' ? '<i class="tfh4">H4</i>' : ''}<span class="dir ${up ? 'up' : 'down'}">${up ? '▲ LONG' : '▼ SHORT'}</span><span class="ty ${s.type}">${TYPE[s.type] || s.type}</span></span>
+      <span class="ti"><span class="co">${esc(labelOf(s.coin))}</span>${tft ? `<i class="tfh4${s.tf === '30m' ? ' m30t' : ''}">${tft}</i>` : ''}<span class="dir ${up ? 'up' : 'down'}">${up ? '▲ LONG' : '▼ SHORT'}</span><span class="ty ${s.type}">${TYPE[s.type] || s.type}</span></span>
       <span class="pr">${fmtPrice(s.close, s.tickSz)}</span>
       <span class="ds">${ds}</span>
       <span class="ex">${ex}</span>
@@ -357,10 +391,59 @@ function m30Chip(s) {
     case 'ok': return `<span class="m30 ok">✓ M30 giữ được · đã báo ${s.m30At ? hhmm(s.m30At) : ''}</span>`;
     case 'wick': return `<span class="m30 ok">✓ M30 rút râu về ${up ? 'đáy' : 'đỉnh'} cây phá nhưng đóng ${up ? 'xanh' : 'đỏ'} · đã báo</span>`;
     case 'nodata': return `<span class="m30">không lấy được nến M30 · vẫn báo</span>`;
-    case 'follow': return `<span class="m30 wait">⏳ cây phá chưa đẹp (sai màu / râu dài hơn thân) · chờ cây ${s.tf === '4H' ? 'H4' : 'H1'} sau, xét lúc ${hhmm(s.followAt)}</span>`;
-    case 'follow-ok': return `<span class="m30 ok">✓ cây ${s.tf === '4H' ? 'H4' : 'H1'} sau đóng tiếp ${up ? 'trên' : 'dưới'} đường · đã báo</span>`;
+    case 'follow': return `<span class="m30 wait">⏳ cây phá chưa đẹp (sai màu / râu dài hơn thân) · chờ cây ${TFL(s.tf) || 'H1'} sau, xét lúc ${hhmm(s.followAt)}</span>`;
+    case 'follow2': return `<span class="m30 wait">⏳ không vào ở nến phá · chờ nến M30 thứ 2, xét lúc ${hhmm(s.followAt)}</span>`;
+    case 'follow-ok': return `<span class="m30 ok">✓ cây ${TFL(s.tf) || 'H1'} sau đóng tiếp ${up ? 'trên' : 'dưới'} đường · đã báo</span>`;
     default: return '';
   }
+}
+
+// Kèo S+/S++ bot đang theo dõi sau khi báo (+0,6R, TP1, TP2, SL, hết hạn), cộng kết quả các kèo đã đóng.
+function renderTrades() {
+  const el = $('#sigTrades'); if (!el) return;
+  const st = S.status || {}, open = st.trades || [], log = st.tradeLog || [];
+  if (!open.length && !log.length) { el.innerHTML = ''; return; }
+  const STG = ['đã vào', 'đã +0,6R · SL thu hẹp', 'đã chốt 50% ở TP1 · SL hoà vốn', 'đã chốt 80% · SL ở TP1'];
+  const WHY = { sl: 'chạm SL', 'sl-be': 'về SL hoà vốn sau TP1', time: 'hết hạn' };
+  let html = `<div class="card trades"><h3>Kèo S+/S++ đang theo dõi <span class="muted">(${open.length})</span></h3>`;
+  for (const T of open) {
+    const m = S.mkMap.get(T.instId), k = T.dir === 'LONG' ? 1 : -1, R = Math.abs(T.entry - T.sl0);
+    const r = m && m.last && R ? (m.last - T.entry) * k / R : null;
+    html += `<button class="trow" data-inst="${esc(T.instId)}"><b>${esc(labelOf(T.coin))}</b> <span class="${k > 0 ? 'up' : 'down'}">${k > 0 ? '▲' : '▼'} ${T.dir}</span> <span class="scc ${gcls(T.grade)}">${esc(T.grade)} ${T.score}đ</span>
+      <span class="muted">${esc(T.style)} · vào ${fmtPrice(T.entry, T.tickSz)} lúc ${hhmm(T.t0)} ${ddmm(T.t0)} · ${STG[T.stage] || ''}</span>
+      <span>SL ${fmtPrice(T.sl, T.tickSz)} · TP1 ${fmtPrice(T.tp1, T.tickSz)} · TP2 ${fmtPrice(T.tp2, T.tickSz)}${r != null ? ` · hiện tại <b class="${r >= 0 ? 'up' : 'down'}">${r >= 0 ? '+' : ''}${r.toFixed(2)}R</b>` : ''}</span></button>`;
+  }
+  if (log.length) {
+    const sum = log.reduce((t, x) => t + x.r, 0), win = log.filter(x => x.r > 0).length;
+    html += `<details><summary>Đã đóng ${log.length} kèo · thắng ${win} · tổng ${sum >= 0 ? '+' : ''}${sum.toFixed(2)}R</summary>` +
+      log.map(x => `<div class="tlog">${hhmm(x.t1)} ${ddmm(x.t1)} · <b>${esc(labelOf(x.coin))}</b> ${x.dir} ${esc(x.grade)} · ${esc(WHY[x.why] || x.why)} · <b class="${x.r >= 0 ? 'up' : 'down'}">${x.r >= 0 ? '+' : ''}${x.r}R</b></div>`).join('') + '</details>';
+  }
+  el.innerHTML = html + '</div>';
+}
+
+// Bối cảnh thị trường bot dùng để chấm điểm: ma trận BTC.D × USDT.D, dòng tiền ví sàn, whale alert, tin Đỏ FED.
+function renderContext() {
+  const el = $('#mkCtx'); if (!el) return;
+  const m = S.status && S.status.market;
+  if (!m) { el.innerHTML = ''; return; }
+  const usd = x => x == null ? '—' : (x >= 0 ? '+' : '−') + (Math.abs(x) >= 1e9 ? (Math.abs(x) / 1e9).toFixed(2) + 'B$' : (Math.abs(x) / 1e6).toFixed(0) + 'M$');
+  const f = m.flow || {}, d = m.dom, sc = m.scenario || {};
+  const pp = x => x == null ? '' : ` <span class="${x >= 0 ? 'up' : 'down'}">${x >= 0 ? '+' : ''}${x}</span>`;
+  let html = `<div class="card ctx"><h3>Dòng tiền & vĩ mô <span class="muted">· ${hhmm(m.at)}</span></h3>`;
+  if (m.blackout && m.blackout.active) html += `<p class="bad">🗓 Đang trong giờ tin Đỏ: ${esc(m.blackout.title)} lúc ${esc(m.blackout.hhmm)} — bot đóng băng kèo mới ±45 phút.</p>`;
+  html += `<p class="${sc.riskOff ? 'bad' : sc.id ? 'warnc' : ''}">${esc(sc.text || '—')}</p><dl class="kv">`;
+  if (d) html += `<dt>BTC.D · USDT.D</dt><dd>${d.btc}%${pp(d.dBtc)} · ${d.usdt}%${pp(d.dUsdt)} <span class="muted">(24h)</span></dd>`;
+  html += `<dt>Stablecoin ví 28c + TDqSq</dt><dd>${usd(f.stable24hWallet)} 24h · ${usd(f.stable7dWallet)} 7 ngày</dd>`;
+  html += `<dt>Whale alert</dt><dd>stablecoin vào sàn ${usd(f.stableIn24)} · mint ${usd(f.mint24)} (24h)</dd>`;
+  html += `<dt>BTC ví sàn</dt><dd>${usd(f.btcEx24)} 24h${f.btcEx24 != null ? (f.btcEx24 > 0 ? ' · nạp lên sàn' : ' · rút khỏi sàn') : ''}</dd>`;
+  html += `<dt>Điểm dòng tiền</dt><dd>${f.bias > 0 ? '<span class="up">nghiêng tăng</span>' : f.bias < 0 ? '<span class="down">nghiêng giảm</span>' : 'trung tính'} (${f.bias > 0 ? '+' : ''}${f.bias ?? 0})</dd>`;
+  html += `<dt>TOTAL vs BTC</dt><dd>${esc(m.totalVsBtc || '—')}</dd>`;
+  if (m.nextRed && m.nextRed.length) html += `<dt>Tin Đỏ 24h tới</dt><dd>${m.nextRed.slice(0, 4).map(x => `${esc(x.hhmm)} ${esc(x.title)}`).join('<br>')}</dd>`;
+  if (m.whale && m.whale.length) html += `<dt>Cá voi 24h</dt><dd>${m.whale.slice(0, 6).map(x => `${esc(x.c)} vào ${usd(x.in24)} / ra ${usd(-x.out24)}`).join('<br>')}</dd>`;
+  if (m.insight && m.insight.length) html += `<dt>Kênh on-chain (chặn LONG 12h)</dt><dd>${m.insight.slice(0, 5).map(x => `<b>${esc(x.c)}</b> ${esc(x.text.slice(0, 90))}…`).join('<br>')}</dd>`;
+  html += '</dl>';
+  if (m.errors && m.errors.length) html += `<p class="muted">Nguồn lỗi lần này: ${esc(m.errors.join(' · ').slice(0, 200))}</p>`;
+  el.innerHTML = html + '</div>';
 }
 
 /* ======================= TOP VỐN HOÁ + TOP KHỐI LƯỢNG + VÀNG, DẦU ======================= */
@@ -384,6 +467,7 @@ function recentDir(inst) {
 }
 
 function renderMarkets() {
+  renderContext();
   const q = ($('#search').value || '').trim().toUpperCase();
   const src = q ? S.all.filter(m => m.coin.includes(q) || (nameOf(m.coin) || '').toUpperCase().includes(q) || ((S.topMap.get(m.instId) || {}).name || '').toUpperCase().includes(q)).slice(0, 80) : S.markets;
   const tm = $('#mkMeta');
@@ -521,7 +605,11 @@ function renderBot() {
   const m3 = st.m30;
   if (m3) html += row('Xét nến M30 gần nhất', `${hhmm(m3.closeAt)} ${ddmm(m3.closeAt)} · báo ${m3.pushed} · bỏ ${m3.skipped}`);
   if (st.pending && st.pending.length) html += row('Đang chờ M30', `${st.pending.length} cú phá · xét lúc ${hhmm(Math.min(...st.pending.map(p => p.m30Close)))}`);
-  if (st.following && st.following.length) html += row('Chờ cây sau', `${st.following.length} cú phá yếu · xét lúc ${hhmm(Math.min(...st.following.map(p => p.at)))}`);
+  if (st.following && st.following.length) html += row('Chờ cây sau', `${st.following.length} cú phá · xét lúc ${hhmm(Math.min(...st.following.map(p => p.at)))}`);
+  const ml = st.m30lines;
+  if (ml) html += row('Trendline M30 gần nhất', `nến ${hhmm(ml.target)} · ${ml.lines} đường · báo ${ml.pushed} · chờ nến 2 ${ml.waiting}`);
+  if (st.trades) html += row('Kèo S+/S++ đang theo dõi', String(st.trades.length));
+  if (st.market && st.market.scenario) html += row('Thị trường', esc(st.market.scenario.text));
   html += row('Máy nhận thông báo', String(st.push ? st.push.configured : 0) + (st.push && st.push.fromApp ? ` (${st.push.fromApp} tự đăng ký)` : ''));
   html += row('Nguồn giá', esc((st.host || (ls && ls.host) || '').replace('https://', '')));
   html += '</dl>';
@@ -531,21 +619,21 @@ function renderBot() {
 
 function renderRules() {
   const pins = PINNED.map(id => nameOf(coinOf(id)) || coinOf(id));
+  const R = TF_RULES;
   const items = [
     `Theo dõi <b>top ${TOP_N} đồng theo vốn hoá</b> (CoinGecko) <b>+ top ${TOP_VOL} khối lượng giao dịch 24h trên OKX</b>, cập nhật mỗi giờ. Đồng không có hợp đồng USDT vĩnh cửu trên OKX, stablecoin, token bọc → bỏ qua${pins.length ? `. Luôn theo dõi thêm ${pins.join(', ')}` : ''}.`,
-    `Kẻ đường trên <b>H1</b> và <b>H4</b> (H1 nhiều râu thì đường rõ nằm ở H4). Mỗi khung xét tối đa ${CFG.WINDOW} nến; mô hình dài <b>từ ${CFG.MIN_PATTERN} nến</b> trở lên.`,
-    `<b>Hướng đúng</b>: <span class="sw S"></span><b>hỗ trợ tăng</b> nối từ đáy thấp lên đáy CAO HƠN (bị phá xuống → SHORT); <span class="sw R"></span><b>kháng cự giảm</b> nối từ đỉnh cao xuống đỉnh THẤP HƠN (bị phá lên → LONG). Đáy thấp dần / đỉnh cao dần không phải trendline → bỏ.`,
-    `<b>Đáy/đỉnh đầu tiên kẻ ở đầu râu</b> (nến đẹp, không rút râu) và phải là đáy/đỉnh thật của cả xu hướng — không có râu nào thấp hơn/cao hơn nó, kể cả phía trước. <b>Từ đáy/đỉnh thứ hai trở đi tính THÂN</b>: đường chạm thân nến, râu được xuyên qua.`,
-    `Mỗi lần chạm là đáy/đỉnh của <b>một con sóng riêng</b>: giữa hai lần chạm giá phải chạy ra xa đường rõ rệt (≥ ${CFG.REACT} ATR) và sóng hồi về phải sâu ≥ ${Math.round(CFG.RETR * 100)}% sóng trước; đáy/đỉnh thứ hai cách đáy/đỉnh đầu ≥ ${Math.round(CFG.ANCHOR_GAP * 100)}% mô hình. Cần ≥ ${CFG.MIN_TOUCH} lần chạm, hoặc 2 nếu cả hai là đỉnh/đáy lớn (±${CFG.MAJOR} nến).`,
-    `Chọn đường <b>chạm được nhiều đáy/đỉnh nhất</b>, không bỏ sót: khi đáy/đỉnh không thẳng hàng, đường đi qua trung bình thân–râu. Từ điểm neo đầu tới cây phá không thân nến nào vượt đường; râu của nến khác cắt qua quá ${CFG.POKE_TOTAL} cây là kẻ bừa → bỏ.`,
-    `<b>Biên sideway</b>: giá đi ngang giữa kháng cự ngang và hỗ trợ ngang (mỗi biên ≥ 2 lần chạm, cùng một vùng, cao ≤ ${CFG.RANGE_MAX} ATR). Chỉ báo khi cây nến <b>phá biên với khối lượng ≥ ${CFG.VOL_K} lần trung bình ${CFG.VOL_N} nến</b>; phá mà volume nhỏ thì không báo.`,
-    `<b>Kênh giá</b>: chỉ vẽ khi phía bên kia cũng có một trendline thật (đủ luật) chạy gần song song, cùng cỡ mô hình — không tự kẻ song song qua một đỉnh/đáy lẻ.`,
-    `<b>Phá</b> = cây nến đóng cửa ra ngoài đường (râu không tính). Cây phá <b>đẹp</b>: phá lên nến xanh, phá xuống nến đỏ, thân dài hơn râu, đóng xa đường ≥ ${CFG.BREAK_MIN} ATR. Tin báo kèm khối lượng cây phá so với trung bình.`,
-    `<b>H1 phá đẹp → luật M30</b>: chờ cây M30 đầu tiên của giờ sau đóng (phút :30). LONG: M30 chạm về ≤ đáy cây phá → không báo, trừ khi M30 đóng xanh. SHORT: M30 chạm ≥ đỉnh cây phá → không báo, trừ khi đóng đỏ.`,
-    `<b>Cây phá chưa đẹp</b> (sai màu, râu dài hơn thân, đóng sát đường) → không xét M30, chờ cây kế tiếp: đóng tiếp ngoài đường, đúng màu thì báo; quay lại trong đường là phá giả, đường vẫn còn.`,
-    `<b>H4 phá đẹp</b> → báo ngay khi cây H4 đóng (03, 07, 11, 15, 19, 23 giờ); chưa đẹp → chờ cây H4 sau.`,
-    `<b>Xác nhận</b> = đóng cửa vượt đỉnh/đáy cuối cùng nằm trên đường (gãy cấu trúc). <b>Retest</b> = giá chạy xa ≥ ${CFG.AWAY} ATR rồi quay về chạm đường, đóng cửa giữ được. Báo ngay khi nến đóng.`,
-    `Chỉ báo tín hiệu của cây nến VỪA đóng (đúng lúc), không báo bù tín hiệu cũ. Mỗi cú phá một tin, không giới hạn; hai đường cùng phía thủng cách nhau ≤ 3 nến là một tin.`,
+    `Kẻ trendline trên <b>M30, H1, H4</b>. Mô hình dài từ <b>${CFG.MIN_PATTERN} nến</b>, tối đa theo khung (prompt V8.0): <b>M30 ≤ ${R['30m'].MAX_PATTERN}</b>, <b>H1 ≤ ${R['1H'].MAX_PATTERN}</b>, <b>H4 ≤ ${R['4H'].MAX_PATTERN} nến</b> — quá thì đường hết hạn. Hai điểm neo cách nhau ≥ ${R['30m'].MIN_SPAN} / ${R['1H'].MIN_SPAN} / ${R['4H'].MIN_SPAN} nến.`,
+    `<b>Hướng đúng</b>: <span class="sw S"></span><b>hỗ trợ tăng</b> nối từ đáy thấp lên đáy CAO HƠN (bị phá xuống → SHORT); <span class="sw R"></span><b>kháng cự giảm</b> nối từ đỉnh cao xuống đỉnh THẤP HƠN (bị phá lên → LONG).`,
+    `<b>Kẻ chạm râu, không cắt thân</b>: đáy/đỉnh đầu kẻ ở đầu râu, là đáy/đỉnh thật của cả xu hướng; đường thử cả hai cách — đầu râu ↔ đầu râu, và đầu râu ↔ thân cụm nến sau. Từ điểm neo đầu tới cây phá không thân nến nào vượt đường. Đường 2 điểm neo đã hợp lệ; đủ 3 chạm được cộng điểm cấu trúc.`,
+    `Mỗi lần chạm là đáy/đỉnh của <b>một con sóng riêng</b> (giá chạy xa đường ≥ ${CFG.REACT} ATR, sóng hồi sâu ≥ ${Math.round(CFG.RETR * 100)}%). Râu nến khác cắt qua đường quá ${CFG.POKE_TOTAL} cây → bỏ.`,
+    `<b>Biên sideway</b>: chỉ báo khi phá biên với khối lượng ≥ ${CFG.VOL_K} lần trung bình ${CFG.VOL_N} nến. <b>Kênh giá</b>: chỉ khi bên kia cũng có trendline thật gần song song.`,
+    `<b>Phá</b> = nến đóng cửa ra ngoài đường (râu không tính). <b>Không vào ở nến phá</b>: H1 chờ nến M30 kế tiếp (luật M30); M30 chờ nến M30 thứ 2 đóng tiếp ngoài đường, đúng màu; cây phá chưa đẹp (sai màu, râu dài hơn thân) chờ cây sau. H4 phá đẹp báo ngay khi cây H4 đóng.`,
+    `<b>Xác nhận</b> = đóng cửa vượt đỉnh/đáy cuối trên đường (gãy cấu trúc). <b>Retest</b> = giá chạy xa ≥ ${CFG.AWAY} ATR rồi quay về chạm đường, đóng cửa giữ được.`,
+    `<b>Chấm điểm /100</b> mỗi tín hiệu (prompt V8.0): đa khung EMA21/55/144/200 + ADX (20) · Dual Stoch 32/13/5 + 10/5/5 và góc dốc (20) · trendline + Hộp Tím + nến 2 (20) · OTE/OB/FVG + mẫu nến + nước rút (15) · volume, CVD, Giá × OI, bản đồ thanh lý (15) · dòng tiền ví sàn on-chain + BTC.D × USDT.D + tin Đỏ (10).`,
+    `<b>Hạng</b>: S++ ≥ 92 (vào 1% rủi ro) · S+ 88–91 (0,75%) · A ≥ 80 · B ≥ 70 · C. Ngược khung xác nhận hoặc ADX < 20 → hạ 1 hạng. Dính <b>cờ đỏ</b> (R:R tới TP1 < 1,5 · ngược xu hướng chưa đủ chuỗi đảo chiều · RISK-OFF · cá voi xả · vào trễ · SL rộng / tường lệnh) hoặc <b>khoá Stoch</b> (ghim đỉnh/đáy, lờ đờ giữa, lao thẳng đứng, nước rút) → <b>Đứng ngoài</b>. Vẫn báo mọi cú phá, kèm điểm.`,
+    `<b>TP/SL</b>: SL ngoài cây phá + đệm ATR (Scalp 0,3 · Intraday 0,4 · Swing 0,5). TP1 = cản gần nhất phía trước (đỉnh/đáy swing, ổ thanh khoản, đỉnh/đáy ngày–tuần trước). TP2 = +2,2R. Kèo S+/S++ được theo dõi: +0,6R thu hẹp SL, TP1 chốt 50% dời SL về Entry ± 0,15R, TP2 chốt 30%, ≥ 2 dấu hiệu đảo chiều nhắc cắt sớm, quá hạn đóng hoà vốn.`,
+    `<b>Dòng tiền</b>: báo cáo 07:00 · 15:00 · 23:00; báo ngay khi stablecoin vào sàn ≥ 200M$ / 2 giờ, BTC vào/ra sàn ≥ 150M$ / 2 giờ, BTC/ETH vừa quét cụm thanh lý lớn.`,
+    `Chỉ báo tín hiệu của cây nến VỪA đóng, không báo bù tín hiệu cũ. Mỗi cú phá một tin, không giới hạn.`,
   ];
   $('#rules').innerHTML = items.map(x => `<li>${x}</li>`).join('');
 }
@@ -589,6 +677,10 @@ function bindUI() {
     S.sigFilter = b.dataset.f;
     for (const x of document.querySelectorAll('#sigFilter .chip')) x.classList.toggle('on', x === b);
     renderSignals();
+  });
+  $('#sigTrades').addEventListener('click', e => {
+    const b = e.target.closest('[data-inst]'); if (!b) return;
+    showTab('chart'); openSymbol(b.dataset.inst);
   });
   $('#sigList').addEventListener('click', e => {
     const b = e.target.closest('[data-id]'); if (!b) return;
