@@ -229,7 +229,7 @@ details summary { cursor: pointer; color: #8fb6ff; font-size: 13.5px; padding: 4
 .scard .sh { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
 .scard .scn { font: 800 26px/1 var(--mono); color: var(--dim); }
 .scard .scn.gSS { color: var(--gold); } .scard .scn.gS { color: var(--up); } .scard .scn.gA { color: #8fb6ff; } .scard .scn.gB { color: var(--warn); }
-.scard ul.why { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 3px; color: var(--ink); }
+.scard ul.wy { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 3px; color: var(--ink); }
 .scard .plan { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); font-family: var(--mono); font-size: 12px; line-height: 1.6; }
 .scard details { margin-top: 8px; }
 .scard summary { color: var(--blue); cursor: pointer; }
@@ -242,4 +242,8 @@ details summary { cursor: pointer; color: #8fb6ff; font-size: 13.5px; padding: 4
 .card.trades, .card.ctx { margin: 10px var(--sr) 6px var(--sl); }
 .trow { display: grid; gap: 2px; width: 100%; text-align: left; padding: 8px 0; border-top: 1px solid var(--line); font-size: 12.5px; }
 .tlog { font-size: 12px; padding: 4px 0; border-top: 1px solid var(--line); color: var(--dim); }
-.card.ctx dd { word-break: break-word; }
+.card.ctx summary { cursor: pointer; line-height: 1.5; }
+.card.ctx summary b { font-size: 15px; }
+dl.ctxl { margin: 10px 0 0; display: grid; gap: 8px; }
+dl.ctxl dt { font-size: 11.5px; color: var(--dim); }
+dl.ctxl dd { margin: 1px 0 0; font-size: 13px; word-break: break-word; }

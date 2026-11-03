@@ -110,8 +110,15 @@ export async function marketContext(state, { log = () => {}, now = Date.now(), b
       mk.dom.push({ t: now, btc: +(+p.btc).toFixed(3), usdt: +(+p.usdt).toFixed(3), total: Math.round(g.total_market_cap.usd) });
     }),
     job('lịch tin', async () => {
-      const cal = await get('https://nfs.faireconomy.media/ff_calendar_thisweek.json');
-      M.red = cal.filter(x => x.country === 'USD' && x.impact === 'High').map(x => ({ title: x.title, t: Date.parse(x.date) })).filter(x => isFinite(x.t));
+      // nguồn giới hạn số lần gọi → giữ lịch trong state, 6 giờ mới tải lại
+      const c = mk.cal;
+      if (!c || now - c.at > 6 * HOUR) {
+        try {
+          const cal = await get('https://nfs.faireconomy.media/ff_calendar_thisweek.json');
+          mk.cal = { at: now, red: cal.filter(x => x.country === 'USD' && x.impact === 'High').map(x => ({ title: x.title, t: Date.parse(x.date) })).filter(x => isFinite(x.t)) };
+        } catch (e) { if (!c) throw e; }
+      }
+      M.red = mk.cal ? mk.cal.red : [];
     }),
     job('whale_alert', async () => {
       const seen = new Set(mk.whale.map(x => x.id));
@@ -228,7 +235,7 @@ export async function marketContext(state, { log = () => {}, now = Date.now(), b
 
 /* ---------------- dữ liệu từng đồng ---------------- */
 
-const TFMAP = { '1M': '1Mutc', '1W': '1Wutc', '1D': '1Dutc', '4H': '4H', '30m': '30m', '15m': '15m' };
+const TFMAP = { '1M': '1Mutc', '1W': '1Wutc', '1D': '1Dutc', '4H': '4H', '1H': '1H', '30m': '30m', '15m': '15m' };
 
 /**
  * Nến đa khung + OI 1H (≈ 200 giờ) + taker volume 1H + sổ lệnh 400 mức.

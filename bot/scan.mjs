@@ -349,7 +349,7 @@ function marketSummary() {
     at: M.at, dom: M.dom, scenario: M.scenario, blackout: M.blackout, nextRed: M.nextRed, totalVsBtc: M.totalVsBtc,
     flow: { bias: f.bias, s28c: f.s28c, tron: f.tron, btcEx: f.btcEx, stable24hWallet: f.stable24hWallet, stable7dWallet: f.stable7dWallet, stableIn24: f.stableIn24, mint24: f.mint24, btcEx24: f.btcEx24, btcIn2h: f.btcIn2h, btcOut2h: f.btcOut2h },
     whale: Object.entries(M.whale || {}).map(([c, o]) => ({ c, in24: Math.round(o.in24), out24: Math.round(o.out24) })).filter(x => x.in24 + x.out24 >= 25e6).sort((a, b) => (b.in24 + b.out24) - (a.in24 + a.out24)).slice(0, 12),
-    insight: Object.entries(M.insight || {}).map(([c, o]) => ({ c, t: o.t, text: o.text.slice(0, 160) })),
+    insight: (() => { const g = new Map(); for (const [c, o] of Object.entries(M.insight || {})) { const k = o.t + '|' + o.text.slice(0, 60); if (!g.has(k)) g.set(k, { coins: [], t: o.t, text: o.text.slice(0, 200) }); g.get(k).coins.push(c); } return [...g.values()].sort((x, y) => y.t - x.t).slice(0, 6); })(),
     report: flowReport(M), errors: M.errors || [],
   };
 }
@@ -426,7 +426,7 @@ function finish(extra = {}) {
   if (!status.m30 && prevStatus.m30) status.m30 = prevStatus.m30;
   writeJSON(MODE === 'dry-run' ? 'dryrun-status.json' : 'status.json', status);
   const drop = ['journal.json', 'model.json', 'stats.json', 'top50.json'];
-  if (MODE !== 'dry-run') drop.push('dryrun-candles.json', 'dryrun-instruments.json');
+  if (MODE !== 'dry-run') drop.push('dryrun-candles.json', 'dryrun-instruments.json', 'dryrun-candles-m30.json');
   for (const f of drop) fs.rmSync(path.join(OUT, f), { force: true });
   if (MODE !== 'dry-run') writeJSON('state.json', state);
   const logName = MODE === 'dry-run' ? 'dryrun.log' : STAGE === 'm30' ? 'm30.log' : 'last.log';
@@ -836,7 +836,9 @@ async function stageM30(wait) {
   const openNow = Math.floor(now / M30MS) * M30MS;
   let t30 = null;
   if (!state.lastM30 || state.lastM30 < openNow - M30MS) t30 = openNow - M30MS;
-  else if (wait && openNow + M30MS - now <= M30_WAIT_MAX) t30 = openNow;
+  // chỉ ở lại chờ cây M30 :00–:30 (đóng lúc :30). Cây :30–:00 đóng cùng cây H1 → để bước H1 của lượt sau xét,
+  // không giữ máy chạy tới :00 làm lượt H1 sau phải xếp hàng chờ (trễ báo).
+  else if (wait && openNow % HOUR === 0 && openNow + M30MS - now <= M30_WAIT_MAX) t30 = openNow;
   if (!due.length && t30 === null) { log(list.length ? `${list.length} cú phá đang chờ M30, chưa tới giờ.` : 'Không có cú phá nào đang chờ M30, nến M30 đã xét.'); return; }
 
   let U = null, d30 = null;

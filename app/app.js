@@ -276,7 +276,7 @@ function scoreCard(s, livePx) {
   const layers = (sc.L || []).map(([pts, max, notes], i) => `<div class="ly"><span>${['Đa khung', 'Dual Stoch', 'Trendline & Hộp Tím', 'SMC & nến', 'Dòng tiền phái sinh', 'On-chain & vĩ mô'][i]}</span><b>${pts}/${max}</b><i style="width:${Math.round(100 * pts / max)}%"></i><small>${notes.map(esc).join('<br>')}</small></div>`).join('');
   return `<div class="scard ${gcls(sc.g)}">
     <div class="sh"><b class="scn ${gcls(sc.g)}">${sc.s}</b><span>/100 · hạng <b>${esc(sc.g)}</b> · ${esc(sc.st)} · ${verdict}${sc.in ? ` ${sc.rk}% rủi ro` : ''} · tự tin ${sc.cf}/10</span></div>
-    ${(sc.f || []).length || (sc.k || []).length || (sc.dn || []).length || (sc.w || []).length ? `<ul class="why">${li(sc.f, '🚩')}${li(sc.k, '🔒')}${(sc.dn || []).length ? `<li>⬇️ Hạ 1 hạng: ${esc(sc.dn.join(', '))}</li>` : ''}${li(sc.w, '⚠️')}${li(sc.n, 'ℹ️')}</ul>` : ''}
+    ${(sc.f || []).length || (sc.k || []).length || (sc.dn || []).length || (sc.w || []).length ? `<ul class="wy">${li(sc.f, '🚩')}${li(sc.k, '🔒')}${(sc.dn || []).length ? `<li>⬇️ Hạ 1 hạng: ${esc(sc.dn.join(', '))}</li>` : ''}${li(sc.w, '⚠️')}${li(sc.n, 'ℹ️')}</ul>` : ''}
     <div class="plan">Entry <b>${p(sc.en)}</b> · SL <b class="down">${p(sc.sl)}</b> (${sc.rp}%) · TP1 <b class="up">${p(sc.tp1)}</b> <span class="muted">(${esc(sc.tw || '')})</span> · TP2 <b class="up">${p(sc.tp2)}</b> · R:R <b>${sc.rr}</b>${rrNow}</div>
     <details><summary>Chi tiết 6 lớp điểm · khung xu hướng ${esc(sc.ttf || '')}, xác nhận ${esc(sc.ctf || '')}</summary><div class="lys">${layers}</div></details>
     <details><summary>Quản lý lệnh (tầng hậu kiểm)</summary><ul class="mg">${(sc.mg || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul></details>
@@ -429,9 +429,10 @@ function renderContext() {
   const usd = x => x == null ? '—' : (x >= 0 ? '+' : '−') + (Math.abs(x) >= 1e9 ? (Math.abs(x) / 1e9).toFixed(2) + 'B$' : (Math.abs(x) / 1e6).toFixed(0) + 'M$');
   const f = m.flow || {}, d = m.dom, sc = m.scenario || {};
   const pp = x => x == null ? '' : ` <span class="${x >= 0 ? 'up' : 'down'}">${x >= 0 ? '+' : ''}${x}</span>`;
-  let html = `<div class="card ctx"><h3>Dòng tiền & vĩ mô <span class="muted">· ${hhmm(m.at)}</span></h3>`;
+  const biasTxt = f.bias > 0 ? '<span class="up">dòng tiền nghiêng tăng</span>' : f.bias < 0 ? '<span class="down">dòng tiền nghiêng giảm</span>' : 'dòng tiền trung tính';
+  let html = `<details class="card ctx"${LS.get('ctxOpen', false) ? ' open' : ''}><summary><b>Dòng tiền & vĩ mô</b> <span class="muted">· ${hhmm(m.at)}</span><br><span class="${sc.riskOff ? 'bad' : sc.id ? 'warnc' : 'muted'}">${esc(sc.text || '—')}</span> · ${biasTxt}${m.blackout && m.blackout.active ? ' · <span class="bad">đang giờ tin Đỏ</span>' : ''}</summary>`;
   if (m.blackout && m.blackout.active) html += `<p class="bad">🗓 Đang trong giờ tin Đỏ: ${esc(m.blackout.title)} lúc ${esc(m.blackout.hhmm)} — bot đóng băng kèo mới ±45 phút.</p>`;
-  html += `<p class="${sc.riskOff ? 'bad' : sc.id ? 'warnc' : ''}">${esc(sc.text || '—')}</p><dl class="kv">`;
+  html += `<dl class="ctxl">`;
   if (d) html += `<dt>BTC.D · USDT.D</dt><dd>${d.btc}%${pp(d.dBtc)} · ${d.usdt}%${pp(d.dUsdt)} <span class="muted">(24h)</span></dd>`;
   html += `<dt>Stablecoin ví 28c + TDqSq</dt><dd>${usd(f.stable24hWallet)} 24h · ${usd(f.stable7dWallet)} 7 ngày</dd>`;
   html += `<dt>Whale alert</dt><dd>stablecoin vào sàn ${usd(f.stableIn24)} · mint ${usd(f.mint24)} (24h)</dd>`;
@@ -440,10 +441,11 @@ function renderContext() {
   html += `<dt>TOTAL vs BTC</dt><dd>${esc(m.totalVsBtc || '—')}</dd>`;
   if (m.nextRed && m.nextRed.length) html += `<dt>Tin Đỏ 24h tới</dt><dd>${m.nextRed.slice(0, 4).map(x => `${esc(x.hhmm)} ${esc(x.title)}`).join('<br>')}</dd>`;
   if (m.whale && m.whale.length) html += `<dt>Cá voi 24h</dt><dd>${m.whale.slice(0, 6).map(x => `${esc(x.c)} vào ${usd(x.in24)} / ra ${usd(-x.out24)}`).join('<br>')}</dd>`;
-  if (m.insight && m.insight.length) html += `<dt>Kênh on-chain (chặn LONG 12h)</dt><dd>${m.insight.slice(0, 5).map(x => `<b>${esc(x.c)}</b> ${esc(x.text.slice(0, 90))}…`).join('<br>')}</dd>`;
+  if (m.insight && m.insight.length) html += `<dt>Kênh on-chain — chặn LONG 12 giờ</dt><dd>${m.insight.slice(0, 4).map(x => `<b>${esc((x.coins || [x.c]).join(', '))}</b>: ${esc((x.text || '').slice(0, 110))}…`).join('<br>')}</dd>`;
   html += '</dl>';
   if (m.errors && m.errors.length) html += `<p class="muted">Nguồn lỗi lần này: ${esc(m.errors.join(' · ').slice(0, 200))}</p>`;
-  el.innerHTML = html + '</div>';
+  el.innerHTML = html + '</details>';
+  el.firstElementChild.addEventListener('toggle', e => LS.set('ctxOpen', e.currentTarget.open));
 }
 
 /* ======================= TOP VỐN HOÁ + TOP KHỐI LƯỢNG + VÀNG, DẦU ======================= */
