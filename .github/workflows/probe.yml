@@ -1,0 +1,24 @@
+name: Thử nguồn dữ liệu (tạm)
+on:
+  push:
+    branches: [probe-api]
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node probe.mjs
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd probe-out
+          git init -q -b probe-out
+          git add -A
+          git -c user.name="bot-trade" -c user.email="bot-trade@users.noreply.github.com" commit -qm probe
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" probe-out
