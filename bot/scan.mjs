@@ -30,6 +30,10 @@ import { PAGES_URL, TOP_N, TOP_VOL, PINNED, ALERTS, MIN_SPAN_ALERT, NTFY, EXCLUD
 import { hhmm, stamp, labelOf } from '../core/format.js';
 import { buildMessage, plan } from './plan.mjs';
 import { ranking } from './mcap.mjs';
+import { scoreEvent, compactScore } from '../core/score.js';
+import { liqMap } from '../core/liqmap.js';
+import { marketContext, coinData, flowReport, flowAlerts } from './context.mjs';
+import { openTrade, trackTrades } from './trades.mjs';
 
 const MODE = process.env.MODE || 'scan';
 const STAGE = MODE === 'scan' ? (process.env.STAGE || 'all') : MODE;
@@ -52,11 +56,14 @@ const readJSON = (f, d) => { try { return JSON.parse(fs.readFileSync(path.join(O
 const writeJSON = (f, v, pretty = true) => fs.writeFileSync(path.join(OUT, f), pretty ? JSON.stringify(v, null, 1) : JSON.stringify(v));
 const sha = s => crypto.createHash('sha256').update(s).digest('hex').slice(0, 12);
 const H4 = 4 * HOUR;
-const eventId = (instId, e) => `${instId}|${e.type}|${e.side}|${e.line.tBreak}` + (e.tf === '4H' ? '|4H' : '');
+const M30MS = 30 * 60e3;
+const eventId = (instId, e) => `${instId}|${e.type}|${e.side}|${e.line.tBreak}` + (e.tf && e.tf !== '1H' ? '|' + e.tf : '');
+const lastOf = a => a[a.length - 1];
 
 const state = readJSON('state.json', {});
 const prevStatus = readJSON('status.json', {});
 state.sent ||= {}; state.devices ||= {}; state.pending ||= {}; state.follow ||= {}; state.subs ||= {}; state.dead ||= {};
+state.trades ||= {}; state.flowSent ||= {};
 for (const [id, at] of Object.entries(state.dead)) if (Date.now() - at > 30 * 24 * 3600e3) delete state.dead[id];
 delete state.lastBreak;
 const status = { version: 5, mode: MODE, stage: STAGE, trigger: TRIGGER, startedAt: t0,
@@ -230,7 +237,121 @@ async function connectOkx() {
   writeJSON('top.json', { at: Date.now(), src, list: universe.map(u => ({ instId: u.instId, coin: u.coin, rank: u.rank || null, volRank: u.volRank || null, mcap: u.mcap || null, name: u.name || null, pinned: !!u.pinned, volUsd: Math.round(u.volUsd), last: u.last, chg: +u.chg.toFixed(5) })) });
   log(`Theo dõi ${universe.length} mã theo ${src}: ${universe.filter(u => !u.pinned).slice(0, 12).map(u => u.coin).join(' ')} …` +
     (pins.length ? ` + ${pins.map(u => labelOf(u.coin)).join(', ')}` : ''));
+  for (const u of universe) UNI.set(u.instId, u);
+  for (const x of insts) CTVAL[x.instId] = +x.ctVal || null;
+  startMarket();                    // tải bối cảnh thị trường song song (BTC.D/USDT.D, tin FED, ví on-chain, whale alert)
   return { ticks, universe };
+}
+
+// Bước M30 chạy trong tiến trình riêng: lấy lại danh sách đồng của bước H1 (top.json) thay vì xếp hạng lại.
+async function m30Universe() {
+  const top = readJSON('top.json', null);
+  if (!top || !top.list || !top.list.length || Date.now() - top.at > 3 * HOUR) return connectOkx();
+  okx.setThrottle(60);
+  if (!status.host) { const { host } = await okx.pickHost(); status.host = host; }
+  const insts = await okx.instruments();
+  const ticks = await okx.tickSizes(insts);
+  const tickers = await okx.swapTickers(okx.allowedSet(insts));
+  const byInst = new Map(tickers.map(x => [x.instId, x]));
+  const universe = top.list.filter(x => byInst.has(x.instId)).map(x => ({ ...x, ...byInst.get(x.instId) }));
+  for (const u of universe) UNI.set(u.instId, u);
+  for (const x of insts) CTVAL[x.instId] = +x.ctVal || null;
+  return { ticks, universe };
+}
+
+/* ---------------- lớp chấm điểm (prompt V8.0) ---------------- */
+
+const UNI = new Map();          // instId → thông tin đồng (giá, bid/ask, khối lượng 24h…) của lượt này
+const CTVAL = {};               // instId → giá trị một hợp đồng (đơn vị coin)
+let MKT = null, MKT_P = null;
+
+function startMarket() {
+  if (!MKT_P) {
+    const b = UNI.get('BTC-USDT-SWAP');
+    MKT_P = marketContext(state, { log, btcTicker: b ? { last: b.last, chg: b.chg } : null })
+      .then(m => (MKT = m))
+      .catch(e => { log('  bối cảnh thị trường lỗi:', e.message); return (MKT = { errors: [e.message], scenario: { id: 0, text: 'không lấy được dữ liệu' } }); });
+  }
+  return MKT_P;
+}
+
+/**
+ * Chấm điểm /100 cho các sự kiện sắp báo: tải nến đa khung + OI + taker + sổ lệnh cho từng đồng, rồi scoreEvent.
+ * haveFn(instId) → { '1H': K, '4H': K, '30m': K } nến đã có sẵn trong lượt (khỏi tải lại).
+ * Gắn e.sc (bản gọn, lưu vào signals.json + soạn thông báo) và e._score (bản đầy đủ, mở lệnh theo dõi).
+ */
+async function scoreAll(events, haveFn = () => ({}), asOfFn = () => Date.now()) {
+  if (!events.length) return;
+  const t1 = Date.now();
+  const M = await startMarket();
+  const ids = [...new Set(events.map(e => e.instId))];
+  const Ds = {};
+  await pool(ids.map(instId => ({ instId })), async ({ instId }) => {
+    const u = UNI.get(instId) || { instId, coin: instId.split('-')[0] };
+    const have = {};
+    for (const [k, v] of Object.entries(haveFn(instId) || {})) if (v && v.c && v.c.length) have[k] = v;
+    Ds[instId] = await coinData(u, { have, ctVal: CTVAL[instId] || null, log });
+    Ds[instId].btc = M.btc || {};
+  });
+  for (const e of events) {
+    try {
+      const r = scoreEvent(e, Ds[e.instId] || { coin: e.coin, K: {} }, M, asOfFn(e));
+      e._score = r; e.sc = compactScore(r);
+    } catch (err) { e.sc = { err: String(err.message || err).slice(0, 80) }; log(`  chấm điểm ${e.coin} lỗi:`, err.stack || err.message); }
+    if (e.sc && e.sc.s != null) log(`  điểm ${e.coin} ${e.type} ${e.dir} ${e.tf || '1H'}: ${e.sc.s}/100 hạng ${e.sc.g}${e.sc.in ? ' → KÈO VÀO' : ''}${(e.sc.f || []).length ? ' · cờ đỏ: ' + e.sc.f.join(' | ') : ''}${(e.sc.k || []).length ? ' · khoá: ' + e.sc.k.join(' | ') : ''}`);
+  }
+  status.scoreMs = (status.scoreMs || 0) + (Date.now() - t1);
+}
+
+// Kèo S+/S++ không cờ đỏ: mở theo dõi sau khi báo (Tầng Hậu Kiểm).
+function openTrades(events) {
+  for (const e of events) if (e._score && e.sc && e.sc.in && (e._pu || MODE === 'scan')) openTrade(state, e, e._score);
+}
+
+// Thông báo dòng tiền: báo cáo 07:00 · 15:00 · 23:00 và cảnh báo tức thì (stablecoin / BTC vào–ra sàn, quét thanh lý lớn).
+async function marketPushes(closeAt) {
+  const M = await startMarket();
+  const list = devices();
+  const msgs = [];
+  const vnHour = new Date(closeAt + 7 * HOUR).getUTCHours();
+  if ([7, 15, 23].includes(vnHour)) msgs.push({ title: `📊 Báo cáo dòng tiền ${String(vnHour).padStart(2, '0')}:00`, body: flowReport(M), url: './#tab=markets', tag: 'flow-report' });
+  for (const a of flowAlerts(M)) {
+    if (state.flowSent[a.key] && Date.now() - state.flowSent[a.key] < 2 * HOUR) continue;
+    state.flowSent[a.key] = Date.now();
+    msgs.push({ title: a.title, body: a.body, url: './#tab=markets', tag: 'flow|' + a.key });
+  }
+  // Bản đồ thanh lý BTC, ETH: vừa quét cụm thanh lý lớn ở nến H1 vừa đóng
+  for (const instId of ['BTC-USDT-SWAP', 'ETH-USDT-SWAP']) {
+    try {
+      const K = (await okx.candles(instId, '1H', 200)).K;
+      const a = await okx.api('/api/v5/rubik/stat/contracts/open-interest-history', { instId, period: '1H', limit: '100' });
+      const oi = a.map(r => [+r[0], +r[3]]).sort((x, y) => x[0] - y[0]);
+      const lm = liqMap(K, oi, 72);
+      const coin = instId.split('-')[0];
+      for (const [hit, side] of [[lm.sweptLong, 'LONG'], [lm.sweptShort, 'SHORT']]) {
+        const key = `liq|${coin}|${side}|${lastOf(K.t)}`;
+        if (!hit || state.flowSent[key]) continue;
+        state.flowSent[key] = Date.now();
+        msgs.push({ title: `💥 Vừa quét cụm thanh lý ${side} lớn · ${coin}`, body: `Nến H1 ${hhmm(lastOf(K.t))} quét cụm thanh lý ${side} ước tính ~${(lm.sweptUsd / 1e6).toFixed(0)}M$. Lệnh ép ${side === 'LONG' ? 'bán' : 'mua'} đã cạn — giá dễ chững lại và đảo chiều nếu có CHoCH + Dual Stoch cắt ngược lại.`, url: './#' + new URLSearchParams({ s: instId }).toString(), tag: key });
+      }
+    } catch (e) { log('  bản đồ thanh lý', instId, e.message); }
+  }
+  for (const [k, v] of Object.entries(state.flowSent)) if (Date.now() - v > 3 * 24 * HOUR) delete state.flowSent[k];
+  for (const m of msgs) { log(`${m.title} — ${m.body.replace(/\n/g, ' / ')}`); if (list.length) await pushAll(m); }
+  status.marketPushes = msgs.length;
+}
+
+function marketSummary() {
+  const M = MKT;
+  if (!M) return prevStatus.market || null;
+  const f = M.flow || {};
+  return {
+    at: M.at, dom: M.dom, scenario: M.scenario, blackout: M.blackout, nextRed: M.nextRed, totalVsBtc: M.totalVsBtc,
+    flow: { bias: f.bias, s28c: f.s28c, tron: f.tron, btcEx: f.btcEx, stable24hWallet: f.stable24hWallet, stable7dWallet: f.stable7dWallet, stableIn24: f.stableIn24, mint24: f.mint24, btcEx24: f.btcEx24, btcIn2h: f.btcIn2h, btcOut2h: f.btcOut2h },
+    whale: Object.entries(M.whale || {}).map(([c, o]) => ({ c, in24: Math.round(o.in24), out24: Math.round(o.out24) })).filter(x => x.in24 + x.out24 >= 25e6).sort((a, b) => (b.in24 + b.out24) - (a.in24 + a.out24)).slice(0, 12),
+    insight: Object.entries(M.insight || {}).map(([c, o]) => ({ c, t: o.t, text: o.text.slice(0, 160) })),
+    report: flowReport(M), errors: M.errors || [],
+  };
 }
 
 /* ---------------- lưu tín hiệu cho app ---------------- */
@@ -250,7 +371,7 @@ function rowOf(e, extra = {}) {
     id: e._key, instId: e.instId, coin: e.coin, type: e.type, dir: e.dir, side: e.side,
     t: e.t, close: e.close, atr: +e.atr.toPrecision(6), linePrice: e.linePrice, level: e.level, confirmed: e.confirmed,
     others: e.others, tickSz: e.tickSz, line: e.line, bar: e.bar, tf: e.tf || '1H', cls: e.cls || null, vol: typeof e.vol === 'number' ? +e.vol.toFixed(2) : null,
-    sentAt: Date.now(), pushed: 0, pu: 0, why: null, ...extra,
+    sc: e.sc || null, sentAt: Date.now(), pushed: 0, pu: 0, why: null, ...extra,
   };
 }
 const findRow = id => signals.find(s => s.id === id);
@@ -289,7 +410,11 @@ function finish(extra = {}) {
   const all = devices();
   status.push = { configured: all.length, ids: all.map(d => d.id), dead: Object.keys(state.dead), vapidPub: botPub, ntfy: NTFY, fromApp: all.filter(d => d.src === 'app').length };
   status.pending = Object.values(state.pending).map(p => ({ coin: p.coin, dir: p.dir, t: p.t, m30Close: p.m30Close }));
-  status.following = Object.values(state.follow).map(f => ({ coin: f.coin, dir: f.dir, tf: f.tf, t: f.t, at: f.tNext + (f.tf === '4H' ? H4 : HOUR) }));
+  status.following = Object.values(state.follow).map(f => ({ coin: f.coin, dir: f.dir, tf: f.tf, t: f.t, at: f.tNext + (f.tf === '4H' ? H4 : f.tf === '30m' ? M30MS : HOUR) }));
+  status.market = marketSummary();
+  status.trades = Object.values(state.trades || {}).map(T => ({ id: T.id, instId: T.instId, coin: T.coin, dir: T.dir, tf: T.tf, grade: T.grade, score: T.score, style: T.style, entry: T.entry, sl: T.sl, sl0: T.sl0, tp1: T.tp1, tp2: T.tp2, t0: T.t0, stage: T.stage, best: +(T.best || 0).toFixed(2), tickSz: T.tickSz }));
+  status.tradeLog = (state.tradeLog || []).slice(0, 30);
+  if (!status.m30lines && prevStatus.m30lines) status.m30lines = prevStatus.m30lines;
   // giữ lại thông tin lần quét H1 thật gần nhất để app hiển thị
   if (MODE === 'scan' && status.h1Done) status.lastScan = {
     at: status.finishedAt, target: status.target, closeAt: status.closeAt, trigger: TRIGGER, host: status.host,
@@ -347,10 +472,11 @@ async function stageH1() {
   const h4Due = MODE === 'dry-run' || closeAt % H4 === 0;
 
   // ----- tải trước nến mỗi đồng: WINDOW + WARMUP nến H1 (và H4 nếu tới giờ) -----
-  const data = {}, data4 = {};
+  const data = {}, data4 = {}, data30 = {};
   await pool(universe, async u => {
     data[u.instId] = (await okx.candles(u.instId, '1H', CFG.WINDOW + CFG.WARMUP)).K;
     if (h4Due) data4[u.instId] = (await okx.candles(u.instId, '4H', CFG.WINDOW + CFG.WARMUP)).K;
+    data30[u.instId] = (await okx.candles(u.instId, '30m', M30N)).K;          // trendline M30 (≤ 60 nến) + nến 2 xác nhận
   });
   status.prefetchMs = Date.now() - t0;
   log(`Đã tải ${Object.keys(data).length} đồng${h4Due ? ' (cả nến H4)' : ''}`);
@@ -418,24 +544,40 @@ async function stageH1() {
   log(`Phân tích ${perCoin.length} đồng: ${nLines} đường H1${h4Due ? `, ${nLines4} đường H4` : ''}, ${found.length} sự kiện mới`);
 
   if (MODE === 'dry-run') {
+    // trendline M30 trong 48 giờ
+    let nLines30 = 0;
+    for (const u of universe) {
+      const K = data30[u.instId];
+      if (!K || K.c.length < 100) continue;
+      const r = analyze(K, '30m'); nLines30 += r.all.length;
+      for (const e of r.events.filter(e => e.t > target - 48 * HOUR)) found.push({ ...e, instId: u.instId, coin: u.coin, tickSz: ticks[u.instId] });
+    }
+    status.counts.lines30 = nLines30;
+    // chấm điểm 30 sự kiện mới nhất (dùng dữ liệu hiện tại — chỉ để thử, OI/sổ lệnh/dòng tiền là của lúc chạy)
+    const latest = [...found].sort((a, b) => b.t - a.t).slice(0, 30);
+    await scoreAll(latest, inst => ({ '1H': data[inst], '4H': data4[inst], '30m': data30[inst] }), e => e.t + ({ '30m': M30MS, '4H': H4 }[e.tf] || HOUR) + 1000);
     const byType = {}, bySize = {};
-    const tier = s => s < 100 ? '45-99' : s < 250 ? '100-249' : s < 500 ? '250-499' : '500+';
+    const tier = s => s < 60 ? '45-59' : s < 97 ? '60-96' : '97-120';
     for (const e of found) {
-      const k0 = e.type + (e.tf === '4H' ? ' H4' : '');
+      const k0 = e.type + (e.tf === '4H' ? ' H4' : e.tf === '30m' ? ' M30' : '');
       byType[k0] = (byType[k0] || 0) + 1;
       const k = tier(e.line.span);
       bySize[k] ||= { BREAK: 0, CONFIRM: 0, RETEST: 0 };
       bySize[k][e.type]++;
     }
     const weak = found.filter(e => e.cls === 'weak').length;
-    const sample = found.sort((a, b) => b.t - a.t).slice(0, 40).map(e => ({ at: stamp(e.t), tf: e.tf, coin: e.coin, type: e.type, dir: e.dir, kind: e.line.kind, span: e.line.span, touches: e.line.touches, cls: e.cls, follow: e.follow, msg: buildMessage(e) }));
-    writeJSON('dryrun.json', { at: Date.now(), host: status.host, universe: status.universe, target: stamp(target), hours: 48, byType, bySize, weak, perDay: +(found.length / 2).toFixed(1), perCoin, sample, timing: { prefetchMs: status.prefetchMs, analyzeMs: status.analyzeMs } });
+    const sample = found.sort((a, b) => b.t - a.t).slice(0, 40).map(e => ({ at: stamp(e.t), tf: e.tf, coin: e.coin, type: e.type, dir: e.dir, kind: e.line.kind, span: e.line.span, touches: e.line.touches, cls: e.cls, follow: e.follow, score: e.sc ? (e.sc.s != null ? `${e.sc.s} ${e.sc.g}${e.sc.in ? ' VÀO' : ''}` : e.sc.err) : null, sc: e.sc || null, msg: buildMessage(e) }));
+    const sd = latest.filter(e => e.sc && e.sc.s != null).map(e => e.sc);
+    const dist = { n: sd.length, avg: sd.length ? +(sd.reduce((t, x) => t + x.s, 0) / sd.length).toFixed(1) : null, grades: {}, enter: sd.filter(x => x.in).length, flags: {}, locks: {} };
+    for (const x of sd) { dist.grades[x.g] = (dist.grades[x.g] || 0) + 1; for (const f of x.f) { const k = f.split(/[:—(]/)[0].trim(); dist.flags[k] = (dist.flags[k] || 0) + 1; } for (const f of x.k) { const k = f.split(/[:—(]/)[0].trim(); dist.locks[k] = (dist.locks[k] || 0) + 1; } }
+    writeJSON('dryrun.json', { at: Date.now(), host: status.host, universe: status.universe, target: stamp(target), hours: 48, byType, bySize, weak, perDay: +(found.length / 2).toFixed(1), scores: dist, market: marketSummary(), perCoin, sample, timing: { prefetchMs: status.prefetchMs, analyzeMs: status.analyzeMs, scoreMs: status.scoreMs } });
     log(`Thử 48 giờ: ${JSON.stringify(byType)} (cây phá yếu phải chờ cây sau: ${weak}) → khoảng ${(found.length / 2).toFixed(0)} tín hiệu/ngày`);
     if (process.env.DUMP_CANDLES) {
       const dump = {}, dump4 = {};
       for (const u of universe) { if (data[u.instId]) dump[u.instId] = data[u.instId]; if (data4[u.instId]) dump4[u.instId] = data4[u.instId]; }
       writeJSON('dryrun-candles.json', { at: Date.now(), target, data: dump }, false);
       writeJSON('dryrun-candles-h4.json', { at: Date.now(), target, data: dump4 }, false);
+      writeJSON('dryrun-candles-m30.json', { at: Date.now(), target, data: data30 }, false);
     }
     status.result = 'dry-run';
     return;
@@ -444,6 +586,7 @@ async function stageH1() {
   // ----- cú phá yếu đang chờ cây kế tiếp: cây đó vừa đóng thì xét -----
   const now2 = [], skipped = [];
   for (const f of Object.values(state.follow)) {
+    if (f.tf === '30m') continue;                                  // M30: xét ở processM30
     const step = f.tf === '4H' ? H4 : HOUR;
     if (f.tf === '4H' && !h4Due) continue;
     const due = f.tf === '4H' ? closeAt - H4 : target;          // giờ mở của cây vừa đóng ở khung đó
@@ -500,6 +643,7 @@ async function stageH1() {
     now2.push(e);   // H4 phá đẹp, xác nhận, retest: báo ngay
   }
 
+  await scoreAll(now2, inst => ({ '1H': data[inst], '4H': data4[inst], '30m': data30[inst] }));
   const { sentN, batches } = await sendAll(now2);
   state.lastCandle = target;
   status.h1Done = true;
@@ -510,11 +654,26 @@ async function stageH1() {
 
   for (const e of now2) {
     const r0 = findRow(e._key);
-    if (r0 && r0.m30 === 'follow-ok') Object.assign(r0, { pushed: e._okN || 0, pu: e._pu ?? 0, sentAt: Date.now() }), changed.set(r0.id, r0);
+    if (r0 && r0.m30 === 'follow-ok') Object.assign(r0, { pushed: e._okN || 0, pu: e._pu ?? 0, sentAt: Date.now(), sc: e.sc || null }), changed.set(r0.id, r0);
     else upsert(rowOf(e, { pushed: e._okN || 0, pu: e._pu ?? 0 }));
   }
   for (const e of skipped) upsert(rowOf(e, { why: e.why }));
+  openTrades(now2);
   status.result = 'ok';
+
+  // ----- Tầng Hậu Kiểm: theo dõi kèo S+/S++ đã báo -----
+  const tn = trackTrades(state, data, data4);
+  for (const m of tn) { log(`${m.title} — ${m.body}`); if (devices().length) await pushAll(m); }
+  status.tradePushes = tn.length;
+
+  // ----- trendline M30: cây M30 vừa đóng cùng lúc với cây H1 -----
+  try {
+    await closeM30(universe, data30, closeAt - M30MS);
+    await processM30(universe, ticks, data30, closeAt - M30MS, data);
+  } catch (e) { log('  M30 lỗi:', e.message); }
+
+  // ----- dòng tiền: báo cáo 07:00 · 15:00 · 23:00, cảnh báo tức thì -----
+  try { await marketPushes(closeAt); } catch (e) { log('  dòng tiền lỗi:', e.message); }
 }
 
 /* ---------------- bước 2: nến M30 → báo PHÁ ---------------- */
@@ -537,19 +696,8 @@ async function fetchM30(instId, openTs) {
   return null;
 }
 
-async function stageM30(wait) {
-  const list = Object.values(state.pending);
-  if (!list.length) { log('Không có cú phá nào đang chờ M30.'); return; }
-  const now = Date.now();
-  const due = list.filter(p => p.m30Close <= now + (wait ? M30_WAIT_MAX : 0));
-  if (!due.length) { log(`${list.length} cú phá đang chờ M30, chưa tới giờ.`); return; }
-  const at = Math.max(...due.map(p => p.m30Close)) + SETTLE;
-  if (at > Date.now()) {
-    log(`Chờ ${((at - Date.now()) / 1000).toFixed(0)} giây tới khi nến M30 ${hhmm(at - SETTLE - M30)}–${hhmm(at - SETTLE)} đóng (${due.length} cú phá)…`);
-    await sleep(at - Date.now());
-  }
-  if (!status.host) { okx.setThrottle(60); try { status.host = (await okx.pickHost()).host; } catch {} }
-
+// Cú phá H1 đang chờ nến M30 đầu tiên của giờ sau (luật M30 của chủ repo).
+async function pendingVerdicts(due) {
   const ok = [], drop = [];
   await pool(due, async p => {
     const row = findRow(p.key);
@@ -564,9 +712,16 @@ async function stageM30(wait) {
     log(`  ${p.coin} ${p.dir}: M30 ${m ? `o${m.o} h${m.h} l${m.l} c${m.c}` : 'không có'} so với cây phá h${p.h1.h} l${p.h1.l} → ${r.why ? 'KHÔNG báo — ' + r.why : 'báo'}`);
   });
 
-  const events = ok.filter(r => r.line).map(r => ({ ...r, m30: r._v }));
+  // Vào lệnh ở nến M30 xác nhận (nến 2) → giá vào = giá đóng nến M30 đó. Chấm điểm trước khi báo.
+  const events = ok.filter(r => r.line).map(r => ({ ...r, _key: r.id, m30: r._v, entry: r.m30Bar ? r.m30Bar.c : r.close }));
+  await scoreAll(events);
   const { sentN } = await sendAll(events);
-  for (const r of ok) { const ev = events.find(e => e.id === r.id); delete r._v; Object.assign(r, { pu: ev ? ev._pu ?? 0 : 0, pushed: ev ? ev._okN || 0 : 0, sentAt: Date.now() }); if (r.line) upsert(r); }
+  for (const r of ok) {
+    const ev = events.find(e => e.id === r.id); delete r._v;
+    Object.assign(r, { pu: ev ? ev._pu ?? 0 : 0, pushed: ev ? ev._okN || 0 : 0, sentAt: Date.now(), sc: ev ? ev.sc || null : null });
+    if (r.line) upsert(r);
+  }
+  openTrades(events);
   for (const r of drop) if (r.line) upsert(r);
   for (const p of due) delete state.pending[p.key];
   // dọn chờ quá lâu (bot ngừng chạy cả ngày)
@@ -574,6 +729,132 @@ async function stageM30(wait) {
   const closeAt = Math.max(...due.map(p => p.m30Close));
   status.m30 = { at: Date.now(), closeAt, checked: due.length, pushed: ok.length, skipped: drop.length, sent: sentN, doneAfterCloseMs: Date.now() - closeAt };
   log(`Bước M30 xong: ${due.length} cú phá — báo ${ok.length}, bỏ ${drop.length}. Sau khi nến M30 đóng ${((Date.now() - closeAt) / 1000).toFixed(1)} giây.`);
+}
+
+/* ---------------- trendline M30 (luật prompt: ≤ 60 nến, bắt buộc chờ nến 2) ---------------- */
+
+const M30N = 500;     // nến M30 tải về: đường ≤ 60 nến + phần tính ATR / kiểm tra đáy/đỉnh thật phía trước
+
+async function loadM30(universe) {
+  const d = {};
+  await pool(universe, async u => { d[u.instId] = (await okx.candles(u.instId, '30m', M30N)).K; });
+  return d;
+}
+
+// Chốt cây M30 vừa đóng (mở lúc `target`) cho những đồng chưa có.
+async function closeM30(universe, d, target) {
+  const need = universe.filter(u => d[u.instId] && lastOf(d[u.instId].t) !== target);
+  if (!need.length) return;
+  let missing = 0;
+  await pool(need, async u => {
+    for (let k = 0; k < 12; k++) {
+      const rows = await okx.latest(u.instId, '30m', 2);
+      const row = rows.find(r => +r[0] === target);
+      if (row && row[8] === '1') { d[u.instId] = mergeClosed(d[u.instId], rows, target); return; }
+      await sleep(600);
+    }
+    missing++;
+  });
+  log(`Chốt nến M30 ${hhmm(target)}–${hhmm(target + M30MS)}: ${need.length - missing}/${need.length} đồng`);
+}
+
+/**
+ * Sự kiện trendline M30 của cây vừa đóng (mở lúc `target`):
+ *   PHÁ: không báo ở nến phá — chờ nến M30 thứ 2 đóng tiếp ngoài đường, đúng màu (prompt 5.2 kịch bản B).
+ *   XÁC NHẬN / RETEST: báo ngay (kèm điểm).
+ * Đồng thời xét các cú phá M30 đang chờ nến 2 (nến 2 = cây vừa đóng).
+ */
+async function processM30(universe, ticks, d30, target, d1h = {}) {
+  if (state.lastM30 && state.lastM30 >= target) { log(`Nến M30 ${hhmm(target)} đã xét.`); return; }
+  const found = [];
+  let nLines = 0;
+  for (const u of universe) {
+    const K = d30[u.instId];
+    if (!K || K.c.length < 100 || lastOf(K.t) !== target) continue;
+    const r = analyze(K, '30m');
+    nLines += r.all.length;
+    for (const e of r.events.filter(x => x.t === target)) found.push({ ...e, instId: u.instId, coin: u.coin, tickSz: ticks[u.instId] });
+  }
+  const now2 = [];
+  // nến 2 của các cú phá M30 đang chờ
+  for (const f of Object.values(state.follow)) {
+    if (f.tf !== '30m' || f.tNext > target) continue;
+    const row = findRow(f.key) || { id: f.key };
+    const K = d30[f.instId], j = K ? K.t.indexOf(f.tNext) : -1;
+    delete state.follow[f.key];
+    if (f.tNext < target || j < 0) { Object.assign(row, { why: 'bot không chạy kịp lúc xét nến M30 thứ 2', m30: 'follow-late' }); if (row.line) upsert(row); continue; }
+    const up = f.dir === 'LONG', y = lineAt(f.line, f.tNext), o = K.o[j], c = K.c[j];
+    const held = (up ? c > y : c < y) && (up ? c > o : c < o);
+    const nb = { o, h: K.h[j], l: K.l[j], c };
+    if (!held) {
+      Object.assign(row, { why: `nến M30 thứ 2 không đóng tiếp ${up ? 'trên' : 'dưới'} đường`, m30: 'follow-no', nextBar: nb });
+      if (row.line) upsert(row);
+      log(`  ${f.coin} ${f.dir} M30: nến 2 không giữ được → không báo`);
+      continue;
+    }
+    Object.assign(row, { m30: 'follow-ok', nextBar: nb });
+    now2.push({ ...row, type: 'BREAK', instId: f.instId, coin: f.coin, dir: f.dir, side: f.side, t: f.t, tf: '30m', line: f.line, close: c, linePrice: y, cls: f.cls,
+      tickSz: ticks[f.instId] ?? row.tickSz, nextBar: nb, m30: null, entry: c, _key: f.key });
+    log(`  ${f.coin} ${f.dir} M30: nến 2 đóng tiếp ${up ? 'trên' : 'dưới'} đường → báo`);
+  }
+  let waiting = 0, skipped = 0;
+  for (const e of found.sort((a, b) => a.t - b.t)) {
+    const key = eventId(e.instId, e);
+    if (state.sent[key]) continue;
+    state.sent[key] = Date.now();
+    e._key = key;
+    if (!ALERTS.includes(e.type) || e.line.span < MIN_SPAN_ALERT) { upsert(rowOf(e, { why: 'loại thông báo đang tắt' })); skipped++; continue; }
+    if (e.type === 'BREAK') {
+      state.follow[key] = { key, instId: e.instId, coin: e.coin, dir: e.dir, side: e.side, tf: '30m', t: e.t, tNext: e.t + M30MS, line: e.line, cls: e.cls };
+      upsert(rowOf(e, { m30: 'follow2', followAt: e.t + 2 * M30MS }));
+      waiting++;
+      log(`  chờ nến M30 thứ 2: ${e.coin} ${e.dir} (phá ${e.line.kind} ${e.line.span} nến) — xét lúc ${hhmm(e.t + 2 * M30MS)}`);
+      continue;
+    }
+    now2.push(e);
+  }
+  await scoreAll(now2, inst => ({ '30m': d30[inst], '1H': d1h[inst] }));
+  const { sentN } = await sendAll(now2);
+  for (const e of now2) {
+    const r0 = findRow(e._key);
+    if (r0 && r0.m30 === 'follow-ok') Object.assign(r0, { pushed: e._okN || 0, pu: e._pu ?? 0, sentAt: Date.now(), sc: e.sc || null }), changed.set(r0.id, r0);
+    else upsert(rowOf(e, { pushed: e._okN || 0, pu: e._pu ?? 0 }));
+  }
+  openTrades(now2);
+  state.lastM30 = target;
+  status.m30lines = { at: Date.now(), target, lines: nLines, events: found.length, pushed: now2.length, waiting, skipped, sent: sentN, doneAfterCloseMs: Date.now() - (target + M30MS) };
+  log(`Trendline M30 ${hhmm(target)}–${hhmm(target + M30MS)}: ${nLines} đường, ${found.length} sự kiện — báo ${now2.length}, chờ nến 2 ${waiting}.`);
+}
+
+/* ---------------- bước 2: nến M30 ---------------- */
+
+async function stageM30(wait) {
+  const now = Date.now();
+  const list = Object.values(state.pending);
+  const due = list.filter(p => p.m30Close <= now + (wait ? M30_WAIT_MAX : 0));
+  // cây M30 cần xét trendline: cây vừa đóng chưa xét, hoặc cây đang chạy nếu sắp đóng
+  const openNow = Math.floor(now / M30MS) * M30MS;
+  let t30 = null;
+  if (!state.lastM30 || state.lastM30 < openNow - M30MS) t30 = openNow - M30MS;
+  else if (wait && openNow + M30MS - now <= M30_WAIT_MAX) t30 = openNow;
+  if (!due.length && t30 === null) { log(list.length ? `${list.length} cú phá đang chờ M30, chưa tới giờ.` : 'Không có cú phá nào đang chờ M30, nến M30 đã xét.'); return; }
+
+  let U = null, d30 = null;
+  if (t30 !== null) {
+    try { U = await m30Universe(); d30 = await loadM30(U.universe); log(`Đã tải nến M30 ${U.universe.length} đồng`); }
+    catch (e) { log('  không tải được nến M30:', e.message); U = null; }
+  }
+  const at = Math.max(due.length ? Math.max(...due.map(p => p.m30Close)) : 0, t30 !== null ? t30 + M30MS : 0) + SETTLE;
+  if (at > Date.now()) {
+    log(`Chờ ${((at - Date.now()) / 1000).toFixed(0)} giây tới khi nến M30 ${hhmm(at - SETTLE - M30)}–${hhmm(at - SETTLE)} đóng (${due.length} cú phá H1 chờ M30)…`);
+    await sleep(at - Date.now());
+  }
+  if (!status.host) { okx.setThrottle(60); try { status.host = (await okx.pickHost()).host; } catch {} }
+  if (due.length) await pendingVerdicts(due);
+  if (U && d30) {
+    try { await closeM30(U.universe, d30, t30); await processM30(U.universe, U.ticks, d30, t30); }
+    catch (e) { log('  M30 lỗi:', e.message); }
+  }
   if (!status.result) status.result = 'ok';
 }
 

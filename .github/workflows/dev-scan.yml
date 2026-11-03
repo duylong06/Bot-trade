@@ -1,0 +1,60 @@
+# TẠM: thử lớp chấm điểm trên nhánh diem-prompt. KHÔNG gửi thông báo (không dùng PUSH_CONFIG), KHÔNG ghi nhánh data
+# (kết quả lưu ở nhánh dev-data). Xoá file này trước khi gộp vào main.
+name: Thử lớp chấm điểm (tạm)
+on:
+  push:
+    branches: [diem-prompt]
+permissions:
+  contents: write
+concurrency:
+  group: dev-scan
+  cancel-in-progress: true
+jobs:
+  dev:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Kiểm thử lõi
+        run: node bot/test-core.mjs
+      - name: Chép dữ liệu bot thật (chỉ đọc) và xoá bộ nhớ chống trùng
+        run: |
+          mkdir -p out
+          git fetch -q --depth=1 origin data && git archive FETCH_HEAD | tar -x -C out
+          node -e "const fs=require('fs');const p='out/state.json';const s=JSON.parse(fs.readFileSync(p));delete s.lastCandle;delete s.lastM30;s.sent={};s.pending={};s.follow={};s.trades={};fs.writeFileSync(p,JSON.stringify(s))"
+      - name: Quét thử 48 giờ (dry-run)
+        env:
+          MODE: dry-run
+          DUMP_CANDLES: ''
+        run: node bot/scan.mjs
+      - name: Quét thật bước H1 (không có máy nhận → không gửi)
+        if: always()
+        env:
+          MODE: scan
+          STAGE: h1
+          TRIGGER: dev
+        run: node bot/scan.mjs
+      - name: Bước M30 (không chờ)
+        if: always()
+        env:
+          MODE: scan
+          STAGE: m30
+          TRIGGER: dev
+          M30_WAIT_MAX: '0'
+        run: node bot/scan.mjs
+      - name: Lưu kết quả vào nhánh dev-data
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd out
+          rm -rf .git
+          git init -q -b dev-data
+          git add -A
+          git -c user.name="bot-trade" -c user.email="bot-trade@users.noreply.github.com" commit -qm "dev $(date -u +%FT%TZ)"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" dev-data

@@ -5,6 +5,7 @@ import { EXCLUDE, CATEGORIES, TOP_N, PINNED } from './config.js';
 export const HOSTS = ['https://www.okx.com', 'https://aws.okx.com', 'https://my.okx.com'];
 let host = HOSTS[0];
 let gap = 0, nextAt = 0;   // giãn cách tối thiểu giữa hai lần gọi (ms) — bot đặt để không vượt giới hạn OKX
+let rubikNext = 0;         // API thống kê (OI, taker volume) giới hạn 5 lần / 2 giây → giãn 450 ms
 
 export const getHost = () => host;
 export const setHost = h => { host = h; };
@@ -18,11 +19,17 @@ async function slot() {
   if (w) await sleep(w);
 }
 
+async function rubikSlot() {
+  const now = Date.now(), w = Math.max(0, rubikNext - now);
+  rubikNext = Math.max(now, rubikNext) + 450;
+  if (w) await sleep(w);
+}
+
 export async function api(path, params = {}, { retries = 3 } = {}) {
   const qs = new URLSearchParams(params).toString();
   let err;
   for (let a = 0; a <= retries; a++) {
-    await slot();
+    if (path.includes('/rubik/')) await rubikSlot(); else await slot();
     try {
       const r = await fetch(host + path + (qs ? '?' + qs : ''), { headers: { accept: 'application/json' } });
       if (r.status === 429) { await sleep(400 * (a + 1)); err = new Error('OKX 429'); continue; }
@@ -101,7 +108,7 @@ export async function swapTickers(allow) {
       const last = +x.last, open = +x.open24h;
       return {
         instId: x.instId, coin: x.instId.split('-')[0],
-        last, open24h: open, high24h: +x.high24h, low24h: +x.low24h,
+        last, open24h: open, high24h: +x.high24h, low24h: +x.low24h, bid: +x.bidPx || 0, ask: +x.askPx || 0,
         chg: open ? (last - open) / open : 0,
         volUsd: (+x.volCcy24h || 0) * last,
       };

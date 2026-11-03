@@ -31,7 +31,7 @@
  * Retest: giá chạy ra xa ít nhất 2 ATR rồi quay về chạm đường và đóng cửa giữ được.
  */
 
-import { TUNE } from './config.js';
+import { TUNE, TF_RULES } from './config.js';
 
 const DEFAULTS = {
   WINDOW: 1000,       // tối đa 1000 nến H1 (≈ 42 ngày) — bắt được cả đường dài 500–1000 nến
@@ -97,6 +97,11 @@ const DEFAULTS = {
 
 export const CFG = Object.freeze({ ...DEFAULTS, ...TUNE });
 
+// Luật riêng từng khung (core/config.js → TF_RULES): độ dài tối đa của đường, khoảng cách tối thiểu giữa hai
+// điểm neo… analyze(K, tf) dùng CFG + luật của khung tf. Các hàm khác dùng P (CFG + luật khung đang phân tích).
+export const rulesOf = tf => Object.freeze({ ...CFG, ...((TF_RULES && TF_RULES[tf]) || {}) });
+let P = CFG;
+
 export const HOUR = 3600000;
 
 /* ---------- tiện ích nến ---------- */
@@ -115,7 +120,7 @@ export function sliceK(K, from, to = K.c.length) {
   return { t: s(K.t), o: s(K.o), h: s(K.h), l: s(K.l), c: s(K.c), v: s(K.v) };
 }
 
-export function atrSeries(K, n = CFG.ATR) {
+export function atrSeries(K, n = P.ATR) {
   const N = K.c.length, out = new Array(N);
   let sum = 0, prev = 0;
   for (let i = 0; i < N; i++) {
@@ -128,7 +133,7 @@ export function atrSeries(K, n = CFG.ATR) {
   return out;
 }
 
-export function findPivots(K, k = CFG.PIVOT) {
+export function findPivots(K, k = P.PIVOT) {
   const N = K.c.length, hi = [], lo = [];
   for (let i = k; i < N - k; i++) {
     let isH = true, isL = true;
@@ -159,7 +164,7 @@ export function pivotStrength(K, piv, side, kmax = 60, edgeFree = true) {
   return st;
 }
 
-const needFor = span => Math.max(CFG.PIVOT, Math.min(CFG.SCALE_MAX, Math.round(span / CFG.SCALE)));
+const needFor = span => Math.max(P.PIVOT, Math.min(P.SCALE_MAX, Math.round(span / P.SCALE)));
 
 // Râu kim: râu dài ≥ NEEDLE_WICK lần thân và chọc ra khỏi râu các cây ±5 bên cạnh ≥ NEEDLE_OUT ATR.
 export function isNeedle(K, A, i, side) {
@@ -168,7 +173,7 @@ export function isNeedle(K, A, i, side) {
   const wick = (X[i] - edge) * s, body = Math.abs(K.c[i] - K.o[i]);
   let nb = -Infinity;
   for (let j = Math.max(0, i - 5); j <= Math.min(X.length - 1, i + 5); j++) if (j !== i) nb = Math.max(nb, X[j] * s);
-  return wick >= CFG.NEEDLE_WICK * Math.max(body, 0.05 * A[i]) && X[i] * s - nb >= CFG.NEEDLE_OUT * A[i];
+  return wick >= P.NEEDLE_WICK * Math.max(body, 0.05 * A[i]) && X[i] * s - nb >= P.NEEDLE_OUT * A[i];
 }
 
 // Cây nến "bình thường" của chuỗi: trung vị biên độ (cao − thấp). Dùng để biết râu nào là râu dài bất thường
@@ -184,10 +189,10 @@ export function isClean(K, A, i, side, base = typicalRange(K)) {
   const s = side === 'R' ? 1 : -1, X = side === 'R' ? K.h : K.l;
   const edge = side === 'R' ? Math.max(K.o[i], K.c[i]) : Math.min(K.o[i], K.c[i]);
   const wick = (X[i] - edge) * s;
-  if (wick > CFG.RUT_WICK * base) return false;
+  if (wick > P.RUT_WICK * base) return false;
   let nb = -Infinity;
   for (let j = Math.max(0, i - 3); j <= Math.min(X.length - 1, i + 3); j++) if (j !== i) nb = Math.max(nb, X[j] * s);
-  return !(X[i] * s - nb > CFG.RUT_OUT * base);
+  return !(X[i] * s - nb > P.RUT_OUT * base);
 }
 
 // Cây phá: 'clean' = đúng màu (phá lên nến xanh, phá xuống nến đỏ) và thân dài hơn cả hai râu;
@@ -204,7 +209,7 @@ export function isSpike(K, A, i, dir) {
   const up = dir === 'LONG';
   const wick = up ? K.h[i] - Math.max(K.o[i], K.c[i]) : Math.min(K.o[i], K.c[i]) - K.l[i];
   const body = Math.abs(K.c[i] - K.o[i]);
-  return wick >= CFG.SPIKE_WICK * A[i] && wick >= CFG.SPIKE_RATIO * Math.max(body, 0.05 * A[i]);
+  return wick >= P.SPIKE_WICK * A[i] && wick >= P.SPIKE_RATIO * Math.max(body, 0.05 * A[i]);
 }
 
 // Bao nhiêu nến phía TRƯỚC đáy (đỉnh) này không có đáy thấp hơn (đỉnh cao hơn) — xét trên TOÀN BỘ nến đã tải
@@ -216,7 +221,7 @@ export function isSpike(K, A, i, dir) {
 function leftOf(Kfull, Afull, from, side, base) {
   const s = side === 'R' ? 1 : -1, X = side === 'R' ? Kfull.h : Kfull.l;
   const rut = j => !isClean(Kfull, Afull, j, side, base);
-  const odd = j => Kfull.h[j] - Kfull.l[j] > CFG.ABNORMAL * base || rut(j);
+  const odd = j => Kfull.h[j] - Kfull.l[j] > P.ABNORMAL * base || rut(j);
   const memo = new Map();
   return i => {
     if (memo.has(i)) return memo.get(i);
@@ -224,7 +229,7 @@ function leftOf(Kfull, Afull, from, side, base) {
     let j = g - 1;
     // Cây rút râu luôn được bỏ qua. Cây biên độ lớn bất thường (nến vọt/sập) chỉ bỏ qua khi ở xa (> LEFT_NEAR nến):
     // một cây sập lớn ngay sát bên mà đáy thấp hơn thì đó mới là đáy thật của vùng (PI 26/10).
-    while (j >= 0 && ((X[g] - X[j]) * s >= 0 || rut(j) || (g - j > CFG.LEFT_NEAR && odd(j)))) j--;
+    while (j >= 0 && ((X[g] - X[j]) * s >= 0 || rut(j) || (g - j > P.LEFT_NEAR && odd(j)))) j--;
     const v = j < 0 ? Infinity : g - j - 1;
     memo.set(i, v);
     return v;
@@ -232,7 +237,7 @@ function leftOf(Kfull, Afull, from, side, base) {
 }
 
 // Khối lượng cây nến so với trung bình VOL_N cây trước đó (null nếu không có dữ liệu khối lượng).
-export function volRatio(K, i, n = CFG.VOL_N) {
+export function volRatio(K, i, n = P.VOL_N) {
   if (!K.v || i < 1) return null;
   let sum = 0, k = 0;
   for (let j = Math.max(0, i - n); j < i; j++) { sum += K.v[j] || 0; k++; }
@@ -253,9 +258,9 @@ function levelAt(K, A, i, side, base) {
   for (let j = lo; j <= hi; j++) top = Math.max(top, edge(j) * s);
   const mem = [];
   for (let j = lo; j <= hi; j++)
-    if (top - edge(j) * s <= CFG.CL_BODY * A[i] && (X[i] - X[j]) * s <= CFG.CL_TIP * A[i] && isClean(K, A, j, side, base)) mem.push(j);
-  const shortN = mem.filter(j => j !== i && (X[j] - edge(j)) * s <= CFG.SHORT_WICK * base).length;
-  if (mem.length < CFG.CL_MIN || shortN < CFG.CL_MIN) return X[i];      // phải là vùng NHIỀU RÂU NGẮN
+    if (top - edge(j) * s <= P.CL_BODY * A[i] && (X[i] - X[j]) * s <= P.CL_TIP * A[i] && isClean(K, A, j, side, base)) mem.push(j);
+  const shortN = mem.filter(j => j !== i && (X[j] - edge(j)) * s <= P.SHORT_WICK * base).length;
+  if (mem.length < P.CL_MIN || shortN < P.CL_MIN) return X[i];      // phải là vùng NHIỀU RÂU NGẮN
   const avg = mem.reduce((t, j) => t + X[j], 0) / mem.length;
   const body = top * s;
   return s > 0 ? Math.max(avg, body) : Math.min(avg, body);
@@ -291,25 +296,25 @@ function candidates(K, A, piv, side, base, leftFn, mode = 'trend') {
   const flat = mode === 'flat';
   const out = [];
   // râu ngắn mà thân vẫn nằm trong đường thì không tính là "râu cắt qua đường"
-  const pokesOut = (i, y) => (X[i] - y) * s > CFG.WICK_MAX * A[i]
-    && !((X[i] - edge(i)) * s <= CFG.SHORT_WICK * base && (edge(i) - y) * s <= CFG.TOL * A[i]);
+  const pokesOut = (i, y) => (X[i] - y) * s > P.WICK_MAX * A[i]
+    && !((X[i] - edge(i)) * s <= P.SHORT_WICK * base && (edge(i) - y) * s <= P.TOL * A[i]);
 
   // Chạm (từ đáy/đỉnh thứ hai trở đi tính THÂN): trong cụm nến của đáy/đỉnh (±NEAR_TOUCH) râu chạm tới đường, và
   // thân nến sát đường (cách ≤ BODY_TOUCH ATR) — hoặc đường đi qua râu BÌNH THƯỜNG của vùng đáy/đỉnh đó (râu ngắn,
   // không chọc lẻ loi ra khỏi các nến bên cạnh). Một cây râu dài chọc ra một mình chạm đường mà thân còn xa thì
   // KHÔNG tính — kẻ vậy là kẻ theo râu, không có căn cứ. Đáy/đỉnh không thẳng hàng → đường đi giữa thân và râu.
   const normalWick = j => {
-    if ((X[j] - edge(j)) * s > CFG.WICK_TOUCH * base) return false;
+    if ((X[j] - edge(j)) * s > P.WICK_TOUCH * base) return false;
     let nb = -Infinity;
     for (let q = Math.max(0, j - 3); q <= Math.min(N - 1, j + 3); q++) if (q !== j) nb = Math.max(nb, X[q] * s);
-    return X[j] * s - nb <= CFG.OUT_TOUCH * base;
+    return X[j] * s - nb <= P.OUT_TOUCH * base;
   };
   const touchAt = (p, y) => {
     let body = false, wick = false;
-    for (let j = Math.max(0, p - CFG.NEAR_TOUCH); j <= Math.min(N - 1, p + CFG.NEAR_TOUCH); j++) {
-      const yj = y(j), reach = (X[j] - yj) * s >= -CFG.TOUCH * A[j];
+    for (let j = Math.max(0, p - P.NEAR_TOUCH); j <= Math.min(N - 1, p + P.NEAR_TOUCH); j++) {
+      const yj = y(j), reach = (X[j] - yj) * s >= -P.TOUCH * A[j];
       if (reach) wick = true;
-      if ((edge(j) - yj) * s >= -CFG.BODY_TOUCH * A[j] || (reach && normalWick(j))) body = true;
+      if ((edge(j) - yj) * s >= -P.BODY_TOUCH * A[j] || (reach && normalWick(j))) body = true;
     }
     return body && wick;
   };
@@ -318,7 +323,7 @@ function candidates(K, A, piv, side, base, leftFn, mode = 'trend') {
   // râu đáy sau thủng xuống dưới đáy trước là đáy bằng / đáy thấp hơn, không phải xu hướng tăng.
   const tipOf = p => {
     let x = X[p];
-    for (let j = Math.max(0, p - CFG.NEAR_TOUCH); j <= Math.min(N - 1, p + CFG.NEAR_TOUCH); j++) if ((X[j] - x) * s > 0) x = X[j];
+    for (let j = Math.max(0, p - P.NEAR_TOUCH); j <= Math.min(N - 1, p + P.NEAR_TOUCH); j++) if ((X[j] - x) * s > 0) x = X[j];
     return x;
   };
 
@@ -336,9 +341,9 @@ function candidates(K, A, piv, side, base, leftFn, mode = 'trend') {
 
   for (const ia of piv) {
     if (!clean(ia)) continue;                                        // điểm neo đầu: nến đẹp, kẻ ở đầu râu
-    if (st.get(ia) < CFG.PIVOT) continue;
+    if (st.get(ia) < P.PIVOT) continue;
     // phải là đáy/đỉnh thật (biên sideway thì không cần: vùng đi ngang có thể hình thành sau một cây vọt/sập)
-    if (!flat && leftFn(ia) < Math.ceil(CFG.LEFT * CFG.MIN_PATTERN)) continue;
+    if (!flat && leftFn(ia) < Math.ceil(P.LEFT * P.MIN_PATTERN)) continue;
     // Mức kẻ ở điểm neo đầu: ĐẦU RÂU (vùng đỉnh/đáy nhiều râu ngắn: trung bình các đầu râu — levelAt).
     const pa = levelAt(K, A, ia, side, base);
     const group = new Map();                                         // các đường thử, theo đáy/đỉnh thứ hai
@@ -348,13 +353,15 @@ function candidates(K, A, piv, side, base, leftFn, mode = 'trend') {
     if (mode === 'flat') slopes = [0];
     else {
       for (const p of piv) {
-        if (p - ia < CFG.MIN_SPAN) continue;
+        if (p - ia < P.MIN_SPAN) continue;
         let m = null;
-        for (let j = Math.max(ia + 1, p - CFG.PIVOT); j <= Math.min(N - 1, p + CFG.PIVOT); j++) {
+        for (let j = Math.max(ia + 1, p - P.PIVOT); j <= Math.min(N - 1, p + P.PIVOT); j++) {
           const mj = (edge(j) - pa) / (j - ia);
           if (m === null || (s > 0 ? mj > m : mj < m)) m = mj;      // vào sát giá nhất mà không cắt thân cụm đó
         }
         slopes.push(m);
+        // Thêm đường nối ĐẦU RÂU điểm neo đầu với ĐẦU RÂU đỉnh/đáy sau (kẻ chạm râu, không cắt thân — luật prompt).
+        if (P.WICK_SLOPE) slopes.push((X[p] - pa) / (p - ia));
       }
       slopes.sort((a, b) => a - b);
       slopes = slopes.filter((m, k) => k === 0 || Math.abs(m - slopes[k - 1]) > 1e-12);
@@ -370,10 +377,10 @@ function candidates(K, A, piv, side, base, leftFn, mode = 'trend') {
       for (let i = ia + 1; i < N; i++) {
         const yi = y(i);
         if (!est) {
-          if ((edge(i) - yi) * s > CFG.TOL * A[i]) { ok = false; break; }
-        } else if ((C[i] - yi) * s > Math.max(CFG.BREAK, CFG.TOL) * A[i]) {
-          let weak = breakClass(K.o[i], K.h[i], K.l[i], C[i], dirStr) === 'weak' || (C[i] - yi) * s < CFG.BREAK_MIN * A[i];
-          if (mode === 'flat') { const vr = volRatio(K, i); if (vr !== null && vr < CFG.VOL_K) weak = true; }
+          if ((edge(i) - yi) * s > P.TOL * A[i]) { ok = false; break; }
+        } else if ((C[i] - yi) * s > Math.max(P.BREAK, P.TOL) * A[i]) {
+          let weak = breakClass(K.o[i], K.h[i], K.l[i], C[i], dirStr) === 'weak' || (C[i] - yi) * s < P.BREAK_MIN * A[i];
+          if (mode === 'flat') { const vr = volRatio(K, i); if (vr !== null && vr < P.VOL_K) weak = true; }
           if (weak && i + 1 < N && (C[i + 1] - y(i + 1)) * s <= 0 && fakes < 1) { fakes++; continue; }
           v = i; break;
         }
@@ -381,59 +388,60 @@ function candidates(K, A, piv, side, base, leftFn, mode = 'trend') {
           raw.push(i);
           if (!est && (flat || (tipOf(i) - X[ia]) * s < 0)) {
             const w = wave(pa, ia, i, y);
-            if (w.away >= CFG.REACT * A[i] && w.retr >= CFG.RETR) est = true;
+            if (w.away >= P.REACT * A[i] && w.retr >= P.RETR) est = true;
           }
         }
       }
       if (!ok || !raw.length) continue;
       const end = v < 0 ? N : v;
-      if (end - ia < CFG.MIN_PATTERN) continue;                     // mô hình quá ngắn
+      if (end - ia < P.MIN_PATTERN) continue;                     // mô hình quá ngắn
+      if (P.MAX_PATTERN && end - ia > P.MAX_PATTERN) continue;     // quá dài: đường đã hết hạn (luật prompt: H1 ≤ 96, H4 ≤ 120, M30 ≤ 60)
 
       // Điểm neo đầu là đáy (đỉnh) của cả xu hướng: từ đó tới cây phá không râu nào thấp hơn (cao hơn) nó.
       if (!flat) {
         let bad = false;
-        for (let i = ia + 1; i < end && !bad; i++) if ((X[i] - X[ia]) * s > CFG.TOL * A[i]) bad = true;
+        for (let i = ia + 1; i < end && !bad; i++) if ((X[i] - X[ia]) * s > P.TOL * A[i]) bad = true;
         if (bad) continue;
       }
       // Đường càng dài thì điểm neo đầu càng phải là đáy/đỉnh lớn, và là đáy/đỉnh thật của cả vùng phía trước.
       const need = needFor(end - ia);
       if (st.get(ia) < need) continue;
-      if (!flat && leftFn(ia) < Math.min(CFG.LEFT_MAX, Math.ceil(CFG.LEFT * (end - ia)))) continue;
-      const needTouch = Math.max(CFG.PIVOT, Math.ceil(need / 2));
+      if (!flat && leftFn(ia) < Math.min(P.LEFT_MAX, Math.ceil(P.LEFT * (end - ia)))) continue;
+      const needTouch = Math.max(P.PIVOT, Math.ceil(need / 2));
 
       // Bề rộng mô hình: giá lùi xa đường nhất bao nhiêu (để đòi mỗi nhịp phải lùi rõ ràng).
       let width = 0;
       for (let i = ia; i < end; i++) { const d = (y(i) - Y[i]) * s; if (d > width) width = d; }
 
       // Lượt 2: đếm chạm — mỗi lần chạm là đáy/đỉnh của một con sóng riêng.
-      const gap = Math.max(5, Math.round((end - ia) * CFG.GAP));
+      const gap = Math.max(5, Math.round((end - ia) * P.GAP));
       const T = [ia];
       for (const p of raw) {
         if (p >= end) break;
         if (st.get(p) < needTouch) continue;
         const q = T[T.length - 1];
         if (p - q < gap) continue;
-        if (q === ia && p - ia < CFG.ANCHOR_GAP * (end - ia)) continue;    // đáy 2 sát đáy 1 = cùng một vùng đáy, chưa phải sóng mới
+        if (q === ia && p - ia < P.ANCHOR_GAP * (end - ia)) continue;    // đáy 2 sát đáy 1 = cùng một vùng đáy, chưa phải sóng mới
         if (!flat && (tipOf(p) - (q === ia ? X[ia] : tipOf(q))) * s >= 0) continue;   // đáy cao dần / đỉnh thấp dần
         const w = wave(y(q), q, p, y);
-        if (w.away < CFG.REACT * A[p] || w.away < CFG.PROM * width || w.retr < CFG.RETR) continue;
+        if (w.away < P.REACT * A[p] || w.away < P.PROM * width || w.retr < P.RETR) continue;
         T.push(p);
       }
       if (T.length < 2) continue;
       const ib = T[1];
       // Đủ chạm: ≥ 3 lần; hoặc 2 lần nếu cả hai điểm neo là đỉnh/đáy LỚN (cao/thấp nhất ≥ MAJOR nến mỗi bên).
-      const major = st.get(ia) >= CFG.MAJOR && stReal.get(ib) >= CFG.MAJOR;
-      if (T.length < (major || flat ? 2 : CFG.MIN_TOUCH)) continue;     // biên sideway: mỗi biên ≥ 2 lần chạm
+      const major = st.get(ia) >= P.MAJOR && stReal.get(ib) >= P.MAJOR;
+      if (T.length < (major || flat ? 2 : P.MIN_TOUCH)) continue;     // biên sideway: mỗi biên ≥ 2 lần chạm
 
       // Râu cắt qua đường (trừ cụm nến của các lần chạm — râu ở đó được phép xuyên vì đường chạm thân):
       // tối đa WICK_ALLOW râu của nến thường + RUT_ALLOW râu của cây rút râu, tổng không quá POKE_TOTAL.
       const near = new Uint8Array(N);
-      for (const p of [ia, ...raw]) for (let j = Math.max(0, p - CFG.NEAR_TOUCH); j <= Math.min(N - 1, p + CFG.NEAR_TOUCH); j++) near[j] = 1;
+      for (const p of [ia, ...raw]) for (let j = Math.max(0, p - P.NEAR_TOUCH); j <= Math.min(N - 1, p + P.NEAR_TOUCH); j++) near[j] = 1;
       let pokes = 0, ruts = 0;
       for (let i = ia + 1; i < end && ok; i++) {
         if (near[i] || !pokesOut(i, y(i))) continue;
         if (clean(i)) pokes++; else ruts++;
-        if (pokes > CFG.WICK_ALLOW || ruts > CFG.RUT_ALLOW || pokes + ruts > CFG.POKE_TOTAL) ok = false;
+        if (pokes > P.WICK_ALLOW || ruts > P.RUT_ALLOW || pokes + ruts > P.POKE_TOTAL) ok = false;
       }
       if (!ok) continue;
 
@@ -473,13 +481,13 @@ function classify(K, A, L) {
     // "Chạy ra xa" chỉ tính từ các nến SAU nến phá: râu dài của chính nến phá không được tính,
     // nếu không thì nến ngay sau nến phá nào cũng thành retest.
     let away = 0;
-    for (let i = L.b; i < N && i <= L.b + CFG.RETEST_MAX; i++) {
+    for (let i = L.b; i < N && i <= L.b + P.RETEST_MAX; i++) {
       const yi = y(i), ci = K.c[i];
-      if (i > L.b && (ci - yi) * s < -CFG.FAIL * A[i]) { L.fail = i; break; }  // đóng ngược vào sâu → phá hụt
+      if (i > L.b && (ci - yi) * s < -P.FAIL * A[i]) { L.fail = i; break; }  // đóng ngược vào sâu → phá hụt
       if (L.confirm < 0 && (ci - L.level) * s > 0) L.confirm = i;
-      if (i >= L.b + 2 && L.retest < 0 && away >= CFG.AWAY * A[i]
-          && (near[i] - yi) * s <= CFG.TOUCH * A[i]
-          && (ci - yi) * s >= -CFG.TOL * A[i]) L.retest = i;
+      if (i >= L.b + 2 && L.retest < 0 && away >= P.AWAY * A[i]
+          && (near[i] - yi) * s <= P.TOUCH * A[i]
+          && (ci - yi) * s >= -P.TOL * A[i]) L.retest = i;
       if (i > L.b) away = Math.max(away, (far[i] - yi) * s);
       if (L.confirm >= 0 && L.retest >= 0) break;
     }
@@ -489,7 +497,7 @@ function classify(K, A, L) {
   L.span = endIdx - L.ia;
   const aRef = (A[L.ia] + A[Math.min(endIdx, N - 1)]) / 2;
   L.slopeAtr = L.m / aRef;
-  L.steep = Math.abs(L.slopeAtr) >= CFG.STEEP;
+  L.steep = Math.abs(L.slopeAtr) >= P.STEEP;
   L.kind = kindOf(L.side, L.slopeAtr, L.span);
   L.score = L.touches + L.span / 80;
   return L;
@@ -497,7 +505,7 @@ function classify(K, A, L) {
 
 // Ngang = dốc rất ít mỗi nến VÀ cả đường không lệch quá FLAT_TOTAL ATR (đường dài mà nghiêng đều vẫn là đường dốc).
 export function kindOf(side, slopeAtr, span = 0) {
-  const flat = Math.abs(slopeAtr) < CFG.FLAT && Math.abs(slopeAtr) * span <= CFG.FLAT_TOTAL;
+  const flat = Math.abs(slopeAtr) < P.FLAT && Math.abs(slopeAtr) * span <= P.FLAT_TOTAL;
   if (side === 'R') return flat ? 'kháng cự ngang' : slopeAtr < 0 ? 'kháng cự giảm' : 'kháng cự tăng';
   return flat ? 'hỗ trợ ngang' : slopeAtr > 0 ? 'hỗ trợ tăng' : 'hỗ trợ giảm';
 }
@@ -514,7 +522,7 @@ function similar(A, L1, L2, N) {
 /* ---------- phân tích ---------- */
 
 /**
- * analyze(K) — K là nến H1 đã đóng, cũ → mới (có thể dài hơn CFG.WINDOW; chỉ CFG.WINDOW nến cuối được xét).
+ * analyze(K) — K là nến H1 đã đóng, cũ → mới (có thể dài hơn P.WINDOW; chỉ P.WINDOW nến cuối được xét).
  * Trả về:
  *   W       nến trong cửa sổ
  *   A       ATR theo từng nến của W
@@ -522,8 +530,14 @@ function similar(A, L1, L2, N) {
  *   events  mọi sự kiện trong cửa sổ: BREAK / CONFIRM / RETEST, mỗi (loại, phía, nến) một sự kiện
  */
 export function analyze(Kfull, tf = '1H') {
+  const prev = P;
+  P = rulesOf(tf);
+  try { return analyzeTf(Kfull, tf); } finally { P = prev; }
+}
+
+function analyzeTf(Kfull, tf) {
   const Nf = Kfull.c.length;
-  const from = Math.max(0, Nf - CFG.WINDOW);
+  const from = Math.max(0, Nf - P.WINDOW);
   const Afull = atrSeries(Kfull);
   const W = sliceK(Kfull, from);
   const A = Afull.slice(from);
@@ -559,19 +573,19 @@ export function analyze(Kfull, tf = '1H') {
       if (endOf(L) - p < 0.4 * span) continue;                            // hai biên của cùng một vùng đi ngang
       const h = Math.abs(L.y0 - M.y0), a0 = Math.min(L.ia, M.ia);
       const aMed = A.slice(a0, endOf(L) + 1).sort((x, y) => x - y)[(endOf(L) - a0) >> 1];   // ATR trung vị trong vùng đi ngang
-      if (h < CFG.REACT * aMed || h > CFG.RANGE_MAX * aMed) continue;      // biên đi ngang: không quá hẹp, không quá rộng
+      if (h < P.REACT * aMed || h > P.RANGE_MAX * aMed) continue;      // biên đi ngang: không quá hẹp, không quá rộng
       if (!best || M.touches > best.touches || (M.touches === best.touches && M.span > best.span)) best = M;
     }
     if (best) {
       L.range = best;
-      if (L.b >= 0) { L.vol = volRatio(W, L.b); L.lowVol = L.vol !== null && L.vol < CFG.VOL_K; }
+      if (L.b >= 0) { L.vol = volRatio(W, L.b); L.lowVol = L.vol !== null && L.vol < P.VOL_K; }
       ranges.push(L);
     }
   }
 
   const any = [...trend, ...ranges];
   const counter = L => L.kind === 'kháng cự tăng' || L.kind === 'hỗ trợ giảm';
-  const all = CFG.TREND_ONLY ? any.filter(L => !counter(L)) : any;
+  const all = P.TREND_ONLY ? any.filter(L => !counter(L)) : any;
 
   // ---- sự kiện ----
   // Một cú phá = mọi đường cùng phía bị phá trên cùng một cây nến. Đường chính là đường dài nhất;
@@ -615,19 +629,19 @@ export function analyze(Kfull, tf = '1H') {
       if (kept.length >= n) break;
       const now = L2 => L2.y0 + L2.m * (N - 1);
       if (!kept.some(K2 => similar(A, K2, L, N)
-        || (L.state === 'active' && K2.state === 'active' && Math.abs(now(L) - now(K2)) <= CFG.ZONE_ATR * A[N - 1]))) kept.push(L);
+        || (L.state === 'active' && K2.state === 'active' && Math.abs(now(L) - now(K2)) <= P.ZONE_ATR * A[N - 1]))) kept.push(L);
     }
     return kept;
   };
   const live = all.filter(L => L.state === 'active'
-    && Math.abs(L.y0 + L.m * last - price) <= CFG.NEAR_ATR * A[last]);
+    && Math.abs(L.y0 + L.m * last - price) <= P.NEAR_ATR * A[last]);
   // Đường đã phá: lấy đúng đường của các tín hiệu (đường chính mỗi cú phá), cái nào vừa có động tĩnh
   // (phá / xác nhận / retest) gần nhất thì vẽ trước — để mũi tên nào cũng có đường đi kèm.
   const lastAct = L => Math.max(L.b, L.confirm, L.retest);
-  const liveShown = [...pick(live.filter(L => L.side === 'R'), CFG.SHOW_PER_SIDE), ...pick(live.filter(L => L.side === 'S'), CFG.SHOW_PER_SIDE)];
+  const liveShown = [...pick(live.filter(L => L.side === 'R'), P.SHOW_PER_SIDE), ...pick(live.filter(L => L.side === 'S'), P.SHOW_PER_SIDE)];
   const brokenShown = [];
-  for (const L of kept.map(k => k.L).filter(L => last - lastAct(L) <= CFG.SHOW_BROKEN_WITHIN).sort((x, y) => lastAct(y) - lastAct(x))) {
-    if (brokenShown.length >= CFG.SHOW_BROKEN) break;
+  for (const L of kept.map(k => k.L).filter(L => last - lastAct(L) <= P.SHOW_BROKEN_WITHIN).sort((x, y) => lastAct(y) - lastAct(x))) {
+    if (brokenShown.length >= P.SHOW_BROKEN) break;
     // đường đã phá gần trùng một đường cùng gốc vẫn còn hiệu lực (cú phá đó là phá giả) → chỉ vẽ đường còn hiệu lực
     if (liveShown.some(K2 => K2.side === L.side && K2.ia === L.ia && similar(A, K2, L, N))) continue;
     if (!brokenShown.some(B => B.side === L.side)) brokenShown.push(L);
@@ -657,7 +671,7 @@ function channelOf(W, A, L, pool) {
     const w = i => ((L.y0 + L.m * i) - (M.y0 + M.m * i)) * L.s;     // bề rộng kênh tại nến i
     const w0 = w(p), w1 = w(q);
     if (w0 <= 0 || w1 <= 0) continue;
-    if (Math.abs(w0 - w1) > CFG.PAR * (w0 + w1) / 2) continue;
+    if (Math.abs(w0 - w1) > P.PAR * (w0 + w1) / 2) continue;
     if (!best || M.touches > best.touches || (M.touches === best.touches && M.span > best.span)) best = M;
   }
   return best ? { line: lineInfo(W, A, best), touches: best.touches } : null;
@@ -694,7 +708,7 @@ function makeEvent(W, A, type, i, L, others, tf) {
   let cls = null, follow = null;
   if (type === 'BREAK') {
     cls = breakClass(W.o[i], W.h[i], W.l[i], W.c[i], dir);
-    if ((W.c[i] - y) * s < CFG.BREAK_MIN * A[i]) cls = 'weak';          // đóng sát đường: chưa dứt khoát
+    if ((W.c[i] - y) * s < P.BREAK_MIN * A[i]) cls = 'weak';          // đóng sát đường: chưa dứt khoát
     // cây kế tiếp (nếu đã có): đóng cửa vẫn ngoài đường và đúng màu → phá tiếp
     if (i + 1 < N) {
       const j = i + 1, up = dir === 'LONG';

@@ -31,6 +31,19 @@ export const MIN_SPAN_ALERT = 0;
 // Ghi đè ngưỡng trong core/breakout.js (CFG). Ví dụ: { MIN_SPAN: 20, LEFT: 0.4 }
 export const TUNE = {};
 
+// Luật trendline riêng từng khung (theo prompt V8.0, mục 5.1):
+//   MAX_PATTERN  tổng chiều dài đường (từ điểm neo đầu tới cây phá / tới hiện tại) tối đa — quá thì đường hết hạn
+//   MIN_SPAN     hai điểm neo cách nhau tối thiểu
+//   MIN_TOUCH 2  đường hai điểm neo là đường hợp lệ (đủ 3 chạm thì được cộng điểm cấu trúc)
+//   ANCHOR_GAP 0 điểm neo thứ hai chỉ cần cách điểm neo đầu MIN_SPAN nến
+//   WICK_SLOPE   thử cả đường nối đầu râu ↔ đầu râu (kẻ chạm râu, không cắt thân)
+// Mô hình vẫn dài tối thiểu MIN_PATTERN = 45 nến như cũ.
+export const TF_RULES = {
+  '30m': { MAX_PATTERN: 60, MIN_SPAN: 5, MIN_TOUCH: 2, ANCHOR_GAP: 0, WICK_SLOPE: true },
+  '1H': { MAX_PATTERN: 96, MIN_SPAN: 6, MIN_TOUCH: 2, ANCHOR_GAP: 0, WICK_SLOPE: true },
+  '4H': { MAX_PATTERN: 120, MIN_SPAN: 8, MIN_TOUCH: 2, ANCHOR_GAP: 0, WICK_SLOPE: true },
+};
+
 // Loại tài sản được xếp hạng vào top N (trường instCategory của OKX): '1' crypto · '3' cổ phiếu · '4' hàng hoá.
 // Vàng, dầu không cần xếp hạng vì đã nằm trong PINNED.
 export const CATEGORIES = ['1'];

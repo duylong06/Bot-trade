@@ -1,7 +1,12 @@
 // Kiểm thử lõi phát hiện phá vỡ trên dữ liệu dựng sẵn.
 // Chạy: node bot/test-core.mjs
 import fs from 'node:fs';
-import { analyze, CFG, HOUR, breakClass } from '../core/breakout.js';
+import { analyze as analyzeTf, CFG, HOUR, breakClass } from '../core/breakout.js';
+import { TF_RULES } from '../core/config.js';
+
+// Các ca 1–13 kiểm cách KẺ đường (đỉnh/đáy, chạm thân, râu…) — chạy với luật gốc (không giới hạn độ dài theo khung),
+// vì nhiều ca là đường dài hơn 96 nến. Luật riêng từng khung (prompt V8.0) kiểm ở mục 14.
+const analyze = (K, tf = 'gốc') => analyzeTf(K, tf);
 import { m30Verdict } from '../core/confirm.js';
 
 let fails = 0;
@@ -334,6 +339,24 @@ const show = ev => `${ev.type} ${ev.dir} @${ev.i} span=${ev.line.span} touches=$
     ok(m30Verdict('LONG', B(10, 12, 9, 11.5), B(11.5, 11.6, 9, 11.5)).ok === false, 'chạm đáy mà nến M30 đứng giá (mở = đóng) → không báo');
     ok(m30Verdict('SHORT', B(10, 11, 8, 8.5), null).ok === true, 'không lấy được nến M30 → vẫn báo');
   }
+}
+
+console.log('14. Luật trendline theo khung (prompt V8.0): H1 ≤ 96, H4 ≤ 120, M30 ≤ 60 nến; kẻ chạm râu');
+{
+  const fx = JSON.parse(fs.readFileSync(new URL('./fixtures/okx-link-1103.json', import.meta.url)));
+  const toK = rows => ({ t: rows.map(r => r[0]), o: rows.map(r => r[1]), h: rows.map(r => r[2]), l: rows.map(r => r[3]), c: rows.map(r => r[4]), v: rows.map(r => r[5]) });
+  const VNt = (d, h) => Date.UTC(2026, 10, d, h - 7);
+  for (const tf of ['30m', '1H', '4H']) {
+    const r = analyzeTf(toK(fx[tf]), tf), max = TF_RULES[tf].MAX_PATTERN;
+    const long = r.all.filter(L => L.span > max);
+    ok(!long.length, `LINK ${tf}: không đường nào dài quá ${max} nến (${r.all.length} đường)`);
+    ok(r.events.every(e => e.line.span <= max), `LINK ${tf}: mọi sự kiện thuộc đường ≤ ${max} nến`);
+  }
+  // Đường bạn kẻ 03/11: kháng cự giảm từ đỉnh 03:00 01/11 qua đỉnh 20:00 02/11, phá lên lúc 19:00 03/11.
+  const r1 = analyzeTf(toK(fx['1H']), '1H');
+  const br = r1.events.find(e => e.type === 'BREAK' && e.dir === 'LONG' && e.t === VNt(3, 19));
+  ok(!!br && br.line.ta === VNt(1, 3), 'LINK H1: có cú phá LONG 19:00 03/11 của kháng cự giảm neo ở đỉnh 03:00 01/11' + (br ? ` (${br.line.span} nến, ${br.line.touches} chạm)` : ''));
+  ok(!!br && br.line.tTouch.includes(VNt(2, 20)), 'LINK H1: đường đó chạm đỉnh 20:00 02/11');
 }
 
 console.log(fails ? `\n${fails} kiểm thử sai` : '\nTất cả đều đúng');
