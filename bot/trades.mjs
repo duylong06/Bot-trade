@@ -41,6 +41,9 @@ export function trackTrades(state, data, data4 = {}, now = Date.now()) {
       state.tradeLog = state.tradeLog.slice(0, 60);
       delete state.trades[T.id];
     };
+    // kết quả cộng dồn theo phần đã chốt: 50% ở TP1, 30% ở TP2, phần còn lại ở giá đóng
+    const rT1 = (T.tp1 - T.entry) * s / T.R, rT2 = (T.tp2 - T.entry) * s / T.R;
+    const realized = r => T.stage >= 3 ? 0.5 * rT1 + 0.3 * rT2 + 0.2 * r : T.stage >= 2 ? 0.5 * rT1 + 0.5 * r : r;
     let done = false;
     for (let i = 0; i < K.t.length && !done; i++) {
       if (K.t[i] < T.t0 || (T.last && K.t[i] <= T.last)) continue;          // chỉ nến mở sau lúc báo
@@ -48,10 +51,10 @@ export function trackTrades(state, data, data4 = {}, now = Date.now()) {
       const fav = s > 0 ? K.h[i] : K.l[i], adv = s > 0 ? K.l[i] : K.h[i];
       T.best = Math.max(T.best, (fav - T.entry) * s / T.R);
       if ((adv - T.sl) * s <= 0) {                                              // chạm SL (xét trước, bảo thủ)
-        const r = (T.sl - T.entry) * s / T.R;
-        say(T.stage >= 2 ? '🛡 Về SL hoà vốn' : T.stage === 1 ? '⛔ Chạm SL đã thu hẹp' : '⛔ Chạm SL',
-          `Giá chạm ${p(T.sl)} lúc ${hhmm(K.t[i])}–${hhmm(K.t[i] + HOUR)} → ${r >= 0 ? '+' : ''}${r.toFixed(2)}R${T.stage >= 2 ? ' trên 50% còn lại (đã chốt 50% ở TP1)' : ''}.`, 'sl');
-        close(T.stage >= 2 ? 'sl-be' : 'sl', T.stage >= 2 ? 0.5 * ((T.tp1 - T.entry) * s / T.R) + 0.5 * r : r);
+        const r = (T.sl - T.entry) * s / T.R, tot = realized(r);
+        const what = T.stage >= 3 ? '🏁 Chốt nốt 20% ở SL (TP1)' : T.stage === 2 ? '🛡 Về SL hoà vốn' : T.stage === 1 ? '⛔ Chạm SL đã thu hẹp' : '⛔ Chạm SL';
+        say(what, `Giá chạm ${p(T.sl)} lúc ${hhmm(K.t[i])}–${hhmm(K.t[i] + HOUR)}. Cả lệnh: ${tot >= 0 ? '+' : ''}${tot.toFixed(2)}R${T.stage >= 2 ? ` (đã chốt 50% ở TP1${T.stage >= 3 ? ', 30% ở TP2' : ''})` : ''}.`, 'sl');
+        close(T.stage >= 3 ? 'tp2-trail' : T.stage === 2 ? 'sl-be' : 'sl', tot);
         done = true; break;
       }
       if (T.stage < 1 && (fav - (T.entry + s * 0.6 * T.R)) * s >= 0) {
@@ -71,11 +74,11 @@ export function trackTrades(state, data, data4 = {}, now = Date.now()) {
     // Đóng theo thời gian
     const age = (now - T.t0) / HOUR, lim = T.stage >= 2 ? T.ts1 : T.ts;
     if (age >= lim) {
-      const c = K.c[K.c.length - 1], r = (c - T.entry) * s / T.R;
+      const c = K.c[K.c.length - 1], r = (c - T.entry) * s / T.R, tot = realized(r);
       say('⏱ Hết hạn lệnh', T.stage >= 2
-        ? `Đã ${lim} giờ sau khi báo. Đóng phần còn lại ở ${p(c)} (${r >= 0 ? '+' : ''}${r.toFixed(2)}R).`
+        ? `Đã ${lim} giờ sau khi báo. Đóng phần còn lại ở ${p(c)}. Cả lệnh: ${tot >= 0 ? '+' : ''}${tot.toFixed(2)}R.`
         : `Đã ${lim} giờ mà chưa tới TP1 — đóng hoà vốn / đóng ở ${p(c)} (${r >= 0 ? '+' : ''}${r.toFixed(2)}R).`, 'time');
-      close('time', T.stage >= 2 ? 0.5 * ((T.tp1 - T.entry) * s / T.R) + 0.5 * r : r);
+      close('time', tot);
       continue;
     }
     // Active Trade Guard: ≥ 2 dấu hiệu đảo chiều ngược trên nến vừa đóng

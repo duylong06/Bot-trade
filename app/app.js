@@ -404,7 +404,7 @@ function renderTrades() {
   const st = S.status || {}, open = st.trades || [], log = st.tradeLog || [];
   if (!open.length && !log.length) { el.innerHTML = ''; return; }
   const STG = ['đã vào', 'đã +0,6R · SL thu hẹp', 'đã chốt 50% ở TP1 · SL hoà vốn', 'đã chốt 80% · SL ở TP1'];
-  const WHY = { sl: 'chạm SL', 'sl-be': 'về SL hoà vốn sau TP1', time: 'hết hạn' };
+  const WHY = { sl: 'chạm SL', 'sl-be': 'về SL hoà vốn sau TP1', 'tp2-trail': 'chốt nốt sau TP2', time: 'hết hạn' };
   let html = `<div class="card trades"><h3>Kèo S+/S++ đang theo dõi <span class="muted">(${open.length})</span></h3>`;
   for (const T of open) {
     const m = S.mkMap.get(T.instId), k = T.dir === 'LONG' ? 1 : -1, R = Math.abs(T.entry - T.sl0);
