@@ -1,0 +1,155 @@
+{
+ "version": 5,
+ "mode": "scan",
+ "stage": "m30",
+ "trigger": "dev",
+ "startedAt": 1793727244949,
+ "cfg": {
+  "window": 1000,
+  "top": 67,
+  "topVol": 36,
+  "pinned": [
+   "XAU-USDT-SWAP",
+   "CL-USDT-SWAP"
+  ],
+  "alerts": [
+   "BREAK",
+   "CONFIRM",
+   "RETEST"
+  ],
+  "minPattern": 45
+ },
+ "host": "https://www.okx.com",
+ "scoreMs": 4631,
+ "m30": {
+  "at": 1793727250516,
+  "closeAt": 1793712600000,
+  "checked": 4,
+  "pushed": 3,
+  "skipped": 1,
+  "sent": 0,
+  "doneAfterCloseMs": 14650516
+ },
+ "result": "ok",
+ "finishedAt": 1793727250530,
+ "devices": [],
+ "push": {
+  "configured": 0,
+  "ids": [],
+  "dead": [],
+  "vapidPub": null,
+  "ntfy": "https://ntfy.sh/bottrade-duylong06-7f3k9q2m",
+  "fromApp": 0
+ },
+ "pending": [],
+ "following": [],
+ "market": {
+  "at": 1793727245868,
+  "dom": {
+   "btc": 59.26,
+   "usdt": 6.795,
+   "dBtc": null,
+   "dUsdt": null,
+   "total": 2627005448523
+  },
+  "scenario": {
+   "id": 0,
+   "text": "chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu)",
+   "riskOff": false,
+   "altLong": 0,
+   "btcLong": 0
+  },
+  "blackout": {
+   "active": false
+  },
+  "nextRed": [],
+  "totalVsBtc": "chưa đủ 7 ngày dữ liệu TOTAL",
+  "flow": {
+   "bias": 2,
+   "s28c": 1404381,
+   "tron": 604,
+   "btcEx": 554110.44,
+   "stable24hWallet": null,
+   "stable7dWallet": null,
+   "stableIn24": 169899699,
+   "mint24": 0,
+   "btcEx24": null,
+   "btcIn2h": 105508288,
+   "btcOut2h": 667826070
+  },
+  "whale": [
+   {
+    "c": "BTC",
+    "in24": 517312749,
+    "out24": 719860011
+   },
+   {
+    "c": "USDT",
+    "in24": 169899699,
+    "out24": 553956330
+   }
+  ],
+  "insight": [
+   {
+    "coins": [
+     "APR"
+    ],
+    "t": 1793710032000,
+    "text": "$APR đang có Onchain cực kỳ xấu ở hiện tại. Phát hiện một whale vừa dep 2,5M $APR lên sàn Kraken trong vòng ít giờ trước. Tuy chỉ mới x2 từ đáy nhưng khả năng cao đây cũng là động thái để xả vì dự án "
+   },
+   {
+    "coins": [
+     "AVAX",
+     "ONDO",
+     "LINK",
+     "ENA",
+     "LAB",
+     "SOON"
+    ],
+    "t": 1793692921000,
+    "text": "MM Cumberland DRW đang có động thái rất đáng chú ý 🆕 🆕 🆕 | | Trước đó, MM hold rất nhiều $AVAX, $ONDO, $LINK, $ENA, $LAB... | | Nhưng trong hôm nay, họ đã xả rất nhiều $LINK, $LAB, $H, $SOON | | Bâ"
+   }
+  ],
+  "report": "BTC.D 59.26% (—) · USDT.D 6.795% (—) · 24h\nKịch bản: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu)\nStablecoin ví 28c + TDqSq: 24h — · 7 ngày — · whale alert vào sàn 24h +170M$, mint +0M$\nBTC ví sàn (Binance, Bitfinex): 24h —\nCá voi ròng 24h: BTC −203M$ ra sàn\nTOTAL vs BTC: chưa đủ 7 ngày dữ liệu TOTAL",
+  "errors": []
+ },
+ "trades": [],
+ "tradeLog": [],
+ "m30lines": {
+  "at": 1793727226843,
+  "target": 1793725200000,
+  "lines": 494,
+  "events": 0,
+  "pushed": 0,
+  "waiting": 0,
+  "skipped": 0,
+  "sent": 0,
+  "doneAfterCloseMs": 226843
+ },
+ "lastScan": {
+  "at": 1793727226857,
+  "target": 1793721600000,
+  "closeAt": 1793725200000,
+  "trigger": "dev",
+  "host": "https://www.okx.com",
+  "readyAfterCloseMs": 1881523,
+  "pushDoneAfterCloseMs": 1883829,
+  "counts": {
+   "coins": 79,
+   "lines": 2023,
+   "lines4": 0,
+   "events": 1,
+   "h4": false
+  },
+  "signals": 1,
+  "pushes": 1,
+  "sent": 0,
+  "skipped": 0,
+  "waiting": 0,
+  "followN": 0,
+  "universe": {
+   "src": "vốn hoá CoinGecko + top 36 khối lượng OKX (thêm 10)",
+   "n": 79
+  }
+ }
+}

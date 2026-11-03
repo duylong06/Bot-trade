@@ -1,0 +1,2346 @@
+{
+ "sent": {
+  "MORPHO-USDT-SWAP|CONFIRM|R|1793714400000": 1793727082673
+ },
+ "devices": {},
+ "devHash": "3c1da04bbf3d",
+ "firstScanAt": 1792584000000,
+ "bootAt": 1792649136068,
+ "pending": {},
+ "subs": {},
+ "dead": {},
+ "hello": {},
+ "mcap": {
+  "at": 1793727048127,
+  "src": "CoinGecko",
+  "list": [
+   {
+    "symbol": "BTC",
+    "name": "Bitcoin",
+    "mcap": 1560271912824
+   },
+   {
+    "symbol": "ETH",
+    "name": "Ethereum",
+    "mcap": 280431150154
+   },
+   {
+    "symbol": "BNB",
+    "name": "BNB",
+    "mcap": 91580972024
+   },
+   {
+    "symbol": "XRP",
+    "name": "XRP",
+    "mcap": 81361432218
+   },
+   {
+    "symbol": "SOL",
+    "name": "Solana",
+    "mcap": 55073347871
+   },
+   {
+    "symbol": "TRX",
+    "name": "TRON",
+    "mcap": 30672892093
+   },
+   {
+    "symbol": "FIGR_HELOC",
+    "name": "Figure Heloc",
+    "mcap": 26883499850
+   },
+   {
+    "symbol": "ZEC",
+    "name": "Zcash",
+    "mcap": 20670080950
+   },
+   {
+    "symbol": "HYPE",
+    "name": "Hyperliquid",
+    "mcap": 20663488674
+   },
+   {
+    "symbol": "XMR",
+    "name": "Monero",
+    "mcap": 11834210286
+   },
+   {
+    "symbol": "DOGE",
+    "name": "Dogecoin",
+    "mcap": 11785290990
+   },
+   {
+    "symbol": "WBT",
+    "name": "WhiteBIT Coin",
+    "mcap": 8864091146
+   },
+   {
+    "symbol": "LEO",
+    "name": "LEO Token",
+    "mcap": 8524374899
+   },
+   {
+    "symbol": "LINK",
+    "name": "Chainlink",
+    "mcap": 8519981363
+   },
+   {
+    "symbol": "ADA",
+    "name": "Cardano",
+    "mcap": 7129519056
+   },
+   {
+    "symbol": "XLM",
+    "name": "Stellar",
+    "mcap": 5781181094
+   },
+   {
+    "symbol": "BCH",
+    "name": "Bitcoin Cash",
+    "mcap": 5549112203
+   },
+   {
+    "symbol": "NEAR",
+    "name": "NEAR Protocol",
+    "mcap": 5014210459
+   },
+   {
+    "symbol": "RAIN",
+    "name": "Rain",
+    "mcap": 4474508105
+   },
+   {
+    "symbol": "UNI",
+    "name": "Uniswap",
+    "mcap": 4420968598
+   },
+   {
+    "symbol": "LTC",
+    "name": "Litecoin",
+    "mcap": 4219322993
+   },
+   {
+    "symbol": "CC",
+    "name": "Canton",
+    "mcap": 3820603386
+   },
+   {
+    "symbol": "AVAX",
+    "name": "Avalanche",
+    "mcap": 3785658664
+   },
+   {
+    "symbol": "SUI",
+    "name": "Sui",
+    "mcap": 3704948010
+   },
+   {
+    "symbol": "GRAM",
+    "name": "Gram (prev. Toncoin)",
+    "mcap": 3337801321
+   },
+   {
+    "symbol": "HBAR",
+    "name": "Hedera",
+    "mcap": 3086444892
+   },
+   {
+    "symbol": "QNT",
+    "name": "Quant",
+    "mcap": 2833139494
+   },
+   {
+    "symbol": "SHIB",
+    "name": "Shiba Inu",
+    "mcap": 2733150854
+   },
+   {
+    "symbol": "TAO",
+    "name": "Bittensor",
+    "mcap": 2647930471
+   },
+   {
+    "symbol": "CRO",
+    "name": "Cronos",
+    "mcap": 2581635069
+   },
+   {
+    "symbol": "ENA",
+    "name": "Ethena",
+    "mcap": 2289408525
+   },
+   {
+    "symbol": "OKB",
+    "name": "OKB",
+    "mcap": 2279680990
+   },
+   {
+    "symbol": "PEPE",
+    "name": "Pepe",
+    "mcap": 2031992258
+   },
+   {
+    "symbol": "M",
+    "name": "MemeCore",
+    "mcap": 1967203982
+   },
+   {
+    "symbol": "AAVE",
+    "name": "Aave",
+    "mcap": 1966592284
+   },
+   {
+    "symbol": "PUMP",
+    "name": "Pump.fun",
+    "mcap": 1945382589
+   },
+   {
+    "symbol": "ONDO",
+    "name": "Ondo",
+    "mcap": 1898889641
+   },
+   {
+    "symbol": "EURSAFO",
+    "name": "Spiko Amundi Overnight Swap Fund (EUR)",
+    "mcap": 1852309123
+   },
+   {
+    "symbol": "ASTER",
+    "name": "Aster",
+    "mcap": 1752410615
+   },
+   {
+    "symbol": "WLFI",
+    "name": "World Liberty Financial",
+    "mcap": 1619006703
+   },
+   {
+    "symbol": "U",
+    "name": "United Stables",
+    "mcap": 1606329426
+   },
+   {
+    "symbol": "DOT",
+    "name": "Polkadot",
+    "mcap": 1598991537
+   },
+   {
+    "symbol": "MNT",
+    "name": "Mantle",
+    "mcap": 1557854826
+   },
+   {
+    "symbol": "BTW",
+    "name": "Bitway",
+    "mcap": 1555070198
+   },
+   {
+    "symbol": "MORPHO",
+    "name": "Morpho",
+    "mcap": 1546709573
+   },
+   {
+    "symbol": "SKY",
+    "name": "Sky",
+    "mcap": 1543743225
+   },
+   {
+    "symbol": "HTX",
+    "name": "HTX DAO",
+    "mcap": 1399053443
+   },
+   {
+    "symbol": "ICP",
+    "name": "Internet Computer",
+    "mcap": 1387262138
+   },
+   {
+    "symbol": "WLD",
+    "name": "Worldcoin",
+    "mcap": 1377722726
+   },
+   {
+    "symbol": "BGB",
+    "name": "Bitget Token",
+    "mcap": 1223036138
+   },
+   {
+    "symbol": "JST",
+    "name": "JUST",
+    "mcap": 1136502042
+   },
+   {
+    "symbol": "ETC",
+    "name": "Ethereum Classic",
+    "mcap": 1121952439
+   },
+   {
+    "symbol": "ARB",
+    "name": "Arbitrum",
+    "mcap": 1091926608
+   },
+   {
+    "symbol": "VVV",
+    "name": "Venice Token",
+    "mcap": 1089370624
+   },
+   {
+    "symbol": "KCS",
+    "name": "KuCoin",
+    "mcap": 1008099336
+   },
+   {
+    "symbol": "GT",
+    "name": "Gate",
+    "mcap": 999442806
+   },
+   {
+    "symbol": "POL",
+    "name": "POL (ex-MATIC)",
+    "mcap": 974583966
+   },
+   {
+    "symbol": "PI",
+    "name": "Pi Network",
+    "mcap": 863744772
+   },
+   {
+    "symbol": "KAS",
+    "name": "Kaspa",
+    "mcap": 858280657
+   },
+   {
+    "symbol": "ALGO",
+    "name": "Algorand",
+    "mcap": 850553015
+   },
+   {
+    "symbol": "LIT",
+    "name": "Lighter",
+    "mcap": 845096132
+   },
+   {
+    "symbol": "JUP",
+    "name": "Jupiter",
+    "mcap": 820080894
+   },
+   {
+    "symbol": "RENDER",
+    "name": "Render",
+    "mcap": 805389045
+   },
+   {
+    "symbol": "ATOM",
+    "name": "Cosmos Hub",
+    "mcap": 764699724
+   },
+   {
+    "symbol": "NEXO",
+    "name": "NEXO",
+    "mcap": 750599053
+   },
+   {
+    "symbol": "ZRO",
+    "name": "LayerZero",
+    "mcap": 750017165
+   },
+   {
+    "symbol": "FIL",
+    "name": "Filecoin",
+    "mcap": 732848626
+   },
+   {
+    "symbol": "INJ",
+    "name": "Injective",
+    "mcap": 725040959
+   },
+   {
+    "symbol": "NIGHT",
+    "name": "Midnight",
+    "mcap": 710142336
+   },
+   {
+    "symbol": "XDC",
+    "name": "XDC Network",
+    "mcap": 624818872
+   },
+   {
+    "symbol": "CAKE",
+    "name": "PancakeSwap",
+    "mcap": 612714312
+   },
+   {
+    "symbol": "STX",
+    "name": "Stacks",
+    "mcap": 608891535
+   },
+   {
+    "symbol": "DASH",
+    "name": "Dash",
+    "mcap": 597542541
+   },
+   {
+    "symbol": "ETHFI",
+    "name": "Ether.fi",
+    "mcap": 578102512
+   },
+   {
+    "symbol": "BDX",
+    "name": "Beldex",
+    "mcap": 572730195
+   },
+   {
+    "symbol": "JAAA",
+    "name": "Janus Henderson Anemoy AAA CLO Fund",
+    "mcap": 565435621
+   },
+   {
+    "symbol": "APT",
+    "name": "Aptos",
+    "mcap": 545793212
+   },
+   {
+    "symbol": "币安人生",
+    "name": "币安人生 (BinanceLife)",
+    "mcap": 535552455
+   },
+   {
+    "symbol": "PEARL",
+    "name": "Pearl",
+    "mcap": 535027028
+   },
+   {
+    "symbol": "FLR",
+    "name": "Flare",
+    "mcap": 528121431
+   },
+   {
+    "symbol": "PYTH",
+    "name": "Pyth Network",
+    "mcap": 524108866
+   },
+   {
+    "symbol": "STABLE",
+    "name": "​​Stable",
+    "mcap": 490149446
+   },
+   {
+    "symbol": "YLDS",
+    "name": "YLDS",
+    "mcap": 488207942
+   },
+   {
+    "symbol": "VET",
+    "name": "VeChain",
+    "mcap": 487384683
+   },
+   {
+    "symbol": "EUTBL",
+    "name": "Spiko EU T-Bills Money Market Fund",
+    "mcap": 486342453
+   },
+   {
+    "symbol": "A7A5",
+    "name": "A7A5",
+    "mcap": 475928106
+   },
+   {
+    "symbol": "AERO",
+    "name": "Aerodrome Finance",
+    "mcap": 469974723
+   },
+   {
+    "symbol": "TRUMP",
+    "name": "Official Trump",
+    "mcap": 448316821
+   },
+   {
+    "symbol": "PENGU",
+    "name": "Pudgy Penguins",
+    "mcap": 440023149
+   },
+   {
+    "symbol": "TIA",
+    "name": "Celestia",
+    "mcap": 428927649
+   },
+   {
+    "symbol": "RAY",
+    "name": "Raydium",
+    "mcap": 421310225
+   },
+   {
+    "symbol": "CRV",
+    "name": "Curve DAO",
+    "mcap": 417902975
+   },
+   {
+    "symbol": "GRASS",
+    "name": "Grass",
+    "mcap": 407849523
+   },
+   {
+    "symbol": "VIRTUAL",
+    "name": "Virtuals Protocol",
+    "mcap": 388378827
+   },
+   {
+    "symbol": "HASH",
+    "name": "Provenance Blockchain",
+    "mcap": 373362631
+   },
+   {
+    "symbol": "REUSD",
+    "name": "Re Protocol reUSD",
+    "mcap": 372090092
+   },
+   {
+    "symbol": "FET",
+    "name": "Artificial Superintelligence Alliance",
+    "mcap": 357107661
+   },
+   {
+    "symbol": "BTT",
+    "name": "BitTorrent",
+    "mcap": 355037382
+   },
+   {
+    "symbol": "BSV",
+    "name": "Bitcoin SV",
+    "mcap": 340154450
+   },
+   {
+    "symbol": "SPX",
+    "name": "SPX6900",
+    "mcap": 335020362
+   },
+   {
+    "symbol": "STRK",
+    "name": "Starknet",
+    "mcap": 327244381
+   },
+   {
+    "symbol": "DRV",
+    "name": "Derive",
+    "mcap": 323512158
+   },
+   {
+    "symbol": "SEI",
+    "name": "Sei",
+    "mcap": 322013658
+   },
+   {
+    "symbol": "PIEVERSE",
+    "name": "Pieverse",
+    "mcap": 314483814
+   },
+   {
+    "symbol": "FF",
+    "name": "Falcon Finance",
+    "mcap": 309833283
+   },
+   {
+    "symbol": "PENDLE",
+    "name": "Pendle",
+    "mcap": 307699236
+   },
+   {
+    "symbol": "SOFID",
+    "name": "SoFiUSD",
+    "mcap": 307603077
+   },
+   {
+    "symbol": "XPL",
+    "name": "Plasma",
+    "mcap": 303547777
+   },
+   {
+    "symbol": "SUN",
+    "name": "Sun Token",
+    "mcap": 302574723
+   },
+   {
+    "symbol": "KITE",
+    "name": "Kite",
+    "mcap": 290247379
+   },
+   {
+    "symbol": "GNO",
+    "name": "Gnosis",
+    "mcap": 282625914
+   },
+   {
+    "symbol": "LDO",
+    "name": "Lido DAO",
+    "mcap": 277809085
+   },
+   {
+    "symbol": "XTZ",
+    "name": "Tezos",
+    "mcap": 274208477
+   },
+   {
+    "symbol": "OHM",
+    "name": "Olympus",
+    "mcap": 274118610
+   },
+   {
+    "symbol": "UB",
+    "name": "Unibase",
+    "mcap": 266535822
+   },
+   {
+    "symbol": "APEPE",
+    "name": "Ape and Pepe",
+    "mcap": 254159927
+   },
+   {
+    "symbol": "OP",
+    "name": "Optimism",
+    "mcap": 252571510
+   },
+   {
+    "symbol": "BONK",
+    "name": "Bonk",
+    "mcap": 248163178
+   },
+   {
+    "symbol": "CFX",
+    "name": "Conflux",
+    "mcap": 241398538
+   },
+   {
+    "symbol": "SAFO",
+    "name": "Spiko Amundi Overnight Swap Fund",
+    "mcap": 241104431
+   },
+   {
+    "symbol": "NFT",
+    "name": "AINFT",
+    "mcap": 231798567
+   },
+   {
+    "symbol": "PC0000031",
+    "name": "Tradable NA Rent Financing Platform SSTN",
+    "mcap": 227500000
+   },
+   {
+    "symbol": "LUNC",
+    "name": "Terra Luna Classic",
+    "mcap": 225612478
+   },
+   {
+    "symbol": "DCR",
+    "name": "Decred",
+    "mcap": 225208490
+   },
+   {
+    "symbol": "BP",
+    "name": "Backpack",
+    "mcap": 218892509
+   },
+   {
+    "symbol": "FLOKI",
+    "name": "FLOKI",
+    "mcap": 217093918
+   },
+   {
+    "symbol": "GRT",
+    "name": "The Graph",
+    "mcap": 216464826
+   },
+   {
+    "symbol": "RUNE",
+    "name": "THORChain",
+    "mcap": 215030757
+   },
+   {
+    "symbol": "CARDS",
+    "name": "Collector Crypt",
+    "mcap": 213300901
+   },
+   {
+    "symbol": "KAIA",
+    "name": "Kaia",
+    "mcap": 212751438
+   },
+   {
+    "symbol": "MON",
+    "name": "Monad",
+    "mcap": 208950812
+   },
+   {
+    "symbol": "AR",
+    "name": "Arweave",
+    "mcap": 206425807
+   },
+   {
+    "symbol": "SPCXB",
+    "name": "SpaceX (bStocks Tokenized Stock)",
+    "mcap": 205971351
+   },
+   {
+    "symbol": "ENS",
+    "name": "Ethereum Name Service",
+    "mcap": 205702521
+   },
+   {
+    "symbol": "BEAM",
+    "name": "Beam",
+    "mcap": 204454244
+   },
+   {
+    "symbol": "KOGE",
+    "name": "KOGE",
+    "mcap": 201822667
+   },
+   {
+    "symbol": "USX",
+    "name": "USX",
+    "mcap": 201424830
+   },
+   {
+    "symbol": "ZBCN",
+    "name": "Zebec Network",
+    "mcap": 200590059
+   },
+   {
+    "symbol": "COMP",
+    "name": "Compound",
+    "mcap": 200061759
+   },
+   {
+    "symbol": "KMNO",
+    "name": "Kamino",
+    "mcap": 199820997
+   },
+   {
+    "symbol": "SHFL",
+    "name": "Shuffle",
+    "mcap": 194510085
+   },
+   {
+    "symbol": "EURCV",
+    "name": "EUR CoinVertible",
+    "mcap": 194313396
+   },
+   {
+    "symbol": "BAT",
+    "name": "Basic Attention",
+    "mcap": 190166382
+   },
+   {
+    "symbol": "MGLO",
+    "name": "Midas Fasanara Global Open",
+    "mcap": 188947351
+   },
+   {
+    "symbol": "IOTA",
+    "name": "IOTA",
+    "mcap": 188149819
+   },
+   {
+    "symbol": "SYRUP",
+    "name": "Maple Finance",
+    "mcap": 185516375
+   },
+   {
+    "symbol": "JASMY",
+    "name": "JasmyCoin",
+    "mcap": 185367838
+   },
+   {
+    "symbol": "JTO",
+    "name": "Jito",
+    "mcap": 184575093
+   },
+   {
+    "symbol": "EIGEN",
+    "name": "EigenCloud (prev. EigenLayer)",
+    "mcap": 184215776
+   },
+   {
+    "symbol": "KAG",
+    "name": "Kinesis Silver",
+    "mcap": 183618486
+   },
+   {
+    "symbol": "AKT",
+    "name": "Akash Network",
+    "mcap": 181489918
+   },
+   {
+    "symbol": "USAT",
+    "name": "USAT",
+    "mcap": 180072947
+   },
+   {
+    "symbol": "BTSE",
+    "name": "BTSE Token",
+    "mcap": 178948442
+   },
+   {
+    "symbol": "CVX",
+    "name": "Convex Finance",
+    "mcap": 178230855
+   },
+   {
+    "symbol": "ANVL",
+    "name": "Anvil",
+    "mcap": 173399738
+   },
+   {
+    "symbol": "GEOD",
+    "name": "Geodnet",
+    "mcap": 172771394
+   },
+   {
+    "symbol": "USTBL",
+    "name": "Spiko US T-Bills Money Market Fund",
+    "mcap": 172503089
+   },
+   {
+    "symbol": "WIF",
+    "name": "dogwifhat",
+    "mcap": 172388672
+   },
+   {
+    "symbol": "ZAMA",
+    "name": "Zama",
+    "mcap": 169994761
+   },
+   {
+    "symbol": "CRCLB",
+    "name": "Circle Internet Group (bStocks Tokenized Stock)",
+    "mcap": 168556686
+   },
+   {
+    "symbol": "TWT",
+    "name": "Trust Wallet",
+    "mcap": 166942494
+   },
+   {
+    "symbol": "FLUID",
+    "name": "Fluid",
+    "mcap": 166475512
+   },
+   {
+    "symbol": "PC0000033",
+    "name": "Tradable APAC Diversified Finance Provider SSTN",
+    "mcap": 162500000
+   },
+   {
+    "symbol": "JPYSC",
+    "name": "JPYSC",
+    "mcap": 161413708
+   },
+   {
+    "symbol": "GOMINING",
+    "name": "GoMining Token",
+    "mcap": 160985811
+   },
+   {
+    "symbol": "KNTQ",
+    "name": "Kinetiq",
+    "mcap": 154495656
+   },
+   {
+    "symbol": "APYUSD",
+    "name": "apyUSD",
+    "mcap": 153506298
+   },
+   {
+    "symbol": "MET",
+    "name": "Meteora",
+    "mcap": 153082285
+   },
+   {
+    "symbol": "THETA",
+    "name": "Theta Network",
+    "mcap": 151484831
+   },
+   {
+    "symbol": "TRAC",
+    "name": "OriginTrail",
+    "mcap": 149709058
+   },
+   {
+    "symbol": "Q",
+    "name": "Quack AI",
+    "mcap": 149347921
+   },
+   {
+    "symbol": "AXS",
+    "name": "Axie Infinity",
+    "mcap": 149139869
+   },
+   {
+    "symbol": "BORG",
+    "name": "SwissBorg",
+    "mcap": 148973847
+   },
+   {
+    "symbol": "S",
+    "name": "Sonic",
+    "mcap": 148721161
+   },
+   {
+    "symbol": "STRCX",
+    "name": "Strategy PP Variable xStock",
+    "mcap": 148468569
+   },
+   {
+    "symbol": "MX",
+    "name": "MX",
+    "mcap": 145558173
+   },
+   {
+    "symbol": "BR",
+    "name": "Bedrock",
+    "mcap": 143688340
+   },
+   {
+    "symbol": "MANA",
+    "name": "Decentraland",
+    "mcap": 143496730
+   },
+   {
+    "symbol": "COCO",
+    "name": "coco",
+    "mcap": 141891364
+   },
+   {
+    "symbol": "XCN",
+    "name": "Onyxcoin",
+    "mcap": 140714043
+   },
+   {
+    "symbol": "SENT",
+    "name": "Sentient",
+    "mcap": 139435451
+   },
+   {
+    "symbol": "NEO",
+    "name": "NEO",
+    "mcap": 138135947
+   },
+   {
+    "symbol": "VSN",
+    "name": "Vision",
+    "mcap": 135763754
+   },
+   {
+    "symbol": "A",
+    "name": "Vaulta",
+    "mcap": 135521113
+   },
+   {
+    "symbol": "SAND",
+    "name": "The Sandbox",
+    "mcap": 134867273
+   },
+   {
+    "symbol": "PONS",
+    "name": "Pons",
+    "mcap": 134639919
+   },
+   {
+    "symbol": "PC0000097",
+    "name": "Tradable LatAm Fintech SSTN",
+    "mcap": 134000000
+   },
+   {
+    "symbol": "SN51",
+    "name": "lium",
+    "mcap": 132846195
+   },
+   {
+    "symbol": "B",
+    "name": "BUILDon",
+    "mcap": 132602112
+   },
+   {
+    "symbol": "RAIL",
+    "name": "Railgun",
+    "mcap": 130281811
+   },
+   {
+    "symbol": "CASH",
+    "name": "CASH",
+    "mcap": 129326989
+   },
+   {
+    "symbol": "MSTRX",
+    "name": "MicroStrategy xStock",
+    "mcap": 128116684
+   },
+   {
+    "symbol": "USELESS",
+    "name": "Useless Coin",
+    "mcap": 126927725
+   },
+   {
+    "symbol": "CHZ",
+    "name": "Chiliz",
+    "mcap": 126015934
+   },
+   {
+    "symbol": "OZO",
+    "name": "Ozone Chain",
+    "mcap": 125443009
+   },
+   {
+    "symbol": "AWE",
+    "name": "AWE Network",
+    "mcap": 124022563
+   },
+   {
+    "symbol": "NPC",
+    "name": "Non-Playable Coin",
+    "mcap": 123536408
+   },
+   {
+    "symbol": "GOOGLB",
+    "name": "Alphabet (bStocks Tokenized Stock)",
+    "mcap": 123462753
+   },
+   {
+    "symbol": "XEC",
+    "name": "eCash",
+    "mcap": 122160426
+   },
+   {
+    "symbol": "CRCLX",
+    "name": "Circle xStock",
+    "mcap": 121404805
+   },
+   {
+    "symbol": "BC",
+    "name": "BCGame Coin",
+    "mcap": 120608310
+   },
+   {
+    "symbol": "AIOZ",
+    "name": "AIOZ Network",
+    "mcap": 119119265
+   },
+   {
+    "symbol": "ONYC",
+    "name": "OnRe Tokenized Reinsurance",
+    "mcap": 118195370
+   },
+   {
+    "symbol": "FARTCOIN",
+    "name": "Fartcoin",
+    "mcap": 117951861
+   },
+   {
+    "symbol": "THBILL",
+    "name": "Theo Short Duration US Treasury Fund",
+    "mcap": 117183327
+   },
+   {
+    "symbol": "EDGE",
+    "name": "edgeX",
+    "mcap": 117035339
+   },
+   {
+    "symbol": "USD3",
+    "name": "3Jane USD3",
+    "mcap": 116033323
+   },
+   {
+    "symbol": "NOPAL",
+    "name": "Nest BlackOpal LiquidStone II Vault",
+    "mcap": 115922983
+   },
+   {
+    "symbol": "2Z",
+    "name": "DoubleZero",
+    "mcap": 115816010
+   },
+   {
+    "symbol": "CAP",
+    "name": "Cap",
+    "mcap": 115588344
+   },
+   {
+    "symbol": "1INCH",
+    "name": "1INCH",
+    "mcap": 115076438
+   },
+   {
+    "symbol": "PC0000023",
+    "name": "Tradable Singapore Fintech SSL",
+    "mcap": 114500000
+   },
+   {
+    "symbol": "ALFW",
+    "name": "Alpha Bulgaria Warrants",
+    "mcap": 114330001
+   },
+   {
+    "symbol": "GLM",
+    "name": "Golem",
+    "mcap": 113619569
+   },
+   {
+    "symbol": "ZK",
+    "name": "ZKsync",
+    "mcap": 112648128
+   },
+   {
+    "symbol": "RLB",
+    "name": "Rollbit Coin",
+    "mcap": 112492655
+   },
+   {
+    "symbol": "PC0000085",
+    "name": "Tradable LatAm Middle-Market Lender SSTL",
+    "mcap": 111874199
+   },
+   {
+    "symbol": "H",
+    "name": "Humanity",
+    "mcap": 111525358
+   },
+   {
+    "symbol": "APE",
+    "name": "ApeCoin",
+    "mcap": 111046674
+   },
+   {
+    "symbol": "SNDKB",
+    "name": "SanDisk (bStocks Tokenized Stock)",
+    "mcap": 110113027
+   },
+   {
+    "symbol": "SUPER",
+    "name": "SuperVerse",
+    "mcap": 109108548
+   },
+   {
+    "symbol": "IMX",
+    "name": "Immutable",
+    "mcap": 108464212
+   },
+   {
+    "symbol": "CASHCAT",
+    "name": "Cash Cat",
+    "mcap": 108023584
+   },
+   {
+    "symbol": "SOSO",
+    "name": "SoSoValue",
+    "mcap": 107296139
+   },
+   {
+    "symbol": "SFP",
+    "name": "SafePal",
+    "mcap": 106846786
+   },
+   {
+    "symbol": "AUTO",
+    "name": "Hastra AUTO",
+    "mcap": 106594092
+   },
+   {
+    "symbol": "PC0000015",
+    "name": "Tradable NA Third Party Online Merchant SSTN",
+    "mcap": 105971760
+   },
+   {
+    "symbol": "EGLD",
+    "name": "MultiversX",
+    "mcap": 105862208
+   },
+   {
+    "symbol": "STAC",
+    "name": "Securitize Tokenized AAA CLO Fund",
+    "mcap": 104733136
+   },
+   {
+    "symbol": "SNX",
+    "name": "Synthetix",
+    "mcap": 103004334
+   },
+   {
+    "symbol": "GENIUS",
+    "name": "Genius",
+    "mcap": 101510193
+   },
+   {
+    "symbol": "ATH",
+    "name": "Aethir",
+    "mcap": 100237086
+   },
+   {
+    "symbol": "PC0000077",
+    "name": "Tradable Singapore Fintech SSL",
+    "mcap": 100000000
+   },
+   {
+    "symbol": "PLUME",
+    "name": "Plume",
+    "mcap": 98585291
+   },
+   {
+    "symbol": "META",
+    "name": "MetaDAO",
+    "mcap": 98434782
+   },
+   {
+    "symbol": "PROM",
+    "name": "Prom",
+    "mcap": 98100160
+   },
+   {
+    "symbol": "ULTIMA",
+    "name": "Ultima",
+    "mcap": 97859390
+   },
+   {
+    "symbol": "JTRSY",
+    "name": "Janus Henderson Anemoy Treasury Fund",
+    "mcap": 97170889
+   },
+   {
+    "symbol": "DGAI",
+    "name": "DGrid AI",
+    "mcap": 96801810
+   },
+   {
+    "symbol": "ZEN",
+    "name": "Horizen",
+    "mcap": 96578018
+   },
+   {
+    "symbol": "0G",
+    "name": "0G",
+    "mcap": 95576500
+   },
+   {
+    "symbol": "ACRED",
+    "name": "Apollo Diversified Credit Securitize Fund",
+    "mcap": 95557154
+   },
+   {
+    "symbol": "SN64",
+    "name": "Chutes",
+    "mcap": 95408792
+   },
+   {
+    "symbol": "AKE",
+    "name": "Akedo",
+    "mcap": 93834194
+   },
+   {
+    "symbol": "HOT",
+    "name": "Holo",
+    "mcap": 93490659
+   },
+   {
+    "symbol": "GMX",
+    "name": "GMX",
+    "mcap": 92509001
+   },
+   {
+    "symbol": "NXM",
+    "name": "Nexus Mutual",
+    "mcap": 91930083
+   },
+   {
+    "symbol": "SKR",
+    "name": "Seeker",
+    "mcap": 91582579
+   },
+   {
+    "symbol": "BABYCLAW",
+    "name": "Baby Claw",
+    "mcap": 91376294
+   },
+   {
+    "symbol": "QRL",
+    "name": "Quantum Resistant Ledger",
+    "mcap": 90300576
+   },
+   {
+    "symbol": "CRCLON",
+    "name": "Circle Internet Group (Ondo Tokenized Stock)",
+    "mcap": 90191254
+   },
+   {
+    "symbol": "RSR",
+    "name": "Reserve Rights",
+    "mcap": 89442620
+   },
+   {
+    "symbol": "STONK",
+    "name": "STONK",
+    "mcap": 89034679
+   },
+   {
+    "symbol": "DYDX",
+    "name": "dYdX",
+    "mcap": 88399302
+   },
+   {
+    "symbol": "INTCB",
+    "name": "Intel (bStocks Tokenized Stock)",
+    "mcap": 87698103
+   },
+   {
+    "symbol": "VEREM",
+    "name": "Verified Emeralds",
+    "mcap": 87437322
+   },
+   {
+    "symbol": "ORCA",
+    "name": "Orca",
+    "mcap": 86685403
+   },
+   {
+    "symbol": "SOON",
+    "name": "SOON",
+    "mcap": 86675469
+   },
+   {
+    "symbol": "YZY",
+    "name": "YZY",
+    "mcap": 86095981
+   },
+   {
+    "symbol": "GALA",
+    "name": "GALA",
+    "mcap": 85353348
+   },
+   {
+    "symbol": "TAG",
+    "name": "TAGGER",
+    "mcap": 85167086
+   },
+   {
+    "symbol": "DBR",
+    "name": "deBridge",
+    "mcap": 84719736
+   },
+   {
+    "symbol": "MAG7.SSI",
+    "name": "MAG7.ssi",
+    "mcap": 84598383
+   },
+   {
+    "symbol": "CHIP",
+    "name": "USD.AI",
+    "mcap": 82913552
+   },
+   {
+    "symbol": "JPYC",
+    "name": "JPY Coin",
+    "mcap": 82218341
+   },
+   {
+    "symbol": "SHX",
+    "name": "Stronghold",
+    "mcap": 81404718
+   },
+   {
+    "symbol": "ZRX",
+    "name": "0x Protocol",
+    "mcap": 81331488
+   },
+   {
+    "symbol": "ARKM",
+    "name": "Arkham",
+    "mcap": 81187041
+   },
+   {
+    "symbol": "CHEEMS",
+    "name": "Cheems Token",
+    "mcap": 80300409
+   },
+   {
+    "symbol": "PEAQ",
+    "name": "peaq",
+    "mcap": 80120844
+   },
+   {
+    "symbol": "PC0000019",
+    "name": "Tradable North America PoS Lender SSTN",
+    "mcap": 80000000
+   },
+   {
+    "symbol": "GGBR",
+    "name": "Goldfish Gold",
+    "mcap": 79914886
+   },
+   {
+    "symbol": "QTUM",
+    "name": "Qtum",
+    "mcap": 79596392
+   },
+   {
+    "symbol": "SPCXX",
+    "name": "SpaceX xStock",
+    "mcap": 79577254
+   },
+   {
+    "symbol": "RED",
+    "name": "RedStone",
+    "mcap": 78849752
+   },
+   {
+    "symbol": "DOG",
+    "name": "Dog (Bitcoin)",
+    "mcap": 78538112
+   },
+   {
+    "symbol": "SN4",
+    "name": "Targon",
+    "mcap": 77552172
+   },
+   {
+    "symbol": "FORM",
+    "name": "Four",
+    "mcap": 76946676
+   },
+   {
+    "symbol": "PC0000101",
+    "name": "Tradable NA Post-Settlement Legal Financing Receivables",
+    "mcap": 76722081
+   },
+   {
+    "symbol": "WM",
+    "name": "WrappedM by M0",
+    "mcap": 76460766
+   },
+   {
+    "symbol": "PGOLD",
+    "name": "Pleasing Gold",
+    "mcap": 76444036
+   },
+   {
+    "symbol": "WAL",
+    "name": "Walrus",
+    "mcap": 76063900
+   },
+   {
+    "symbol": "MUB",
+    "name": "Micron Technology (bStocks Tokenized Stock)",
+    "mcap": 75867663
+   },
+   {
+    "symbol": "ADI",
+    "name": "ADI",
+    "mcap": 75856986
+   },
+   {
+    "symbol": "MELANIA",
+    "name": "Melania Meme",
+    "mcap": 75785263
+   },
+   {
+    "symbol": "ORE",
+    "name": "ORE",
+    "mcap": 75168868
+   },
+   {
+    "symbol": "CRX",
+    "name": "NUMA-X",
+    "mcap": 74705098
+   },
+   {
+    "symbol": "GAS",
+    "name": "Gas",
+    "mcap": 74604833
+   },
+   {
+    "symbol": "MTBILL",
+    "name": "Midas mTBILL",
+    "mcap": 74291125
+   },
+   {
+    "symbol": "W",
+    "name": "Wormhole",
+    "mcap": 74164236
+   },
+   {
+    "symbol": "MAGMA",
+    "name": "Magma Finance",
+    "mcap": 74103571
+   },
+   {
+    "symbol": "KAVA",
+    "name": "Kava",
+    "mcap": 73871293
+   },
+   {
+    "symbol": "YFI",
+    "name": "yearn.finance",
+    "mcap": 72665185
+   },
+   {
+    "symbol": "TSLAX",
+    "name": "Tesla xStock",
+    "mcap": 72627822
+   },
+   {
+    "symbol": "ORDI",
+    "name": "ORDI",
+    "mcap": 72269917
+   },
+   {
+    "symbol": "APES",
+    "name": "APES",
+    "mcap": 72117621
+   },
+   {
+    "symbol": "MINA",
+    "name": "Mina Protocol",
+    "mcap": 71923532
+   },
+   {
+    "symbol": "FXSAVE",
+    "name": "f(x) USD Saving",
+    "mcap": 71851216
+   },
+   {
+    "symbol": "PROS",
+    "name": "Pharos",
+    "mcap": 71616397
+   },
+   {
+    "symbol": "PC0000049",
+    "name": "Tradable Eu/LatAm PoS Financing SSTL",
+    "mcap": 71300000
+   },
+   {
+    "symbol": "SPYX",
+    "name": "SP500 xStock",
+    "mcap": 70466698
+   },
+   {
+    "symbol": "DOLA",
+    "name": "DOLA",
+    "mcap": 70025407
+   },
+   {
+    "symbol": "HNT",
+    "name": "Helium",
+    "mcap": 69170829
+   },
+   {
+    "symbol": "NMR",
+    "name": "Numeraire",
+    "mcap": 69070277
+   },
+   {
+    "symbol": "LPT",
+    "name": "Livepeer",
+    "mcap": 68609785
+   },
+   {
+    "symbol": "PURR",
+    "name": "Purr",
+    "mcap": 68340599
+   },
+   {
+    "symbol": "ALLO",
+    "name": "Allora",
+    "mcap": 68334260
+   },
+   {
+    "symbol": "COW",
+    "name": "CoW Protocol",
+    "mcap": 68237351
+   },
+   {
+    "symbol": "XAUM",
+    "name": "Matrixdock Gold",
+    "mcap": 68227726
+   },
+   {
+    "symbol": "WEMIX",
+    "name": "WEMIX",
+    "mcap": 67829101
+   },
+   {
+    "symbol": "BRLV",
+    "name": "Crown BRLV",
+    "mcap": 67170825
+   },
+   {
+    "symbol": "AP3X",
+    "name": "APEX",
+    "mcap": 66734224
+   },
+   {
+    "symbol": "NILA",
+    "name": "MindWaveDAO",
+    "mcap": 66183671
+   },
+   {
+    "symbol": "MOOLAH",
+    "name": "Moolah",
+    "mcap": 65679165
+   },
+   {
+    "symbol": "MF-ONE",
+    "name": "Midas mF-ONE",
+    "mcap": 65449740
+   },
+   {
+    "symbol": "O",
+    "name": "o1.exchange",
+    "mcap": 65105507
+   },
+   {
+    "symbol": "SAFE",
+    "name": "Safe",
+    "mcap": 65089808
+   },
+   {
+    "symbol": "OMI",
+    "name": "ECOMI",
+    "mcap": 64971873
+   },
+   {
+    "symbol": "ELG",
+    "name": "Escoin",
+    "mcap": 64916489
+   },
+   {
+    "symbol": "KSM",
+    "name": "Kusama",
+    "mcap": 64644928
+   },
+   {
+    "symbol": "SOXLB",
+    "name": "Semicon Bull 3X ETF (bStocks Tokenized ETF)",
+    "mcap": 64519118
+   },
+   {
+    "symbol": "TEMPLE",
+    "name": "TempleDAO",
+    "mcap": 64160959
+   },
+   {
+    "symbol": "UNT",
+    "name": "UnityWallet Token",
+    "mcap": 63893097
+   },
+   {
+    "symbol": "DIEM",
+    "name": "Diem",
+    "mcap": 63512067
+   },
+   {
+    "symbol": "QQQX",
+    "name": "Nasdaq xStock",
+    "mcap": 62601453
+   },
+   {
+    "symbol": "WIN",
+    "name": "WINkLink",
+    "mcap": 62023064
+   },
+   {
+    "symbol": "REUR",
+    "name": "Royal Euro",
+    "mcap": 62008637
+   },
+   {
+    "symbol": "牛来",
+    "name": "牛来 (Niu Lai)",
+    "mcap": 61662012
+   },
+   {
+    "symbol": "GOOGLX",
+    "name": "Alphabet xStock",
+    "mcap": 61541723
+   },
+   {
+    "symbol": "QUBIC",
+    "name": "Qubic",
+    "mcap": 61433818
+   },
+   {
+    "symbol": "RIF",
+    "name": "Rootstock Infrastructure Framework",
+    "mcap": 61141570
+   },
+   {
+    "symbol": "ZETA",
+    "name": "ZetaChain",
+    "mcap": 61133866
+   },
+   {
+    "symbol": "PRIZE",
+    "name": "Prize Protocol",
+    "mcap": 61040970
+   },
+   {
+    "symbol": "BABY",
+    "name": "Babylon",
+    "mcap": 60973780
+   },
+   {
+    "symbol": "PC0000027",
+    "name": "Tradable LatAm BNPL SSTN",
+    "mcap": 60300000
+   },
+   {
+    "symbol": "AMP",
+    "name": "Amp",
+    "mcap": 60027469
+   },
+   {
+    "symbol": "GAL",
+    "name": "GAL (migrated to Gravity - G)",
+    "mcap": 59903444
+   },
+   {
+    "symbol": "IVVON",
+    "name": "iShares Core S&P 500 ETF (Ondo Tokenized ETF)",
+    "mcap": 59805801
+   },
+   {
+    "symbol": "TFUEL",
+    "name": "Theta Fuel",
+    "mcap": 59761666
+   },
+   {
+    "symbol": "ZIG",
+    "name": "ZIG Finance",
+    "mcap": 59230642
+   },
+   {
+    "symbol": "SWOP",
+    "name": "Swop",
+    "mcap": 59222483
+   },
+   {
+    "symbol": "PC0000081",
+    "name": "Tradable NA Legal Receivables SSL",
+    "mcap": 59103448
+   },
+   {
+    "symbol": "ALEO",
+    "name": "ALEO",
+    "mcap": 58962255
+   },
+   {
+    "symbol": "PC0016245",
+    "name": "NA Capital-as-a-Service SSTN",
+    "mcap": 58600000
+   },
+   {
+    "symbol": "BABYDOGE",
+    "name": "Baby Doge Coin",
+    "mcap": 58276227
+   },
+   {
+    "symbol": "CKB",
+    "name": "Nervos Network",
+    "mcap": 58270939
+   },
+   {
+    "symbol": "GBPSAFO",
+    "name": "Spiko Amundi Overnight Swap Fund (GBP)",
+    "mcap": 58086955
+   },
+   {
+    "symbol": "NOXO",
+    "name": "NOXO",
+    "mcap": 57735554
+   },
+   {
+    "symbol": "AI",
+    "name": "Artificial Inu",
+    "mcap": 57487028
+   },
+   {
+    "symbol": "LINEA",
+    "name": "Linea",
+    "mcap": 57350343
+   },
+   {
+    "symbol": "ZANO",
+    "name": "Zano",
+    "mcap": 57282378
+   },
+   {
+    "symbol": "ONE",
+    "name": "ONEchain",
+    "mcap": 57282248
+   },
+   {
+    "symbol": "VELO",
+    "name": "Velo",
+    "mcap": 57145370
+   },
+   {
+    "symbol": "BANANAS31",
+    "name": "Banana For Scale",
+    "mcap": 57099502
+   },
+   {
+    "symbol": "VTHO",
+    "name": "VeThor",
+    "mcap": 56817987
+   },
+   {
+    "symbol": "DGB",
+    "name": "DigiByte",
+    "mcap": 56758550
+   },
+   {
+    "symbol": "KAITO",
+    "name": "KAITO",
+    "mcap": 56617424
+   },
+   {
+    "symbol": "ICNT",
+    "name": "Impossible Cloud Network Token",
+    "mcap": 56601655
+   },
+   {
+    "symbol": "SPK",
+    "name": "Spark",
+    "mcap": 56341401
+   },
+   {
+    "symbol": "ESP",
+    "name": "Espresso",
+    "mcap": 56248739
+   },
+   {
+    "symbol": "MCAT",
+    "name": "Marscat Token",
+    "mcap": 56056421
+   },
+   {
+    "symbol": "SUSHI",
+    "name": "Sushi",
+    "mcap": 54928943
+   },
+   {
+    "symbol": "FT",
+    "name": "Flying Tulip",
+    "mcap": 54330577
+   },
+   {
+    "symbol": "EXOD",
+    "name": "EXOD",
+    "mcap": 54175416
+   },
+   {
+    "symbol": "XPR",
+    "name": "XPR Network",
+    "mcap": 53622041
+   },
+   {
+    "symbol": "VBILL",
+    "name": "VanEck Treasury Fund",
+    "mcap": 53371408
+   },
+   {
+    "symbol": "ACU",
+    "name": "Acurast",
+    "mcap": 53192813
+   },
+   {
+    "symbol": "STRCON",
+    "name": "Strategy Stretch Preferred (Ondo Tokenized)",
+    "mcap": 53160441
+   },
+   {
+    "symbol": "METAL",
+    "name": "Metal Blockchain",
+    "mcap": 53159690
+   },
+   {
+    "symbol": "TURBO",
+    "name": "Turbo",
+    "mcap": 52935031
+   },
+   {
+    "symbol": "NVDAB",
+    "name": "NVIDIA (bStocks Tokenized Stock)",
+    "mcap": 52744565
+   },
+   {
+    "symbol": "IO",
+    "name": "io.net",
+    "mcap": 52724218
+   },
+   {
+    "symbol": "UNP",
+    "name": "Unipoly",
+    "mcap": 52447567
+   },
+   {
+    "symbol": "YELLOW",
+    "name": "Yellow",
+    "mcap": 52285280
+   },
+   {
+    "symbol": "AXL",
+    "name": "Axelar",
+    "mcap": 52194405
+   },
+   {
+    "symbol": "FONQ",
+    "name": "FONQ",
+    "mcap": 52097765
+   },
+   {
+    "symbol": "PMUSD",
+    "name": "Precious Metals USD",
+    "mcap": 51892280
+   },
+   {
+    "symbol": "MEME",
+    "name": "MEMETOON",
+    "mcap": 51673755
+   },
+   {
+    "symbol": "NXPC",
+    "name": "Nexpace",
+    "mcap": 51440511
+   },
+   {
+    "symbol": "AB",
+    "name": "AB",
+    "mcap": 51395953
+   },
+   {
+    "symbol": "ACRDX",
+    "name": "Anemoy Tokenized Apollo Diversified Credit Fund",
+    "mcap": 51121745
+   },
+   {
+    "symbol": "MEGA",
+    "name": "MegaETH",
+    "mcap": 50744683
+   },
+   {
+    "symbol": "AIN",
+    "name": "Infinity Ground",
+    "mcap": 50634612
+   },
+   {
+    "symbol": "MARSCOIN",
+    "name": "MarsCoin",
+    "mcap": 50517843
+   },
+   {
+    "symbol": "BRSRV",
+    "name": "BlackRock Daily Reinvestment Stablecoin Reserve Vehicle",
+    "mcap": 50459758
+   },
+   {
+    "symbol": "RNT",
+    "name": "Rnt",
+    "mcap": 50283750
+   },
+   {
+    "symbol": "GPS",
+    "name": "GoPlus Security",
+    "mcap": 50185065
+   },
+   {
+    "symbol": "JCT",
+    "name": "Janction",
+    "mcap": 50062375
+   },
+   {
+    "symbol": "BAN",
+    "name": "Comedian",
+    "mcap": 49827709
+   },
+   {
+    "symbol": "MSTRB",
+    "name": "Strategy (bStocks Tokenized Stock)",
+    "mcap": 49826789
+   },
+   {
+    "symbol": "T",
+    "name": "Threshold Network",
+    "mcap": 49818045
+   },
+   {
+    "symbol": "TPT",
+    "name": "TokenPocket Token",
+    "mcap": 49614856
+   },
+   {
+    "symbol": "NVDAX",
+    "name": "NVIDIA xStock",
+    "mcap": 49464621
+   },
+   {
+    "symbol": "ASTR",
+    "name": "Astar",
+    "mcap": 49271301
+   },
+   {
+    "symbol": "DEXE",
+    "name": "DeXe",
+    "mcap": 49177405
+   },
+   {
+    "symbol": "RE",
+    "name": "RE",
+    "mcap": 48914608
+   },
+   {
+    "symbol": "DUSK",
+    "name": "DUSK",
+    "mcap": 48638084
+   },
+   {
+    "symbol": "CTC",
+    "name": "Creditcoin",
+    "mcap": 48621099
+   },
+   {
+    "symbol": "BRZ",
+    "name": "Brazilian Digital",
+    "mcap": 48615251
+   },
+   {
+    "symbol": "UMXM",
+    "name": "Manadia",
+    "mcap": 48611398
+   }
+  ]
+ },
+ "follow": {},
+ "trades": {},
+ "flowSent": {
+  "btc-out": 1793727215632
+ },
+ "mkt": {
+  "dom": [
+   {
+    "t": 1793727048129,
+    "btc": 59.26,
+    "usdt": 6.795,
+    "total": 2627005448523
+   },
+   {
+    "t": 1793727245868,
+    "btc": 59.26,
+    "usdt": 6.795,
+    "total": 2627005448523
+   }
+  ],
+  "chain": [
+   {
+    "t": 1793727048129,
+    "s28c": 1404381,
+    "tron": 604,
+    "btcEx": 554110.44,
+    "btcWhale": 407.83
+   },
+   {
+    "t": 1793727245868,
+    "s28c": 1404381,
+    "tron": 604,
+    "btcEx": 554110.44,
+    "btcWhale": 407.83
+   }
+  ],
+  "whale": [
+   {
+    "id": "whale_alert_io/104545",
+    "t": 1793717680000,
+    "coin": "BTC",
+    "usd": 52033941,
+    "kind": "out",
+    "from": "Coinbase Institutional",
+    "to": "unknown wallet"
+   },
+   {
+    "id": "whale_alert_io/104547",
+    "t": 1793719229000,
+    "coin": "HYPE",
+    "usd": 26316977,
+    "kind": "other",
+    "from": "unknown wallet",
+    "to": "Galaxy Digital"
+   },
+   {
+    "id": "whale_alert_io/104548",
+    "t": 1793720040000,
+    "coin": "BTC",
+    "usd": 173194992,
+    "kind": "in",
+    "from": "unknown wallet",
+    "to": "Coinbase Institutional"
+   },
+   {
+    "id": "whale_alert_io/104549",
+    "t": 1793720041000,
+    "coin": "BTC",
+    "usd": 76295931,
+    "kind": "in",
+    "from": "unknown wallet",
+    "to": "Coinbase Institutional"
+   },
+   {
+    "id": "whale_alert_io/104550",
+    "t": 1793720044000,
+    "coin": "BTC",
+    "usd": 162313538,
+    "kind": "in",
+    "from": "unknown wallet",
+    "to": "Coinbase Institutional"
+   },
+   {
+    "id": "whale_alert_io/104551",
+    "t": 1793720961000,
+    "coin": "BTC",
+    "usd": 157739812,
+    "kind": "out",
+    "from": "Coinbase Institutional",
+    "to": "unknown wallet"
+   },
+   {
+    "id": "whale_alert_io/104552",
+    "t": 1793720962000,
+    "coin": "BTC",
+    "usd": 298648753,
+    "kind": "out",
+    "from": "Coinbase Institutional",
+    "to": "unknown new wallet"
+   },
+   {
+    "id": "whale_alert_io/104553",
+    "t": 1793720974000,
+    "coin": "TRX",
+    "usd": 129397675,
+    "kind": "other",
+    "from": "unknown wallet",
+    "to": "unknown wallet"
+   },
+   {
+    "id": "whale_alert_io/104554",
+    "t": 1793721045000,
+    "coin": "BTC",
+    "usd": 149930726,
+    "kind": "other",
+    "from": "unknown wallet",
+    "to": "unknown wallet"
+   },
+   {
+    "id": "whale_alert_io/104555",
+    "t": 1793721270000,
+    "coin": "BTC",
+    "usd": 122712462,
+    "kind": "out",
+    "from": "#OKX",
+    "to": "unknown wallet"
+   },
+   {
+    "id": "whale_alert_io/104556",
+    "t": 1793721689000,
+    "coin": "TRX",
+    "usd": 103828527,
+    "kind": "other",
+    "from": "unknown wallet",
+    "to": "unknown wallet"
+   },
+   {
+    "id": "whale_alert_io/104557",
+    "t": 1793722181000,
+    "coin": "BTC",
+    "usd": 105508288,
+    "kind": "in",
+    "from": "unknown wallet",
+    "to": "Coinbase Institutional"
+   },
+   {
+    "id": "whale_alert_io/104558",
+    "t": 1793722194000,
+    "coin": "USDT",
+    "usd": 119863620,
+    "kind": "other",
+    "from": "unknown wallet",
+    "to": "#JustLendDAO"
+   },
+   {
+    "id": "whale_alert_io/104559",
+    "t": 1793723435000,
+    "coin": "BTC",
+    "usd": 88725043,
+    "kind": "out",
+    "from": "Coinbase Institutional",
+    "to": "unknown new wallet"
+   },
+   {
+    "id": "whale_alert_io/104560",
+    "t": 1793724633000,
+    "coin": "USDT",
+    "usd": 169935060,
+    "kind": "out",
+    "from": "#Bitfinex",
+    "to": "Tether Treasury"
+   },
+   {
+    "id": "whale_alert_io/104561",
+    "t": 1793724742000,
+    "coin": "USDT",
+    "usd": 169899699,
+    "kind": "in",
+    "from": "Tether Treasury",
+    "to": "#Bitfinex"
+   },
+   {
+    "id": "whale_alert_io/104562",
+    "t": 1793724812000,
+    "coin": "USDT",
+    "usd": 384021270,
+    "kind": "out",
+    "from": "#Bitfinex",
+    "to": "Tether Treasury"
+   },
+   {
+    "id": "whale_alert_io/104563",
+    "t": 1793726267000,
+    "coin": "USDC",
+    "usd": 102568530,
+    "kind": "burn",
+    "from": "USDC Treasury"
+   },
+   {
+    "id": "whale_alert_io/104564",
+    "t": 1793726690000,
+    "coin": "BTC",
+    "usd": 157120854,
+    "kind": "other",
+    "from": "unknown wallet",
+    "to": "unknown wallet"
+   }
+  ],
+  "insight": [
+   {
+    "id": "huntercapital9x6/7674",
+    "t": 1793574915000,
+    "coins": [
+     "GTC"
+    ],
+    "dump": false,
+    "text": "Những chuyển biến sau đây có thể khiến đường giá của $GTC biến động rất mạnh 🔄 🔄 🔄 | | Bitvavo vừa mới di chuyển 1,189M $GTC có giá trị 282K USD sang sàn Coinbase trong vòng ít giờ trước. | | Rất nhiều khả năng đường giá $GTC sẽ có biến "
+   },
+   {
+    "id": "huntercapital9x6/7675",
+    "t": 1793584864000,
+    "coins": [
+     "IDOL"
+    ],
+    "dump": true,
+    "text": "$IDOL đang có Onchain tương đôí xấu ở thời điểm hiện tại 🟢 🟢 🟢 🟢 | | Phát hiện một whale vừa dep 61M $IDOL có giá trị lên tới 1,4 triệu USD lên Gate để xả trong vòng ít giờ trước. | | $IDOL đã có cú tăng trưởng khá mạnh trong ít ngày hô"
+   },
+   {
+    "id": "huntercapital9x6/7676",
+    "t": 1793595818000,
+    "coins": [
+     "AIOT"
+    ],
+    "dump": false,
+    "text": "$AIOT đang có Onchain vô cùng đáng chú ý 🔥 🔥 🔥 🔥 | | Phát hiện một whale vừa mới gom 10M $AIOT có giá trị lên đến 654K USD từ Cobo.com trong vòng ít giờ trước. | | Tuy nhiên, dự án này đã tăng khá cao nên cần cảnh giác chớ vội fomo theo"
+   },
+   {
+    "id": "huntercapital9x6/7677",
+    "t": 1793615902000,
+    "coins": [
+     "AVNT"
+    ],
+    "dump": true,
+    "text": "$AVNT đang có Onchain cực xấu. Phát hiện đội ngũ dự án $AVNT vừa mới chuyển 10 triệu $AVNT trị giá 1,01 triệu USD qua ví phụ sau đó lập tức chuyển toàn bộ số token này lên Bybit để xả trong vòng ít giờ trước. Ví: 0x398FB687B566Fc339eB998438"
+   },
+   {
+    "id": "huntercapital9x6/7678",
+    "t": 1793624714000,
+    "coins": [],
+    "dump": false,
+    "text": "Thông tin tham khảo&#33;&#33;&#33; 🔴 🔴 🔴 🔴 | | Binance dường như đang set up cho một điều gì đó khá lớn. | | Ít giờ trước, Binance đã chuyển 100 triệu USD ra khỏi ví lạnh chuyên dùng để lưu trữ của mình. | | Rất nhiều khả năng, đây là m"
+   },
+   {
+    "id": "huntercapital9x6/7679",
+    "t": 1793664245000,
+    "coins": [
+     "IDOL"
+    ],
+    "dump": true,
+    "text": "$IDOL đang có Onchain tương đôí xấu ở thời điểm hiện tại 🟢 🟢 🟢 🟢 Phát hiện một whale vừa dep 61M $IDOL có giá trị lên tới 1,4 triệu USD lên Gate để xả trong vòng ít giờ trước. $IDOL đã có cú tăng trưởng khá mạnh trong ít ngày hôm nay nê"
+   },
+   {
+    "id": "huntercapital9x6/7680",
+    "t": 1793667544000,
+    "coins": [],
+    "dump": false,
+    "text": "Danh sách những dự án crypto có sự kiện quan trong trong tuần này có thể tác động đến đường giá 💥 💥 💥 | | ARB: Arbitrum bắt đầu hé lộ về một thông báo lớn sẽ được công bố trong tháng 11. | | ZEC: Bản nâng cấp mạng NU7 của Zcash, giúp tốc"
+   },
+   {
+    "id": "huntercapital9x6/7681",
+    "t": 1793682246000,
+    "coins": [
+     "LINK"
+    ],
+    "dump": false,
+    "text": "Phát hiện $LINK đang được whale gom một cách điên cuồng và vội vã 🆕 🆕 🆕 | | Có tới 14 triệu USD $LINK đã được gom từ Binance thông qua 6 ví có mô hình giao dịch giống hệt nhau, sau đó được chuyển đến 6 ví multisig | | Rất nhiều khả năng,"
+   },
+   {
+    "id": "huntercapital9x6/7682",
+    "t": 1793692921000,
+    "coins": [
+     "AVAX",
+     "ONDO",
+     "LINK",
+     "ENA",
+     "LAB",
+     "SOON",
+     "BTC"
+    ],
+    "dump": true,
+    "text": "MM Cumberland DRW đang có động thái rất đáng chú ý 🆕 🆕 🆕 | | Trước đó, MM hold rất nhiều $AVAX, $ONDO, $LINK, $ENA, $LAB... | | Nhưng trong hôm nay, họ đã xả rất nhiều $LINK, $LAB, $H, $SOON | | Bây giờ tổ chức này đang hold 555.9 $BTC t"
+   },
+   {
+    "id": "huntercapital9x6/7683",
+    "t": 1793710032000,
+    "coins": [
+     "APR"
+    ],
+    "dump": true,
+    "text": "$APR đang có Onchain cực kỳ xấu ở hiện tại. Phát hiện một whale vừa dep 2,5M $APR lên sàn Kraken trong vòng ít giờ trước. Tuy chỉ mới x2 từ đáy nhưng khả năng cao đây cũng là động thái để xả vì dự án này ít người biết đến cũng như sự fomo ở"
+   }
+  ],
+  "cal": {
+   "at": 1793727048129,
+   "red": [
+    {
+     "title": "Congressional Elections",
+     "t": 1793718960000
+    },
+    {
+     "title": "Average Hourly Earnings m/m",
+     "t": 1793971800000
+    },
+    {
+     "title": "Non-Farm Employment Change",
+     "t": 1793971800000
+    },
+    {
+     "title": "Unemployment Rate",
+     "t": 1793971800000
+    }
+   ]
+  }
+ },
+ "lastCandle": 1793721600000,
+ "tradeLog": [],
+ "lastM30": 1793725200000
+}
