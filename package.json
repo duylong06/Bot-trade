@@ -2,13 +2,6 @@
   "name": "bot-trade",
   "private": true,
   "type": "module",
-  "description": "Bot báo phá vỡ trendline H1 cho top 50 đồng trên OKX, kèm app xem chart trên iPhone",
-  "scripts": {
-    "test": "node bot/test-core.mjs",
-    "scan": "node bot/scan.mjs"
-  },
-  "engines": { "node": ">=20" },
-  "dependencies": {
-    "web-push": "3.6.7"
-  }
+  "description": "Quét tín hiệu OKX — trang web một file, phân tích futures ngay trong trình duyệt",
+  "engines": { "node": ">=20" }
 }
