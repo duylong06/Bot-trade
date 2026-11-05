@@ -1,0 +1,37 @@
+[  0.4s] Chế độ dry-run · kích hoạt bởi push · 1 máy nhận thông báo
+[  0.6s] Nến cần xử lý: H1 23:00 03/11 (đóng lúc 00:00)
+[  0.9s] OKX: https://www.okx.com
+[  1.4s] Theo dõi 79 mã theo vốn hoá CoinGecko + top 36 khối lượng OKX (thêm 10): BTC ETH BNB XRP SOL TRX ZEC HYPE DOGE LINK ADA XLM … + Vàng XAU, Dầu WTI CL
+[ 56.8s] Đã tải 79 đồng (cả nến H4)
+[ 58.9s] Phân tích 79 đồng: 2023 đường H1, 1974 đường H4, 230 sự kiện mới
+[ 88.5s]   điểm MORPHO CONFIRM LONG 1H: 53/100 hạng C · cờ đỏ: R:R tới TP1 = 1.16 < 1,5
+[ 88.5s]   điểm POL CONFIRM LONG 1H: 60/100 hạng C · cờ đỏ: R:R tới TP1 = 0.47 < 1,5 | Xu hướng 4H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: Climax Volume) | Vào trễ: giá cách đỉnh cũ vừa vượt 3.3 ATR > 1,2 ATR | SL rộng 5.46% > 3.20%
+[ 88.5s]   điểm POL CONFIRM LONG 1H: 60/100 hạng C · cờ đỏ: R:R tới TP1 = 0.47 < 1,5 | Xu hướng 4H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: Climax Volume) | Vào trễ: giá cách đỉnh cũ vừa vượt 1.8 ATR > 1,2 ATR | SL rộng 5.46% > 3.20%
+[ 88.5s]   điểm MORPHO BREAK LONG 1H: 66/100 hạng C · cờ đỏ: R:R tới TP1 = 0.96 < 1,5 | Xu hướng 4H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: CHoCH)
+[ 88.5s]   điểm POL BREAK LONG 1H: 53/100 hạng C · cờ đỏ: R:R tới TP1 = 0.17 < 1,5 | Xu hướng 4H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: CHoCH, Climax Volume) | Vào trễ: giá cách điểm phá 1.2 ATR > 1,2 ATR
+[ 88.6s]   điểm FIL CONFIRM LONG 1H: 43/100 hạng C · cờ đỏ: R:R tới TP1 = 0.26 < 1,5 | Xu hướng 4H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: Phân kỳ) · khoá: Giá ↑ + OI ↓ (Short cover) — cấm LONG đuổi
+[ 88.6s]   điểm ATOM RETEST LONG 30m: 51/100 hạng C · cờ đỏ: Xu hướng 1H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: CHoCH) · khoá: Nhịp hồi có nến nước rút xả mạnh ngược chiều — chặn lệnh bắt hồi
+[ 88.6s]   điểm UNI CONFIRM LONG 1H: 58/100 hạng C · cờ đỏ: R:R tới TP1 = 0.27 < 1,5
+[ 88.6s]   điểm AERO RETEST SHORT 1H: 54/100 hạng C · cờ đỏ: Vào trễ: giá cách điểm phá 1.5 ATR > 1,2 ATR
+[ 88.6s]   điểm STRK CONFIRM LONG 1H: 56/100 hạng C · cờ đỏ: R:R tới TP1 = 0.76 < 1,5 | Xu hướng 4H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: Climax Volume) | SL rộng 4.05% > 3.20%
+[ 88.6s]   điểm NIGHT CONFIRM LONG 30m: 56/100 hạng C · cờ đỏ: R:R tới TP1 = 0.60 < 1,5 | Vào trễ: giá cách EMA20 khung 15m 2.82% > 2%
+[ 88.6s]   điểm ETH RETEST SHORT 1H: 49/100 hạng C
+[ 88.6s]   điểm ETH BREAK LONG 4H: 50/100 hạng C · cờ đỏ: R:R tới TP1 = 0.42 < 1,5 | Sổ lệnh OKX có tường bán lớn ~1.4M$ tại 2300.00, chặn trước TP1
+[ 88.6s]   điểm XRP CONFIRM LONG 1H: 57/100 hạng C · cờ đỏ: R:R tới TP1 = 1.25 < 1,5 | Xu hướng 4H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: Phân kỳ) | Vào trễ: giá cách đỉnh cũ vừa vượt 2.4 ATR > 1,2 ATR | Sổ lệnh OKX có tường bán lớn ~632K$ tại 1.28900, chặn trước TP1
+[ 88.6s]   điểm LINK BREAK LONG 1H: 49/100 hạng C · cờ đỏ: Kênh on-chain báo cá voi xả LINK trong 12 giờ qua: “MM Cumberland DRW đang có động thái rất đáng chú ý 🆕 🆕 🆕 | | Trước đó, MM hold rất nhiề…”
+[ 88.6s]   điểm ADA RETEST SHORT 1H: 58/100 hạng C
+[ 88.6s]   điểm CRO RETEST SHORT 1H: 63/100 hạng C
+[ 88.6s]   điểm CRO BREAK LONG 1H: 47/100 hạng C · cờ đỏ: R:R tới TP1 = 1.09 < 1,5 | Xu hướng 4H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: CHoCH) · khoá: Giá ↑ + OI ↓ (Short cover) — cấm LONG đuổi
+[ 88.6s]   điểm PUMP CONFIRM LONG 1H: 52/100 hạng C · cờ đỏ: R:R tới TP1 = 0.11 < 1,5 | Xu hướng 4H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: Phân kỳ) | SL rộng 4.14% > 3.20%
+[ 88.6s]   điểm VVV BREAK LONG 1H: 45/100 hạng C · cờ đỏ: R:R tới TP1 = 0.84 < 1,5 · khoá: Giá ↑ + OI ↓ (Short cover) — cấm LONG đuổi
+[ 88.7s]   điểm VVV RETEST SHORT 4H: 40/100 hạng C · cờ đỏ: R:R tới TP1 = 1.05 < 1,5 · khoá: Nhịp hồi có nến nước rút bơm mạnh ngược chiều — chặn lệnh bắt hồi
+[ 88.7s]   điểm POL BREAK LONG 1H: 48/100 hạng C · cờ đỏ: R:R tới TP1 = 0.33 < 1,5 | Xu hướng 4H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: CHoCH, Climax Volume)
+[ 88.7s]   điểm ALGO BREAK LONG 1H: 48/100 hạng C · cờ đỏ: R:R tới TP1 = 0.78 < 1,5 | Vào trễ: giá cách điểm phá 1.3 ATR > 1,2 ATR · khoá: Giá ↑ + OI ↓ (Short cover) — cấm LONG đuổi
+[ 88.7s]   điểm LIT CONFIRM LONG 4H: 51/100 hạng C · cờ đỏ: SL rộng 10.36% > 6.40%
+[ 88.7s]   điểm LIT BREAK LONG 4H: 56/100 hạng C · cờ đỏ: Vào trễ: giá cách điểm phá 1.9 ATR > 1,2 ATR | SL rộng 10.36% > 6.40%
+[ 88.7s]   điểm INJ CONFIRM LONG 1H: 51/100 hạng C · cờ đỏ: R:R tới TP1 = 0.20 < 1,5 · khoá: Giá ↑ + OI ↓ (Short cover) — cấm LONG đuổi
+[ 88.7s]   điểm PYTH RETEST SHORT 1H: 46/100 hạng C
+[ 88.7s]   điểm CL BREAK SHORT 4H: 42/100 hạng C · cờ đỏ: R:R tới TP1 = 0.14 < 1,5 | Xu hướng 1D đang TĂNG mà báo SHORT, chưa đủ chuỗi đảo chiều 4 bước (thiếu: Phân kỳ) | Sổ lệnh OKX có tường mua lớn ~390K$ tại 95.5600, chặn trước TP1 · khoá: Giá ↓ + OI ↓ (Long thanh lý) — cấm SHORT đuổi ở đáy
+[ 88.7s]   điểm HYPE CONFIRM LONG 30m: 52/100 hạng C · cờ đỏ: Sổ lệnh OKX có tường bán lớn ~369K$ tại 86.4710, chặn trước TP1
+[ 88.7s]   điểm DOGE RETEST SHORT 1H: 64/100 hạng C
+[ 88.7s] Thử 48 giờ: {"BREAK":86,"CONFIRM":72,"RETEST":46,"BREAK H4":16,"CONFIRM H4":4,"RETEST H4":6,"CONFIRM M30":35,"BREAK M30":44,"RETEST M30":14} (cây phá yếu phải chờ cây sau: 38) → khoảng 162 tín hiệu/ngày

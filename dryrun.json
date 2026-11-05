@@ -1,0 +1,4176 @@
+{
+ "at": 1793727598866,
+ "host": "https://www.okx.com",
+ "universe": {
+  "src": "vốn hoá CoinGecko + top 36 khối lượng OKX (thêm 10)",
+  "n": 79
+ },
+ "target": "23:00 03/11",
+ "hours": 48,
+ "byType": {
+  "BREAK": 86,
+  "CONFIRM": 72,
+  "RETEST": 46,
+  "BREAK H4": 16,
+  "CONFIRM H4": 4,
+  "RETEST H4": 6,
+  "CONFIRM M30": 35,
+  "BREAK M30": 44,
+  "RETEST M30": 14
+ },
+ "bySize": {
+  "45-59": {
+   "BREAK": 69,
+   "CONFIRM": 59,
+   "RETEST": 22
+  },
+  "60-96": {
+   "BREAK": 77,
+   "CONFIRM": 52,
+   "RETEST": 44
+  }
+ },
+ "weak": 38,
+ "perDay": 161.5,
+ "scores": {
+  "n": 30,
+  "avg": 52.6,
+  "grades": {
+   "C": 30
+  },
+  "enter": 0,
+  "flags": {
+   "R": 19,
+   "Xu hướng 4H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước": 10,
+   "Vào trễ": 8,
+   "SL rộng 5.46% > 3.20%": 2,
+   "Xu hướng 1H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước": 1,
+   "SL rộng 4.05% > 3.20%": 1,
+   "Sổ lệnh OKX có tường bán lớn ~1.4M$ tại 2300.00, chặn trước TP1": 1,
+   "Sổ lệnh OKX có tường bán lớn ~632K$ tại 1.28900, chặn trước TP1": 1,
+   "Kênh on-chain báo cá voi xả LINK trong 12 giờ qua": 1,
+   "SL rộng 4.14% > 3.20%": 1,
+   "SL rộng 10.36% > 6.40%": 2,
+   "Xu hướng 1D đang TĂNG mà báo SHORT, chưa đủ chuỗi đảo chiều 4 bước": 1,
+   "Sổ lệnh OKX có tường mua lớn ~390K$ tại 95.5600, chặn trước TP1": 1,
+   "Sổ lệnh OKX có tường bán lớn ~369K$ tại 86.4710, chặn trước TP1": 1
+  },
+  "locks": {
+   "Giá ↑ + OI ↓": 5,
+   "Nhịp hồi có nến nước rút xả mạnh ngược chiều": 1,
+   "Nhịp hồi có nến nước rút bơm mạnh ngược chiều": 1,
+   "Giá ↓ + OI ↓": 1
+  }
+ },
+ "market": {
+  "at": 1793727511519,
+  "dom": {
+   "btc": 59.26,
+   "usdt": 6.795,
+   "dBtc": null,
+   "dUsdt": null,
+   "total": 2627005448523
+  },
+  "scenario": {
+   "id": 0,
+   "text": "chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu)",
+   "riskOff": false,
+   "altLong": 0,
+   "btcLong": 0
+  },
+  "blackout": {
+   "active": false
+  },
+  "nextRed": [],
+  "totalVsBtc": "chưa đủ 7 ngày dữ liệu TOTAL",
+  "flow": {
+   "bias": 2,
+   "s28c": 1404381,
+   "tron": 604,
+   "btcEx": 554110.44,
+   "stable24hWallet": null,
+   "stable7dWallet": null,
+   "stableIn24": 169899699,
+   "mint24": 0,
+   "btcEx24": null,
+   "btcIn2h": 105508288,
+   "btcOut2h": 667826070
+  },
+  "whale": [
+   {
+    "c": "BTC",
+    "in24": 517312749,
+    "out24": 719860011
+   },
+   {
+    "c": "USDT",
+    "in24": 169899699,
+    "out24": 553956330
+   }
+  ],
+  "insight": [
+   {
+    "coins": [
+     "APR"
+    ],
+    "t": 1793710032000,
+    "text": "$APR đang có Onchain cực kỳ xấu ở hiện tại. Phát hiện một whale vừa dep 2,5M $APR lên sàn Kraken trong vòng ít giờ trước. Tuy chỉ mới x2 từ đáy nhưng khả năng cao đây cũng là động thái để xả vì dự án "
+   },
+   {
+    "coins": [
+     "AVAX",
+     "ONDO",
+     "LINK",
+     "ENA",
+     "LAB",
+     "SOON"
+    ],
+    "t": 1793692921000,
+    "text": "MM Cumberland DRW đang có động thái rất đáng chú ý 🆕 🆕 🆕 | | Trước đó, MM hold rất nhiều $AVAX, $ONDO, $LINK, $ENA, $LAB... | | Nhưng trong hôm nay, họ đã xả rất nhiều $LINK, $LAB, $H, $SOON | | Bâ"
+   }
+  ],
+  "report": "BTC.D 59.26% (—) · USDT.D 6.795% (—) · 24h\nKịch bản: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu)\nStablecoin ví 28c + TDqSq: 24h — · 7 ngày — · whale alert vào sàn 24h +170M$, mint +0M$\nBTC ví sàn (Binance, Bitfinex): 24h —\nCá voi ròng 24h: BTC −203M$ ra sàn\nTOTAL vs BTC: chưa đủ 7 ngày dữ liệu TOTAL",
+  "errors": []
+ },
+ "perCoin": [
+  {
+   "coin": "BTC",
+   "lines": 33,
+   "shown": 2,
+   "events": 6
+  },
+  {
+   "coin": "ETH",
+   "lines": 41,
+   "shown": 1,
+   "events": 5
+  },
+  {
+   "coin": "BNB",
+   "lines": 27,
+   "shown": 1,
+   "events": 0
+  },
+  {
+   "coin": "XRP",
+   "lines": 28,
+   "shown": 2,
+   "events": 13
+  },
+  {
+   "coin": "SOL",
+   "lines": 28,
+   "shown": 0,
+   "events": 0
+  },
+  {
+   "coin": "TRX",
+   "lines": 25,
+   "shown": 0,
+   "events": 0
+  },
+  {
+   "coin": "ZEC",
+   "lines": 16,
+   "shown": 0,
+   "events": 2
+  },
+  {
+   "coin": "HYPE",
+   "lines": 25,
+   "shown": 0,
+   "events": 0
+  },
+  {
+   "coin": "DOGE",
+   "lines": 26,
+   "shown": 1,
+   "events": 2
+  },
+  {
+   "coin": "LINK",
+   "lines": 28,
+   "shown": 2,
+   "events": 1
+  },
+  {
+   "coin": "ADA",
+   "lines": 26,
+   "shown": 2,
+   "events": 4
+  },
+  {
+   "coin": "XLM",
+   "lines": 28,
+   "shown": 0,
+   "events": 0
+  },
+  {
+   "coin": "BCH",
+   "lines": 25,
+   "shown": 2,
+   "events": 3
+  },
+  {
+   "coin": "NEAR",
+   "lines": 40,
+   "shown": 3,
+   "events": 4
+  },
+  {
+   "coin": "UNI",
+   "lines": 32,
+   "shown": 2,
+   "events": 7
+  },
+  {
+   "coin": "LTC",
+   "lines": 20,
+   "shown": 2,
+   "events": 2
+  },
+  {
+   "coin": "CC",
+   "lines": 28,
+   "shown": 2,
+   "events": 6
+  },
+  {
+   "coin": "AVAX",
+   "lines": 36,
+   "shown": 2,
+   "events": 2
+  },
+  {
+   "coin": "SUI",
+   "lines": 28,
+   "shown": 0,
+   "events": 0
+  },
+  {
+   "coin": "GRAM",
+   "lines": 31,
+   "shown": 3,
+   "events": 6
+  },
+  {
+   "coin": "HBAR",
+   "lines": 29,
+   "shown": 1,
+   "events": 1
+  },
+  {
+   "coin": "SHIB",
+   "lines": 34,
+   "shown": 1,
+   "events": 3
+  },
+  {
+   "coin": "TAO",
+   "lines": 34,
+   "shown": 0,
+   "events": 0
+  },
+  {
+   "coin": "CRO",
+   "lines": 27,
+   "shown": 2,
+   "events": 8
+  },
+  {
+   "coin": "ENA",
+   "lines": 22,
+   "shown": 1,
+   "events": 3
+  },
+  {
+   "coin": "OKB",
+   "lines": 23,
+   "shown": 1,
+   "events": 2
+  },
+  {
+   "coin": "PEPE",
+   "lines": 14,
+   "shown": 0,
+   "events": 1
+  },
+  {
+   "coin": "AAVE",
+   "lines": 28,
+   "shown": 2,
+   "events": 3
+  },
+  {
+   "coin": "PUMP",
+   "lines": 30,
+   "shown": 4,
+   "events": 11
+  },
+  {
+   "coin": "ONDO",
+   "lines": 31,
+   "shown": 0,
+   "events": 0
+  },
+  {
+   "coin": "ASTER",
+   "lines": 32,
+   "shown": 1,
+   "events": 2
+  },
+  {
+   "coin": "WLFI",
+   "lines": 28,
+   "shown": 1,
+   "events": 1
+  },
+  {
+   "coin": "DOT",
+   "lines": 28,
+   "shown": 1,
+   "events": 4
+  },
+  {
+   "coin": "BTW",
+   "lines": 6,
+   "shown": 0,
+   "events": 0
+  },
+  {
+   "coin": "MORPHO",
+   "lines": 25,
+   "shown": 1,
+   "events": 3
+  },
+  {
+   "coin": "SKY",
+   "lines": 15,
+   "shown": 1,
+   "events": 1
+  },
+  {
+   "coin": "ICP",
+   "lines": 25,
+   "shown": 1,
+   "events": 5
+  },
+  {
+   "coin": "WLD",
+   "lines": 31,
+   "shown": 1,
+   "events": 6
+  },
+  {
+   "coin": "ETC",
+   "lines": 27,
+   "shown": 2,
+   "events": 2
+  },
+  {
+   "coin": "ARB",
+   "lines": 41,
+   "shown": 3,
+   "events": 4
+  },
+  {
+   "coin": "VVV",
+   "lines": 36,
+   "shown": 2,
+   "events": 5
+  },
+  {
+   "coin": "POL",
+   "lines": 17,
+   "shown": 1,
+   "events": 4
+  },
+  {
+   "coin": "PI",
+   "lines": 22,
+   "shown": 1,
+   "events": 5
+  },
+  {
+   "coin": "ALGO",
+   "lines": 28,
+   "shown": 1,
+   "events": 1
+  },
+  {
+   "coin": "LIT",
+   "lines": 15,
+   "shown": 0,
+   "events": 2
+  },
+  {
+   "coin": "JUP",
+   "lines": 20,
+   "shown": 1,
+   "events": 0
+  },
+  {
+   "coin": "RENDER",
+   "lines": 18,
+   "shown": 2,
+   "events": 2
+  },
+  {
+   "coin": "ATOM",
+   "lines": 32,
+   "shown": 1,
+   "events": 1
+  },
+  {
+   "coin": "ZRO",
+   "lines": 23,
+   "shown": 1,
+   "events": 2
+  },
+  {
+   "coin": "FIL",
+   "lines": 22,
+   "shown": 1,
+   "events": 3
+  },
+  {
+   "coin": "INJ",
+   "lines": 33,
+   "shown": 4,
+   "events": 6
+  },
+  {
+   "coin": "NIGHT",
+   "lines": 24,
+   "shown": 0,
+   "events": 0
+  },
+  {
+   "coin": "STX",
+   "lines": 29,
+   "shown": 1,
+   "events": 2
+  },
+  {
+   "coin": "DASH",
+   "lines": 27,
+   "shown": 1,
+   "events": 0
+  },
+  {
+   "coin": "ETHFI",
+   "lines": 17,
+   "shown": 2,
+   "events": 4
+  },
+  {
+   "coin": "APT",
+   "lines": 33,
+   "shown": 1,
+   "events": 1
+  },
+  {
+   "coin": "PYTH",
+   "lines": 26,
+   "shown": 1,
+   "events": 4
+  },
+  {
+   "coin": "STABLE",
+   "lines": 25,
+   "shown": 2,
+   "events": 5
+  },
+  {
+   "coin": "AERO",
+   "lines": 33,
+   "shown": 1,
+   "events": 6
+  },
+  {
+   "coin": "TRUMP",
+   "lines": 35,
+   "shown": 3,
+   "events": 3
+  },
+  {
+   "coin": "PENGU",
+   "lines": 30,
+   "shown": 1,
+   "events": 4
+  },
+  {
+   "coin": "TIA",
+   "lines": 27,
+   "shown": 2,
+   "events": 2
+  },
+  {
+   "coin": "RAY",
+   "lines": 29,
+   "shown": 2,
+   "events": 7
+  },
+  {
+   "coin": "CRV",
+   "lines": 27,
+   "shown": 0,
+   "events": 0
+  },
+  {
+   "coin": "GRASS",
+   "lines": 29,
+   "shown": 2,
+   "events": 4
+  },
+  {
+   "coin": "VIRTUAL",
+   "lines": 29,
+   "shown": 3,
+   "events": 4
+  },
+  {
+   "coin": "FET",
+   "lines": 22,
+   "shown": 1,
+   "events": 7
+  },
+  {
+   "coin": "AKE",
+   "lines": 16,
+   "shown": 0,
+   "events": 0
+  },
+  {
+   "coin": "PIEVERSE",
+   "lines": 20,
+   "shown": 1,
+   "events": 1
+  },
+  {
+   "coin": "XDP",
+   "lines": 11,
+   "shown": 2,
+   "events": 0
+  },
+  {
+   "coin": "STRK",
+   "lines": 20,
+   "shown": 3,
+   "events": 10
+  },
+  {
+   "coin": "XPL",
+   "lines": 19,
+   "shown": 0,
+   "events": 0
+  },
+  {
+   "coin": "APR",
+   "lines": 10,
+   "shown": 0,
+   "events": 1
+  },
+  {
+   "coin": "PONS",
+   "lines": 15,
+   "shown": 2,
+   "events": 3
+  },
+  {
+   "coin": "IRYS",
+   "lines": 16,
+   "shown": 0,
+   "events": 0
+  },
+  {
+   "coin": "HUMA",
+   "lines": 12,
+   "shown": 2,
+   "events": 4
+  },
+  {
+   "coin": "BEAT",
+   "lines": 17,
+   "shown": 1,
+   "events": 0
+  },
+  {
+   "coin": "XAU",
+   "lines": 29,
+   "shown": 1,
+   "events": 1
+  },
+  {
+   "coin": "CL",
+   "lines": 29,
+   "shown": 1,
+   "events": 3
+  }
+ ],
+ "sample": [
+  {
+   "at": "23:00 03/11",
+   "tf": "1H",
+   "coin": "MORPHO",
+   "type": "CONFIRM",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 69,
+   "touches": 4,
+   "cls": null,
+   "follow": null,
+   "score": "53 C",
+   "sc": {
+    "v": 1,
+    "s": 53,
+    "g": "C",
+    "in": 0,
+    "st": "INTRADAY",
+    "ttf": "4H",
+    "ctf": "1D",
+    "L": [
+     [
+      0,
+      20,
+      [
+       "4H: EMA xếp tầng NGƯỢC hướng (0)",
+       "nhịp ngắn M→ W→ 1D↓ 4H↓ 1H→ · khung xác nhận 1D ↓ (+0)",
+       "ADX 4H 18 < 18 (0)"
+      ]
+     ],
+     [
+      16,
+      20,
+      [
+       "32/13/5 = 19 đúng vị thế Long (+10)",
+       "10/5/5 dốc 62° thuận chiều (+6)"
+      ]
+     ],
+     [
+      17,
+      20,
+      [
+       "kháng cự giảm 69 nến, 4 chạm, không cắt thân (+7)",
+       "điểm phá trùng Hộp Tím  (+6)",
+       "đã gãy cấu trúc (đóng qua đỉnh/đáy cũ) (+4) — thiếu: chưa qua EMA200"
+      ]
+     ],
+     [
+      7,
+      15,
+      [
+       "giá vào không nằm trong OTE / OB / FVG (0)",
+       "phân kỳ Stoch/RSI (+4)",
+       "không dính nến nước rút ngược chiều (+3)"
+      ]
+     ],
+     [
+      5,
+      15,
+      [
+       "volume 1.7× MA20 ✓ · CVD 6h bán chủ động (+3)",
+       "OI đi ngang (12h: giá 2.13%, OI 0.23%) (+2)",
+       "nam châm thanh lý phía dưới — chưa thuận (0)"
+      ]
+     ],
+     [
+      8,
+      10,
+      [
+       "dòng tiền sàn (ví 28c / TDqSq / BTC netflow / whale alert): nghiêng tăng (+2) (+5)",
+       "ma trận BTC.D × USDT.D: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu) (+3)"
+      ]
+     ]
+    ],
+    "f": [
+     "R:R tới TP1 = 1.16 < 1,5"
+    ],
+    "k": [],
+    "w": [
+     "Khối lượng 24h 3.3M$ < 25M$ — thanh khoản mỏng"
+    ],
+    "n": [],
+    "dn": [
+     "ngược khung xác nhận 1D"
+    ],
+    "en": 2.1894,
+    "sl": 2.1369427,
+    "tp1": 2.2502,
+    "tp2": 2.3048061,
+    "rr": 1.16,
+    "rp": 2.4,
+    "tw": "ổ thanh khoản 💧",
+    "rk": 0,
+    "cf": 5,
+    "mg": [
+     "+0,6R (2.22087): thu hẹp 50% SL → 2.16317",
+     "TP1 2.25020: chốt 50%, dời SL về 2.19727 (Entry + 0,15R, bù phí)",
+     "TP2 2.30481: chốt thêm 30%",
+     "Đóng theo thời gian: 60 giờ chưa tới TP1 thì đóng hoà vốn"
+    ],
+    "ts": 60,
+    "ts1": 60,
+    "q": "FLAT",
+    "mag": "down"
+   },
+   "msg": {
+    "title": "✓ Xác nhận LONG MORPHO",
+    "body": "📊 53/100 · hạng C · INTRADAY · ⚖️ ĐỨNG NGOÀI\n🚩 R:R tới TP1 = 1.16 < 1,5\nHạ 1 hạng: ngược khung xác nhận 1D\nKhối lượng 24h 3.3M$ < 25M$ — thanh khoản mỏng\nĐóng cửa 2.1894 vượt đỉnh cũ 2.1884 — cấu trúc đã gãy. Phá kháng cự giảm 69 nến lúc 21:00.\nNến H1 23:00\nEntry 2.1894 · SL 2.1369 (2.4%) · TP1 2.2502 · TP2 2.3048 · R:R 1.16",
+    "url": "./#s=MORPHO-USDT-SWAP&ev=CONFIRM&t=1793721600000",
+    "tag": "MORPHO-USDT-SWAP|CONFIRM|1793721600000|1H"
+   }
+  },
+  {
+   "at": "22:00 03/11",
+   "tf": "1H",
+   "coin": "POL",
+   "type": "CONFIRM",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 86,
+   "touches": 5,
+   "cls": null,
+   "follow": null,
+   "score": "60 C",
+   "sc": {
+    "v": 1,
+    "s": 60,
+    "g": "C",
+    "in": 0,
+    "st": "INTRADAY",
+    "ttf": "4H",
+    "ctf": "1D",
+    "L": [
+     [
+      2,
+      20,
+      [
+       "4H: EMA xếp tầng NGƯỢC hướng (0)",
+       "nhịp ngắn M→ W↓ 1D↓ 4H→ 1H→ · khung xác nhận 1D ↓ (+0)",
+       "ADX 4H 21 (+2)"
+      ]
+     ],
+     [
+      16,
+      20,
+      [
+       "32/13/5 = 30 đúng vị thế Long (+10)",
+       "10/5/5 dốc 38° thuận chiều (+6)"
+      ]
+     ],
+     [
+      20,
+      20,
+      [
+       "kháng cự giảm 86 nến, 5 chạm, không cắt thân (+7)",
+       "không có Hộp Tím / ổ thanh khoản tại điểm phá (0)",
+       "đã gãy cấu trúc (đóng qua đỉnh/đáy cũ) + Stoch dốc thuận + volume ≥ 1,2× (+7)",
+       "Thưởng cấu trúc trưởng thành: H1 45–90 nến, ≥ 3 chạm, phá cùng EMA200 ở nến xác nhận (20/20)"
+      ]
+     ],
+     [
+      4,
+      15,
+      [
+       "giá vào không nằm trong OTE / OB / FVG (0)",
+       "phân kỳ Stoch/RSI (+4)",
+       "có nến nước rút đỏ volume > 2,5× lúc 20:00 (0)"
+      ]
+     ],
+     [
+      10,
+      15,
+      [
+       "volume 14.4× MA20 ✓ · CVD 6h mua chủ động ✓ (+5)",
+       "🟢 Giá ↑ + OI ↑: tiền mới vào cửa mua (12h: giá 6.85%, OI 8.95%) (+5)",
+       "nam châm thanh lý phía dưới — chưa thuận (0)"
+      ]
+     ],
+     [
+      8,
+      10,
+      [
+       "dòng tiền sàn (ví 28c / TDqSq / BTC netflow / whale alert): nghiêng tăng (+2) (+5)",
+       "ma trận BTC.D × USDT.D: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu) (+3)"
+      ]
+     ]
+    ],
+    "f": [
+     "R:R tới TP1 = 0.47 < 1,5",
+     "Xu hướng 4H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: Climax Volume)",
+     "Vào trễ: giá cách đỉnh cũ vừa vượt 3.3 ATR > 1,2 ATR",
+     "SL rộng 5.46% > 3.20%"
+    ],
+    "k": [],
+    "w": [
+     "Khối lượng 24h 4.9M$ < 25M$ — thanh khoản mỏng"
+    ],
+    "n": [],
+    "dn": [
+     "ngược khung xác nhận 1D"
+    ],
+    "en": 0.09357,
+    "sl": 0.088459095,
+    "tp1": 0.09597,
+    "tp2": 0.10481399,
+    "rr": 0.47,
+    "rp": 5.46,
+    "tw": "đỉnh swing chưa bị vượt",
+    "rk": 0,
+    "cf": 6,
+    "mg": [
+     "+0,6R (0.0966365): thu hẹp 50% SL → 0.0910145",
+     "TP1 0.0959700: chốt 50%, dời SL về 0.0943366 (Entry + 0,15R, bù phí)",
+     "TP2 0.104814: chốt thêm 30%",
+     "Đóng theo thời gian: 60 giờ chưa tới TP1 thì đóng hoà vốn"
+    ],
+    "ts": 60,
+    "ts1": 60,
+    "q": "LONG_BUILD",
+    "mag": "down"
+   },
+   "msg": {
+    "title": "✓ Xác nhận LONG POL",
+    "body": "📊 60/100 · hạng C · INTRADAY · ⚖️ ĐỨNG NGOÀI\n🚩 R:R tới TP1 = 0.47 < 1,5\n🚩 Xu hướng 4H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: Climax Volume) (+2 lý do)\nHạ 1 hạng: ngược khung xác nhận 1D\nKhối lượng 24h 4.9M$ < 25M$ — thanh khoản mỏng\nĐóng cửa 0.09357 vượt đỉnh cũ 0.08982 — cấu trúc đã gãy. Phá kháng cự giảm 86 nến lúc 19:00.\nNến H1 22:00\nEntry 0.09357 · SL 0.08846 (5.46%) · TP1 0.09597 · TP2 0.10481 · R:R 0.47",
+    "url": "./#s=POL-USDT-SWAP&ev=CONFIRM&t=1793718000000",
+    "tag": "POL-USDT-SWAP|CONFIRM|1793718000000|1H"
+   }
+  },
+  {
+   "at": "22:00 03/11",
+   "tf": "1H",
+   "coin": "POL",
+   "type": "CONFIRM",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 88,
+   "touches": 3,
+   "cls": null,
+   "follow": null,
+   "score": "60 C",
+   "sc": {
+    "v": 1,
+    "s": 60,
+    "g": "C",
+    "in": 0,
+    "st": "INTRADAY",
+    "ttf": "4H",
+    "ctf": "1D",
+    "L": [
+     [
+      2,
+      20,
+      [
+       "4H: EMA xếp tầng NGƯỢC hướng (0)",
+       "nhịp ngắn M→ W↓ 1D↓ 4H→ 1H→ · khung xác nhận 1D ↓ (+0)",
+       "ADX 4H 21 (+2)"
+      ]
+     ],
+     [
+      16,
+      20,
+      [
+       "32/13/5 = 30 đúng vị thế Long (+10)",
+       "10/5/5 dốc 38° thuận chiều (+6)"
+      ]
+     ],
+     [
+      20,
+      20,
+      [
+       "kháng cự giảm 88 nến, 3 chạm, không cắt thân (+7)",
+       "điểm phá trùng Hộp Tím  (+6)",
+       "đã gãy cấu trúc (đóng qua đỉnh/đáy cũ) + Stoch dốc thuận + volume ≥ 1,2× (+7)",
+       "Thưởng cấu trúc trưởng thành: H1 45–90 nến, ≥ 3 chạm, phá cùng EMA200 ở nến xác nhận (20/20)"
+      ]
+     ],
+     [
+      4,
+      15,
+      [
+       "giá vào không nằm trong OTE / OB / FVG (0)",
+       "phân kỳ Stoch/RSI (+4)",
+       "có nến nước rút đỏ volume > 2,5× lúc 20:00 (0)"
+      ]
+     ],
+     [
+      10,
+      15,
+      [
+       "volume 14.4× MA20 ✓ · CVD 6h mua chủ động ✓ (+5)",
+       "🟢 Giá ↑ + OI ↑: tiền mới vào cửa mua (12h: giá 6.85%, OI 8.95%) (+5)",
+       "nam châm thanh lý phía dưới — chưa thuận (0)"
+      ]
+     ],
+     [
+      8,
+      10,
+      [
+       "dòng tiền sàn (ví 28c / TDqSq / BTC netflow / whale alert): nghiêng tăng (+2) (+5)",
+       "ma trận BTC.D × USDT.D: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu) (+3)"
+      ]
+     ]
+    ],
+    "f": [
+     "R:R tới TP1 = 0.47 < 1,5",
+     "Xu hướng 4H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: Climax Volume)",
+     "Vào trễ: giá cách đỉnh cũ vừa vượt 1.8 ATR > 1,2 ATR",
+     "SL rộng 5.46% > 3.20%"
+    ],
+    "k": [],
+    "w": [
+     "Khối lượng 24h 4.9M$ < 25M$ — thanh khoản mỏng"
+    ],
+    "n": [],
+    "dn": [
+     "ngược khung xác nhận 1D"
+    ],
+    "en": 0.09357,
+    "sl": 0.088459095,
+    "tp1": 0.09597,
+    "tp2": 0.10481399,
+    "rr": 0.47,
+    "rp": 5.46,
+    "tw": "đỉnh swing chưa bị vượt",
+    "rk": 0,
+    "cf": 6,
+    "mg": [
+     "+0,6R (0.0966365): thu hẹp 50% SL → 0.0910145",
+     "TP1 0.0959700: chốt 50%, dời SL về 0.0943366 (Entry + 0,15R, bù phí)",
+     "TP2 0.104814: chốt thêm 30%",
+     "Đóng theo thời gian: 60 giờ chưa tới TP1 thì đóng hoà vốn"
+    ],
+    "ts": 60,
+    "ts1": 60,
+    "q": "LONG_BUILD",
+    "mag": "down"
+   },
+   "msg": {
+    "title": "✓ Xác nhận LONG POL",
+    "body": "📊 60/100 · hạng C · INTRADAY · ⚖️ ĐỨNG NGOÀI\n🚩 R:R tới TP1 = 0.47 < 1,5\n🚩 Xu hướng 4H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: Climax Volume) (+2 lý do)\nHạ 1 hạng: ngược khung xác nhận 1D\nKhối lượng 24h 4.9M$ < 25M$ — thanh khoản mỏng\nĐóng cửa 0.09357 vượt đỉnh cũ 0.09145 — cấu trúc đã gãy. Phá kháng cự giảm 88 nến lúc 21:00.\nNến H1 22:00\nEntry 0.09357 · SL 0.08846 (5.46%) · TP1 0.09597 · TP2 0.10481 · R:R 0.47",
+    "url": "./#s=POL-USDT-SWAP&ev=CONFIRM&t=1793718000000",
+    "tag": "POL-USDT-SWAP|CONFIRM|1793718000000|1H"
+   }
+  },
+  {
+   "at": "21:00 03/11",
+   "tf": "1H",
+   "coin": "MORPHO",
+   "type": "BREAK",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 69,
+   "touches": 4,
+   "cls": "weak",
+   "follow": true,
+   "score": "66 C",
+   "sc": {
+    "v": 1,
+    "s": 66,
+    "g": "C",
+    "in": 0,
+    "st": "INTRADAY",
+    "ttf": "4H",
+    "ctf": "1D",
+    "L": [
+     [
+      2,
+      20,
+      [
+       "4H: EMA xếp tầng NGƯỢC hướng (0)",
+       "nhịp ngắn M→ W→ 1D↓ 4H↓ 1H↓ · khung xác nhận 1D ↓ (+0)",
+       "ADX 4H 18 (+2)"
+      ]
+     ],
+     [
+      20,
+      20,
+      [
+       "32/13/5 = 11 đúng vị thế Long (+10)",
+       "10/5/5 cắt lên từ < 25, góc 48° (+10)"
+      ]
+     ],
+     [
+      13,
+      20,
+      [
+       "kháng cự giảm 69 nến, 4 chạm, không cắt thân (+7)",
+       "điểm phá trùng Hộp Tím  (+6)",
+       "chưa có nến 2 xác nhận (vào ở nến phá là dễ dính bẫy — chờ nến 1H kế tiếp giữ ngoài đường) (0)"
+      ]
+     ],
+     [
+      15,
+      15,
+      [
+       "giá vào nằm trong OTE 0.64 (+8)",
+       "Nhấn chìm tăng + phân kỳ Stoch/RSI (+4)",
+       "không dính nến nước rút ngược chiều (+3)"
+      ]
+     ],
+     [
+      8,
+      15,
+      [
+       "volume 2.4× MA20 ✓ · CVD 6h bán chủ động (+3)",
+       "⚪ Giá ↓ + OI ↓: tiền rút, đà giảm sắp cạn (12h: giá -1.05%, OI -1.10%) (+0)",
+       "vừa quét cụm thanh lý Long lớn (+5)"
+      ]
+     ],
+     [
+      8,
+      10,
+      [
+       "dòng tiền sàn (ví 28c / TDqSq / BTC netflow / whale alert): nghiêng tăng (+2) (+5)",
+       "ma trận BTC.D × USDT.D: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu) (+3)"
+      ]
+     ]
+    ],
+    "f": [
+     "R:R tới TP1 = 0.96 < 1,5",
+     "Xu hướng 4H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: CHoCH)"
+    ],
+    "k": [],
+    "w": [
+     "Khối lượng 24h 3.3M$ < 25M$ — thanh khoản mỏng"
+    ],
+    "n": [],
+    "dn": [
+     "ngược khung xác nhận 1D"
+    ],
+    "en": 2.1287,
+    "sl": 2.0662295,
+    "tp1": 2.1884,
+    "tp2": 2.2661351,
+    "rr": 0.96,
+    "rp": 2.93,
+    "tw": "đỉnh swing chưa bị vượt",
+    "rk": 0,
+    "cf": 7,
+    "mg": [
+     "+0,6R (2.16618): thu hẹp 50% SL → 2.09746",
+     "TP1 2.18840: chốt 50%, dời SL về 2.13807 (Entry + 0,15R, bù phí)",
+     "TP2 2.26614: chốt thêm 30%",
+     "Đóng theo thời gian: 60 giờ chưa tới TP1 thì đóng hoà vốn"
+    ],
+    "ts": 60,
+    "ts1": 60,
+    "q": "LONG_LIQ",
+    "mag": "down"
+   },
+   "msg": {
+    "title": "▲ LONG MORPHO · phá kháng cự giảm",
+    "body": "📊 66/100 · hạng C · INTRADAY · ⚖️ ĐỨNG NGOÀI\n🚩 R:R tới TP1 = 0.96 < 1,5\n🚩 Xu hướng 4H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: CHoCH)\nHạ 1 hạng: ngược khung xác nhận 1D\nKhối lượng 24h 3.3M$ < 25M$ — thanh khoản mỏng\nĐóng cửa 2.1287 trên đường 2.1120 · mô hình 69 nến, 4 chạm. Volume x2.4 so với trung bình 20 nến — volume lớn ✓.\nChưa vượt đỉnh cũ 2.1884.\nNến H1 21:00\nEntry 2.1287 · SL 2.0662 (2.93%) · TP1 2.1884 · TP2 2.2661 · R:R 0.96",
+    "url": "./#s=MORPHO-USDT-SWAP&ev=BREAK&t=1793714400000",
+    "tag": "MORPHO-USDT-SWAP|BREAK|1793714400000|1H"
+   }
+  },
+  {
+   "at": "21:00 03/11",
+   "tf": "1H",
+   "coin": "POL",
+   "type": "BREAK",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 88,
+   "touches": 3,
+   "cls": "clean",
+   "follow": true,
+   "score": "53 C",
+   "sc": {
+    "v": 1,
+    "s": 53,
+    "g": "C",
+    "in": 0,
+    "st": "INTRADAY",
+    "ttf": "4H",
+    "ctf": "1D",
+    "L": [
+     [
+      2,
+      20,
+      [
+       "4H: EMA xếp tầng NGƯỢC hướng (0)",
+       "nhịp ngắn M→ W↓ 1D↓ 4H↓ 1H→ · khung xác nhận 1D ↓ (+0)",
+       "ADX 4H 22 (+2)"
+      ]
+     ],
+     [
+      16,
+      20,
+      [
+       "32/13/5 = 23 đúng vị thế Long (+10)",
+       "10/5/5 dốc 36° thuận chiều (+6)"
+      ]
+     ],
+     [
+      13,
+      20,
+      [
+       "kháng cự giảm 88 nến, 3 chạm, không cắt thân (+7)",
+       "điểm phá trùng Hộp Tím  (+6)",
+       "chưa có nến 2 xác nhận (vào ở nến phá là dễ dính bẫy — chờ nến 1H kế tiếp giữ ngoài đường) (0)"
+      ]
+     ],
+     [
+      4,
+      15,
+      [
+       "giá vào không nằm trong OTE / OB / FVG (0)",
+       "Nhấn chìm tăng + phân kỳ Stoch/RSI (+4)",
+       "có nến nước rút đỏ volume > 2,5× lúc 20:00 (0)"
+      ]
+     ],
+     [
+      10,
+      15,
+      [
+       "volume 7.0× MA20 ✓ · CVD 6h mua chủ động ✓ (+5)",
+       "🟢 Giá ↑ + OI ↑: tiền mới vào cửa mua (12h: giá 2.35%, OI 12.11%) (+5)",
+       "nam châm thanh lý phía dưới — chưa thuận (0)"
+      ]
+     ],
+     [
+      8,
+      10,
+      [
+       "dòng tiền sàn (ví 28c / TDqSq / BTC netflow / whale alert): nghiêng tăng (+2) (+5)",
+       "ma trận BTC.D × USDT.D: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu) (+3)"
+      ]
+     ]
+    ],
+    "f": [
+     "R:R tới TP1 = 0.17 < 1,5",
+     "Xu hướng 4H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: CHoCH, Climax Volume)",
+     "Vào trễ: giá cách điểm phá 1.2 ATR > 1,2 ATR"
+    ],
+    "k": [],
+    "w": [
+     "Khối lượng 24h 4.9M$ < 25M$ — thanh khoản mỏng"
+    ],
+    "n": [],
+    "dn": [
+     "ngược khung xác nhận 1D"
+    ],
+    "en": 0.08938,
+    "sl": 0.086813794,
+    "tp1": 0.08982,
+    "tp2": 0.095025653,
+    "rr": 0.17,
+    "rp": 2.87,
+    "tw": "đỉnh swing chưa bị vượt",
+    "rk": 0,
+    "cf": 5,
+    "mg": [
+     "+0,6R (0.0909197): thu hẹp 50% SL → 0.0880969",
+     "TP1 0.0898200: chốt 50%, dời SL về 0.0897649 (Entry + 0,15R, bù phí)",
+     "TP2 0.0950257: chốt thêm 30%",
+     "Đóng theo thời gian: 60 giờ chưa tới TP1 thì đóng hoà vốn"
+    ],
+    "ts": 60,
+    "ts1": 60,
+    "q": "LONG_BUILD",
+    "mag": "down"
+   },
+   "msg": {
+    "title": "▲ LONG POL · phá kháng cự giảm",
+    "body": "📊 53/100 · hạng C · INTRADAY · ⚖️ ĐỨNG NGOÀI\n🚩 R:R tới TP1 = 0.17 < 1,5\n🚩 Xu hướng 4H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: CHoCH, Climax Volume) (+1 lý do)\nHạ 1 hạng: ngược khung xác nhận 1D\nKhối lượng 24h 4.9M$ < 25M$ — thanh khoản mỏng\nĐóng cửa 0.08938 trên đường 0.08830 · mô hình 88 nến, 3 chạm. Volume x7.0 so với trung bình 20 nến — volume lớn ✓.\nChưa vượt đỉnh cũ 0.09145.\nNến H1 21:00\nEntry 0.08938 · SL 0.08681 (2.87%) · TP1 0.08982 · TP2 0.09503 · R:R 0.17",
+    "url": "./#s=POL-USDT-SWAP&ev=BREAK&t=1793714400000",
+    "tag": "POL-USDT-SWAP|BREAK|1793714400000|1H"
+   }
+  },
+  {
+   "at": "21:00 03/11",
+   "tf": "1H",
+   "coin": "FIL",
+   "type": "CONFIRM",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 83,
+   "touches": 3,
+   "cls": null,
+   "follow": null,
+   "score": "43 C",
+   "sc": {
+    "v": 1,
+    "s": 43,
+    "g": "C",
+    "in": 0,
+    "st": "INTRADAY",
+    "ttf": "4H",
+    "ctf": "1D",
+    "L": [
+     [
+      0,
+      20,
+      [
+       "4H: EMA xếp tầng NGƯỢC hướng (0)",
+       "nhịp ngắn M↓ W↓ 1D↓ 4H→ 1H↑ · khung xác nhận 1D ↓ (+0)",
+       "ADX 4H 18 < 18 (0)"
+      ]
+     ],
+     [
+      16,
+      20,
+      [
+       "32/13/5 = 60 đúng vị thế Long (+10)",
+       "10/5/5 dốc 51° thuận chiều (+6)"
+      ]
+     ],
+     [
+      11,
+      20,
+      [
+       "kháng cự giảm 83 nến, 3 chạm, không cắt thân (+7)",
+       "không có Hộp Tím / ổ thanh khoản tại điểm phá (0)",
+       "đã gãy cấu trúc (đóng qua đỉnh/đáy cũ) (+4) — thiếu: chưa qua EMA200"
+      ]
+     ],
+     [
+      3,
+      15,
+      [
+       "giá vào không nằm trong OTE / OB / FVG (0)",
+       "không có mẫu nến đảo chiều / phân kỳ (0)",
+       "không dính nến nước rút ngược chiều (+3)"
+      ]
+     ],
+     [
+      5,
+      15,
+      [
+       "volume 1.7× MA20 ✓ · CVD 6h mua chủ động ✓ (+5)",
+       "🟡 Giá ↑ + OI ↓: Short bị ép đóng, thiếu tiền mua mới (12h: giá 2.90%, OI -1.20%) (+0)",
+       "nam châm thanh lý phía dưới — chưa thuận (0)"
+      ]
+     ],
+     [
+      8,
+      10,
+      [
+       "dòng tiền sàn (ví 28c / TDqSq / BTC netflow / whale alert): nghiêng tăng (+2) (+5)",
+       "ma trận BTC.D × USDT.D: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu) (+3)"
+      ]
+     ]
+    ],
+    "f": [
+     "R:R tới TP1 = 0.26 < 1,5",
+     "Xu hướng 4H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: Phân kỳ)"
+    ],
+    "k": [
+     "Giá ↑ + OI ↓ (Short cover) — cấm LONG đuổi"
+    ],
+    "w": [],
+    "n": [],
+    "dn": [
+     "ngược khung xác nhận 1D",
+     "ADX 1H 15 < 20 (đi ngang)"
+    ],
+    "en": 0.8845,
+    "sl": 0.86948174,
+    "tp1": 0.8884,
+    "tp2": 0.91754018,
+    "rr": 0.26,
+    "rp": 1.7,
+    "tw": "đỉnh swing chưa bị vượt",
+    "rk": 0,
+    "cf": 4,
+    "mg": [
+     "+0,6R (0.893511): thu hẹp 50% SL → 0.876991",
+     "TP1 0.888400: chốt 50%, dời SL về 0.886753 (Entry + 0,15R, bù phí)",
+     "TP2 0.917540: chốt thêm 30%",
+     "Đóng theo thời gian: 60 giờ chưa tới TP1 thì đóng hoà vốn"
+    ],
+    "ts": 60,
+    "ts1": 60,
+    "q": "SHORT_COVER",
+    "mag": "down"
+   },
+   "msg": {
+    "title": "✓ Xác nhận LONG FIL",
+    "body": "📊 43/100 · hạng C · INTRADAY · ⚖️ ĐỨNG NGOÀI\n🚩 R:R tới TP1 = 0.26 < 1,5\n🚩 Xu hướng 4H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: Phân kỳ) (+1 lý do)\nHạ 1 hạng: ngược khung xác nhận 1D, ADX 1H 15 < 20 (đi ngang)\nĐóng cửa 0.8845 vượt đỉnh cũ 0.8812 — cấu trúc đã gãy. Phá kháng cự giảm 83 nến lúc 14:00.\nNến H1 21:00\nEntry 0.8845 · SL 0.8695 (1.7%) · TP1 0.8884 · TP2 0.9175 · R:R 0.26",
+    "url": "./#s=FIL-USDT-SWAP&ev=CONFIRM&t=1793714400000",
+    "tag": "FIL-USDT-SWAP|CONFIRM|1793714400000|1H"
+   }
+  },
+  {
+   "at": "21:00 03/11",
+   "tf": "30m",
+   "coin": "ATOM",
+   "type": "RETEST",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 54,
+   "touches": 3,
+   "cls": null,
+   "follow": null,
+   "score": "51 C",
+   "sc": {
+    "v": 1,
+    "s": 51,
+    "g": "C",
+    "in": 0,
+    "st": "SCALP",
+    "ttf": "1H",
+    "ctf": "4H",
+    "L": [
+     [
+      5,
+      20,
+      [
+       "1H: EMA xếp tầng NGƯỢC hướng (0)",
+       "nhịp ngắn M↓ W↓ 1D↓ 4H↓ 1H↓ · khung xác nhận 4H ↓ (+0)",
+       "ADX 1H 25 ≥ 22 (+5)"
+      ]
+     ],
+     [
+      10,
+      20,
+      [
+       "32/13/5 = 62 đúng vị thế Long (+10)",
+       "10/5/5 = 70 chưa cắt thuận chiều (0)"
+      ]
+     ],
+     [
+      11,
+      20,
+      [
+       "kháng cự giảm 54 nến, 3 chạm, không cắt thân (+7)",
+       "không có Hộp Tím / ổ thanh khoản tại điểm phá (0)",
+       "retest giữ được đường vừa phá (+4) — thiếu: Stoch chưa dốc thuận ≥ 35°, chưa qua EMA200"
+      ]
+     ],
+     [
+      12,
+      15,
+      [
+       "giá vào nằm trong Order Block (+8)",
+       "phân kỳ Stoch/RSI (+4)",
+       "có nến nước rút đỏ volume > 2,5× lúc 12:30 (0)"
+      ]
+     ],
+     [
+      5,
+      15,
+      [
+       "volume 1.2× MA20 · CVD 3h bán chủ động (+0)",
+       "🟢 Giá ↑ + OI ↑: tiền mới vào cửa mua (4h: giá 0.35%, OI 1.84%) (+5)",
+       "nam châm thanh lý phía dưới — chưa thuận (0)"
+      ]
+     ],
+     [
+      8,
+      10,
+      [
+       "dòng tiền sàn (ví 28c / TDqSq / BTC netflow / whale alert): nghiêng tăng (+2) (+5)",
+       "ma trận BTC.D × USDT.D: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu) (+3)"
+      ]
+     ]
+    ],
+    "f": [
+     "Xu hướng 1H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: CHoCH)"
+    ],
+    "k": [
+     "Nhịp hồi có nến nước rút xả mạnh ngược chiều — chặn lệnh bắt hồi"
+    ],
+    "w": [
+     "Spread 0.071% > 0,05% — dễ trượt giá",
+     "Khối lượng 24h 4.4M$ < 25M$ — thanh khoản mỏng"
+    ],
+    "n": [],
+    "dn": [
+     "ngược khung xác nhận 4H",
+     "ADX 30m 15 < 20 (đi ngang)"
+    ],
+    "en": 1.422,
+    "sl": 1.4137426,
+    "tp1": 1.446,
+    "tp2": 1.468,
+    "rr": 2.91,
+    "rp": 0.58,
+    "tw": "đỉnh swing chưa bị vượt",
+    "rk": 0,
+    "cf": 5,
+    "mg": [
+     "+0,6R (1.42695): thu hẹp 50% SL → 1.41787",
+     "TP1 1.44600: chốt 50%, dời SL về 1.42324 (Entry + 0,15R, bù phí)",
+     "TP2 1.46800: chốt thêm 30%",
+     "Đóng theo thời gian: 16 giờ chưa tới TP1 thì đóng hoà vốn (sau TP1: 32 giờ)"
+    ],
+    "ts": 16,
+    "ts1": 32,
+    "q": "LONG_BUILD",
+    "mag": "down"
+   },
+   "msg": {
+    "title": "↺ Retest LONG ATOM M30",
+    "body": "📊 51/100 · hạng C · SCALP · ⚖️ ĐỨNG NGOÀI\n🚩 Xu hướng 1H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: CHoCH)\n🔒 Nhịp hồi có nến nước rút xả mạnh ngược chiều — chặn lệnh bắt hồi\nHạ 1 hạng: ngược khung xác nhận 4H, ADX 30m 15 < 20 (đi ngang)\nSpread 0.071% > 0,05% — dễ trượt giá\nGiá quay về chạm kháng cự giảm 54 nến vừa phá (1.421) và đóng cửa giữ được ở 1.422.\nNến M30 21:00–21:30\nEntry 1.422 · SL 1.414 (0.58%) · TP1 1.446 · TP2 1.468 · R:R 2.91",
+    "url": "./#s=ATOM-USDT-SWAP&ev=RETEST&t=1793714400000&tf=30m",
+    "tag": "ATOM-USDT-SWAP|RETEST|1793714400000|30m"
+   }
+  },
+  {
+   "at": "20:00 03/11",
+   "tf": "1H",
+   "coin": "UNI",
+   "type": "CONFIRM",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 45,
+   "touches": 3,
+   "cls": null,
+   "follow": null,
+   "score": "58 C",
+   "sc": {
+    "v": 1,
+    "s": 58,
+    "g": "C",
+    "in": 0,
+    "st": "INTRADAY",
+    "ttf": "4H",
+    "ctf": "1D",
+    "L": [
+     [
+      3,
+      20,
+      [
+       "4H: EMA chưa xếp tầng (0)",
+       "nhịp ngắn M→ W↑ 1D→ 4H↑ 1H↑ · khung xác nhận 1D → (+3)",
+       "ADX 4H 13 < 18 (0)"
+      ]
+     ],
+     [
+      13,
+      20,
+      [
+       "32/13/5 = 46 đúng vị thế Long (+10)",
+       "10/5/5 = 92 trên đường tín hiệu thuận chiều, góc 27° (+3)"
+      ]
+     ],
+     [
+      17,
+      20,
+      [
+       "kháng cự giảm 45 nến, 3 chạm, không cắt thân (+7)",
+       "điểm phá trùng Hộp Tím (có POC) (+6)",
+       "đã gãy cấu trúc (đóng qua đỉnh/đáy cũ) (+4) — thiếu: Stoch chưa dốc thuận ≥ 35°"
+      ]
+     ],
+     [
+      7,
+      15,
+      [
+       "giá vào không nằm trong OTE / OB / FVG (0)",
+       "phân kỳ Stoch/RSI (+4)",
+       "không dính nến nước rút ngược chiều (+3)"
+      ]
+     ],
+     [
+      10,
+      15,
+      [
+       "volume 1.9× MA20 ✓ · CVD 6h mua chủ động ✓ (+5)",
+       "🟢 Giá ↑ + OI ↑: tiền mới vào cửa mua (12h: giá 5.44%, OI 7.69%) (+5)",
+       "nam châm thanh lý phía dưới — chưa thuận (0)"
+      ]
+     ],
+     [
+      8,
+      10,
+      [
+       "dòng tiền sàn (ví 28c / TDqSq / BTC netflow / whale alert): nghiêng tăng (+2) (+5)",
+       "ma trận BTC.D × USDT.D: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu) (+3)"
+      ]
+     ]
+    ],
+    "f": [
+     "R:R tới TP1 = 0.27 < 1,5"
+    ],
+    "k": [],
+    "w": [],
+    "n": [],
+    "dn": [
+     "ADX 1H 18 < 20 (đi ngang)"
+    ],
+    "en": 7.362,
+    "sl": 7.18082,
+    "tp1": 7.411,
+    "tp2": 7.7605959,
+    "rr": 0.27,
+    "rp": 2.46,
+    "tw": "đỉnh swing chưa bị vượt",
+    "rk": 0,
+    "cf": 6,
+    "mg": [
+     "+0,6R (7.47071): thu hẹp 50% SL → 7.27141",
+     "TP1 7.41100: chốt 50%, dời SL về 7.38918 (Entry + 0,15R, bù phí)",
+     "TP2 7.76060: chốt thêm 30%",
+     "Đóng theo thời gian: 60 giờ chưa tới TP1 thì đóng hoà vốn"
+    ],
+    "ts": 60,
+    "ts1": 60,
+    "q": "LONG_BUILD",
+    "mag": "down"
+   },
+   "msg": {
+    "title": "✓ Xác nhận LONG UNI",
+    "body": "📊 58/100 · hạng C · INTRADAY · ⚖️ ĐỨNG NGOÀI\n🚩 R:R tới TP1 = 0.27 < 1,5\nHạ 1 hạng: ADX 1H 18 < 20 (đi ngang)\nĐóng cửa 7.362 vượt đỉnh cũ 7.294 — cấu trúc đã gãy. Phá kháng cự giảm 45 nến lúc 18:00.\nNến H1 20:00\nEntry 7.362 · SL 7.181 (2.46%) · TP1 7.411 · TP2 7.761 · R:R 0.27",
+    "url": "./#s=UNI-USDT-SWAP&ev=CONFIRM&t=1793710800000",
+    "tag": "UNI-USDT-SWAP|CONFIRM|1793710800000|1H"
+   }
+  },
+  {
+   "at": "20:00 03/11",
+   "tf": "1H",
+   "coin": "AERO",
+   "type": "RETEST",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 82,
+   "touches": 2,
+   "cls": null,
+   "follow": null,
+   "score": "54 C",
+   "sc": {
+    "v": 1,
+    "s": 54,
+    "g": "C",
+    "in": 0,
+    "st": "INTRADAY",
+    "ttf": "4H",
+    "ctf": "1D",
+    "L": [
+     [
+      13,
+      20,
+      [
+       "4H: EMA21/55/144 xếp tầng giảm + giá dưới EMA200 (+10)",
+       "nhịp ngắn M→ W→ 1D→ 4H↓ 1H→ · khung xác nhận 1D → (+1)",
+       "ADX 4H 21 (+2)"
+      ]
+     ],
+     [
+      10,
+      20,
+      [
+       "32/13/5 = 24 đúng vị thế Short (+10)",
+       "10/5/5 = 82 chưa cắt thuận chiều (0)"
+      ]
+     ],
+     [
+      14,
+      20,
+      [
+       "hỗ trợ tăng 82 nến, 2 chạm (+4)",
+       "điểm phá trùng Hộp Tím (có POC) (+6)",
+       "retest giữ được đường vừa phá (+4) — thiếu: Stoch chưa dốc thuận ≥ 35°, volume < 1,2×"
+      ]
+     ],
+     [
+      7,
+      15,
+      [
+       "giá vào không nằm trong OTE / OB / FVG (0)",
+       "Sao băng (Shooting Star) (+4)",
+       "không dính nến nước rút ngược chiều (+3)"
+      ]
+     ],
+     [
+      7,
+      15,
+      [
+       "volume 1.1× MA20 · CVD 6h bán chủ động ✓ (+2)",
+       "🟢 Giá ↑ + OI ↑: tiền mới vào cửa mua (12h: giá 2.76%, OI 1.99%) (+0)",
+       "vừa quét cụm thanh lý Short lớn (+5)"
+      ]
+     ],
+     [
+      3,
+      10,
+      [
+       "dòng tiền sàn (ví 28c / TDqSq / BTC netflow / whale alert): nghiêng tăng (+2) (+0)",
+       "ma trận BTC.D × USDT.D: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu) (+3)"
+      ]
+     ]
+    ],
+    "f": [
+     "Vào trễ: giá cách điểm phá 1.5 ATR > 1,2 ATR"
+    ],
+    "k": [],
+    "w": [
+     "Khối lượng 24h 4.4M$ < 25M$ — thanh khoản mỏng"
+    ],
+    "n": [
+     "Altcoin đi đường riêng: mạnh/yếu hơn BTC -19.26% (14 ngày), -21.59% (30 ngày), cấu trúc 4H riêng thuận chiều"
+    ],
+    "dn": [],
+    "en": 0.6151,
+    "sl": 0.62746962,
+    "tp1": 0.5965,
+    "tp2": 0.58788684,
+    "rr": 1.5,
+    "rp": 2.01,
+    "tw": "đáy tuần trước (PWL)",
+    "rk": 0,
+    "cf": 5,
+    "mg": [
+     "+0,6R (0.607678): thu hẹp 50% SL → 0.621285",
+     "TP1 0.596500: chốt 50%, dời SL về 0.613245 (Entry − 0,15R, bù phí)",
+     "TP2 0.587887: chốt thêm 30%",
+     "Đóng theo thời gian: 60 giờ chưa tới TP1 thì đóng hoà vốn"
+    ],
+    "ts": 60,
+    "ts1": 60,
+    "q": "LONG_BUILD",
+    "mag": "up"
+   },
+   "msg": {
+    "title": "↺ Retest SHORT AERO",
+    "body": "📊 54/100 · hạng C · INTRADAY · ⚖️ ĐỨNG NGOÀI\n🚩 Vào trễ: giá cách điểm phá 1.5 ATR > 1,2 ATR\nKhối lượng 24h 4.4M$ < 25M$ — thanh khoản mỏng\nGiá quay về chạm hỗ trợ tăng 82 nến vừa phá (0.6264) và đóng cửa giữ được ở 0.6151.\nNến H1 20:00\nEntry 0.6151 · SL 0.6275 (2.01%) · TP1 0.5965 · TP2 0.5879 · R:R 1.5",
+    "url": "./#s=AERO-USDT-SWAP&ev=RETEST&t=1793710800000",
+    "tag": "AERO-USDT-SWAP|RETEST|1793710800000|1H"
+   }
+  },
+  {
+   "at": "20:00 03/11",
+   "tf": "1H",
+   "coin": "STRK",
+   "type": "CONFIRM",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 68,
+   "touches": 2,
+   "cls": null,
+   "follow": null,
+   "score": "56 C",
+   "sc": {
+    "v": 1,
+    "s": 56,
+    "g": "C",
+    "in": 0,
+    "st": "INTRADAY",
+    "ttf": "4H",
+    "ctf": "1D",
+    "L": [
+     [
+      3,
+      20,
+      [
+       "4H: EMA xếp tầng NGƯỢC hướng (0)",
+       "nhịp ngắn M→ W↓ 1D→ 4H→ 1H→ · khung xác nhận 1D → (+1)",
+       "ADX 4H 18 (+2)"
+      ]
+     ],
+     [
+      16,
+      20,
+      [
+       "32/13/5 = 28 đúng vị thế Long (+10)",
+       "10/5/5 dốc 45° thuận chiều (+6)"
+      ]
+     ],
+     [
+      14,
+      20,
+      [
+       "kháng cự giảm 68 nến, 2 chạm (+4)",
+       "điểm phá trùng Hộp Tím  (+6)",
+       "đã gãy cấu trúc (đóng qua đỉnh/đáy cũ) (+4) — thiếu: chưa qua EMA200"
+      ]
+     ],
+     [
+      7,
+      15,
+      [
+       "giá vào không nằm trong OTE / OB / FVG (0)",
+       "phân kỳ Stoch/RSI (+4)",
+       "không dính nến nước rút ngược chiều (+3)"
+      ]
+     ],
+     [
+      8,
+      15,
+      [
+       "volume 3.3× MA20 ✓ · CVD 6h bán chủ động (+3)",
+       "🟢 Giá ↑ + OI ↑: tiền mới vào cửa mua (12h: giá 10.49%, OI 26.53%) (+5)",
+       "nam châm thanh lý phía dưới — chưa thuận (0)"
+      ]
+     ],
+     [
+      8,
+      10,
+      [
+       "dòng tiền sàn (ví 28c / TDqSq / BTC netflow / whale alert): nghiêng tăng (+2) (+5)",
+       "ma trận BTC.D × USDT.D: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu) (+3)"
+      ]
+     ]
+    ],
+    "f": [
+     "R:R tới TP1 = 0.76 < 1,5",
+     "Xu hướng 4H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: Climax Volume)",
+     "SL rộng 4.05% > 3.20%"
+    ],
+    "k": [],
+    "w": [],
+    "n": [],
+    "dn": [],
+    "en": 0.04466,
+    "sl": 0.042849789,
+    "tp1": 0.04604,
+    "tp2": 0.048642464,
+    "rr": 0.76,
+    "rp": 4.05,
+    "tw": "đỉnh swing chưa bị vượt",
+    "rk": 0,
+    "cf": 6,
+    "mg": [
+     "+0,6R (0.0457461): thu hẹp 50% SL → 0.0437549",
+     "TP1 0.0460400: chốt 50%, dời SL về 0.0449315 (Entry + 0,15R, bù phí)",
+     "TP2 0.0486425: chốt thêm 30%",
+     "Đóng theo thời gian: 60 giờ chưa tới TP1 thì đóng hoà vốn"
+    ],
+    "ts": 60,
+    "ts1": 60,
+    "q": "LONG_BUILD",
+    "mag": "down"
+   },
+   "msg": {
+    "title": "✓ Xác nhận LONG STRK",
+    "body": "📊 56/100 · hạng C · INTRADAY · ⚖️ ĐỨNG NGOÀI\n🚩 R:R tới TP1 = 0.76 < 1,5\n🚩 Xu hướng 4H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: Climax Volume) (+1 lý do)\nĐóng cửa 0.04466 vượt đỉnh cũ 0.04389 — cấu trúc đã gãy. Phá kháng cự giảm 68 nến lúc 18:00.\nNến H1 20:00\nEntry 0.04466 · SL 0.04285 (4.05%) · TP1 0.04604 · TP2 0.04864 · R:R 0.76",
+    "url": "./#s=STRK-USDT-SWAP&ev=CONFIRM&t=1793710800000",
+    "tag": "STRK-USDT-SWAP|CONFIRM|1793710800000|1H"
+   }
+  },
+  {
+   "at": "19:30 03/11",
+   "tf": "30m",
+   "coin": "NIGHT",
+   "type": "CONFIRM",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 56,
+   "touches": 4,
+   "cls": null,
+   "follow": null,
+   "score": "56 C",
+   "sc": {
+    "v": 1,
+    "s": 56,
+    "g": "C",
+    "in": 0,
+    "st": "SCALP",
+    "ttf": "1H",
+    "ctf": "4H",
+    "L": [
+     [
+      7,
+      20,
+      [
+       "1H: giá trên EMA200, EMA chưa xếp tầng (+4)",
+       "nhịp ngắn M→ W→ 1D↑ 4H→ 1H→ · khung xác nhận 4H → (+1)",
+       "ADX 1H 18 (+2)"
+      ]
+     ],
+     [
+      13,
+      20,
+      [
+       "32/13/5 = 45 đúng vị thế Long (+10)",
+       "10/5/5 = 86 trên đường tín hiệu thuận chiều, góc 32° (+3)"
+      ]
+     ],
+     [
+      11,
+      20,
+      [
+       "kháng cự giảm 56 nến, 4 chạm, không cắt thân (+7)",
+       "không có Hộp Tím / ổ thanh khoản tại điểm phá (0)",
+       "đã gãy cấu trúc (đóng qua đỉnh/đáy cũ) (+4) — thiếu: Stoch chưa dốc thuận ≥ 35°"
+      ]
+     ],
+     [
+      7,
+      15,
+      [
+       "giá vào không nằm trong OTE / OB / FVG (0)",
+       "phân kỳ Stoch/RSI (+4)",
+       "không dính nến nước rút ngược chiều (+3)"
+      ]
+     ],
+     [
+      10,
+      15,
+      [
+       "volume 4.4× MA20 ✓ · CVD 3h mua chủ động ✓ (+5)",
+       "🟢 Giá ↑ + OI ↑: tiền mới vào cửa mua (4h: giá 3.71%, OI 8.93%) (+5)",
+       "nam châm thanh lý phía dưới — chưa thuận (0)"
+      ]
+     ],
+     [
+      8,
+      10,
+      [
+       "dòng tiền sàn (ví 28c / TDqSq / BTC netflow / whale alert): nghiêng tăng (+2) (+5)",
+       "ma trận BTC.D × USDT.D: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu) (+3)"
+      ]
+     ]
+    ],
+    "f": [
+     "R:R tới TP1 = 0.60 < 1,5",
+     "Vào trễ: giá cách EMA20 khung 15m 2.82% > 2%"
+    ],
+    "k": [],
+    "w": [
+     "Khối lượng 24h 5.4M$ < 25M$ — thanh khoản mỏng"
+    ],
+    "n": [],
+    "dn": [
+     "ADX 30m 19 < 20 (đi ngang)"
+    ],
+    "en": 0.041715,
+    "sl": 0.040776693,
+    "tp1": 0.042277,
+    "tp2": 0.043779276,
+    "rr": 0.6,
+    "rp": 2.25,
+    "tw": "đỉnh swing chưa bị vượt",
+    "rk": 0,
+    "cf": 6,
+    "mg": [
+     "+0,6R (0.0422780): thu hẹp 50% SL → 0.0412458",
+     "TP1 0.0422770: chốt 50%, dời SL về 0.0418557 (Entry + 0,15R, bù phí)",
+     "TP2 0.0437793: chốt thêm 30%",
+     "Đóng theo thời gian: 16 giờ chưa tới TP1 thì đóng hoà vốn (sau TP1: 32 giờ)"
+    ],
+    "ts": 16,
+    "ts1": 32,
+    "q": "LONG_BUILD",
+    "mag": "down"
+   },
+   "msg": {
+    "title": "✓ Xác nhận LONG NIGHT M30",
+    "body": "📊 56/100 · hạng C · SCALP · ⚖️ ĐỨNG NGOÀI\n🚩 R:R tới TP1 = 0.60 < 1,5\n🚩 Vào trễ: giá cách EMA20 khung 15m 2.82% > 2%\nHạ 1 hạng: ADX 30m 19 < 20 (đi ngang)\nKhối lượng 24h 5.4M$ < 25M$ — thanh khoản mỏng\nĐóng cửa 0.041715 vượt đỉnh cũ 0.041238 — cấu trúc đã gãy. Phá kháng cự giảm 56 nến lúc 04:30.\nNến M30 19:30–20:00\nEntry 0.041715 · SL 0.040777 (2.25%) · TP1 0.042277 · TP2 0.043779 · R:R 0.6",
+    "url": "./#s=NIGHT-USDT-SWAP&ev=CONFIRM&t=1793709000000&tf=30m",
+    "tag": "NIGHT-USDT-SWAP|CONFIRM|1793709000000|30m"
+   }
+  },
+  {
+   "at": "19:00 03/11",
+   "tf": "1H",
+   "coin": "ETH",
+   "type": "RETEST",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 88,
+   "touches": 2,
+   "cls": null,
+   "follow": null,
+   "score": "49 C",
+   "sc": {
+    "v": 1,
+    "s": 49,
+    "g": "C",
+    "in": 0,
+    "st": "INTRADAY",
+    "ttf": "4H",
+    "ctf": "1D",
+    "L": [
+     [
+      17,
+      20,
+      [
+       "4H: EMA21/55/144 xếp tầng giảm + giá dưới EMA200 (+10)",
+       "nhịp ngắn M→ W↓ 1D↓ 4H↓ 1H→ · khung xác nhận 1D ↓ (+5)",
+       "ADX 4H 20 (+2)"
+      ]
+     ],
+     [
+      10,
+      20,
+      [
+       "32/13/5 = 29 đúng vị thế Short (+10)",
+       "10/5/5 = 85 chưa cắt thuận chiều (0)"
+      ]
+     ],
+     [
+      8,
+      20,
+      [
+       "hỗ trợ tăng 88 nến, 2 chạm (+4)",
+       "không có Hộp Tím / ổ thanh khoản tại điểm phá (0)",
+       "retest giữ được đường vừa phá (+4) — thiếu: Stoch chưa dốc thuận ≥ 35°"
+      ]
+     ],
+     [
+      3,
+      15,
+      [
+       "giá vào không nằm trong OTE / OB / FVG (0)",
+       "không có mẫu nến đảo chiều / phân kỳ (0)",
+       "không dính nến nước rút ngược chiều (+3)"
+      ]
+     ],
+     [
+      8,
+      15,
+      [
+       "volume 1.7× MA20 ✓ · CVD 6h mua chủ động (+3)",
+       "🟡 Giá ↑ + OI ↓: Short bị ép đóng, thiếu tiền mua mới (12h: giá 1.10%, OI -0.92%) (+0)",
+       "nam châm thanh lý phía dưới ~2197.20 (+5)"
+      ]
+     ],
+     [
+      3,
+      10,
+      [
+       "dòng tiền sàn (ví 28c / TDqSq / BTC netflow / whale alert): nghiêng tăng (+2) (+0)",
+       "ma trận BTC.D × USDT.D: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu) (+3)"
+      ]
+     ]
+    ],
+    "f": [],
+    "k": [],
+    "w": [],
+    "n": [],
+    "dn": [
+     "ADX 1H 15 < 20 (đi ngang)"
+    ],
+    "en": 2282.26,
+    "sl": 2291.8717,
+    "tp1": 2240.11,
+    "tp2": 2236.06,
+    "rr": 4.39,
+    "rp": 0.42,
+    "tw": "đáy swing chưa bị vượt",
+    "rk": 0,
+    "cf": 5,
+    "mg": [
+     "+0,6R (2276.49): thu hẹp 50% SL → 2287.07",
+     "TP1 2240.11: chốt 50%, dời SL về 2280.82 (Entry − 0,15R, bù phí)",
+     "TP2 2236.06: chốt thêm 30%",
+     "Đóng theo thời gian: 60 giờ chưa tới TP1 thì đóng hoà vốn"
+    ],
+    "ts": 60,
+    "ts1": 60,
+    "q": "SHORT_COVER",
+    "mag": "down"
+   },
+   "msg": {
+    "title": "↺ Retest SHORT ETH",
+    "body": "📊 49/100 · hạng C · INTRADAY · ⚖️ ĐỨNG NGOÀI (dưới 88 điểm)\nHạ 1 hạng: ADX 1H 15 < 20 (đi ngang)\nGiá quay về chạm hỗ trợ tăng 88 nến vừa phá (2,287.37) và đóng cửa giữ được ở 2,282.26.\nNến H1 19:00\nEntry 2,282.26 · SL 2,291.87 (0.42%) · TP1 2,240.11 · TP2 2,236.06 · R:R 4.39",
+    "url": "./#s=ETH-USDT-SWAP&ev=RETEST&t=1793707200000",
+    "tag": "ETH-USDT-SWAP|RETEST|1793707200000|1H"
+   }
+  },
+  {
+   "at": "19:00 03/11",
+   "tf": "4H",
+   "coin": "ETH",
+   "type": "BREAK",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 77,
+   "touches": 3,
+   "cls": "clean",
+   "follow": null,
+   "score": "50 C",
+   "sc": {
+    "v": 1,
+    "s": 50,
+    "g": "C",
+    "in": 0,
+    "st": "INTRADAY",
+    "ttf": "1D",
+    "ctf": "1W",
+    "L": [
+     [
+      5,
+      20,
+      [
+       "1D: EMA chưa xếp tầng (0)",
+       "nhịp ngắn M→ W↓ 1D↓ 4H→ · khung xác nhận 1W ↓ (+0)",
+       "ADX 1D 31 ≥ 22 (+5)"
+      ]
+     ],
+     [
+      13,
+      20,
+      [
+       "32/13/5 = 46 đúng vị thế Long (+10)",
+       "10/5/5 = 36 trên đường tín hiệu thuận chiều, góc 35° (+3)"
+      ]
+     ],
+     [
+      13,
+      20,
+      [
+       "kháng cự giảm 77 nến, 3 chạm, không cắt thân (+7)",
+       "điểm phá trùng Hộp Tím  (+6)",
+       "chưa có nến 2 xác nhận (vào ở nến phá là dễ dính bẫy — chờ nến H1/H4 kế tiếp giữ ngoài đường) (0)"
+      ]
+     ],
+     [
+      3,
+      15,
+      [
+       "giá vào không nằm trong OTE / OB / FVG (0)",
+       "không có mẫu nến đảo chiều / phân kỳ (0)",
+       "không dính nến nước rút ngược chiều (+3)"
+      ]
+     ],
+     [
+      8,
+      15,
+      [
+       "volume 2.9× MA20 ✓ · CVD 6h bán chủ động (+3)",
+       "🟢 Giá ↑ + OI ↑: tiền mới vào cửa mua (12h: giá 2.04%, OI 1.99%) (+5)",
+       "nam châm thanh lý phía dưới — chưa thuận (0)"
+      ]
+     ],
+     [
+      8,
+      10,
+      [
+       "dòng tiền sàn (ví 28c / TDqSq / BTC netflow / whale alert): nghiêng tăng (+2) (+5)",
+       "ma trận BTC.D × USDT.D: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu) (+3)"
+      ]
+     ]
+    ],
+    "f": [
+     "R:R tới TP1 = 0.42 < 1,5",
+     "Sổ lệnh OKX có tường bán lớn ~1.4M$ tại 2300.00, chặn trước TP1"
+    ],
+    "k": [],
+    "w": [],
+    "n": [],
+    "dn": [
+     "ngược khung xác nhận 1W"
+    ],
+    "en": 2298.51,
+    "sl": 2251.7867,
+    "tp1": 2318.09,
+    "tp2": 2401.3013,
+    "rr": 0.42,
+    "rp": 2.03,
+    "tw": "đỉnh swing chưa bị vượt",
+    "rk": 0,
+    "cf": 5,
+    "mg": [
+     "+0,6R (2326.54): thu hẹp 50% SL → 2275.15",
+     "TP1 2318.09: chốt 50%, dời SL về 2305.52 (Entry + 0,15R, bù phí)",
+     "TP2 2401.30: chốt thêm 30%",
+     "Đóng theo thời gian: 60 giờ chưa tới TP1 thì đóng hoà vốn"
+    ],
+    "ts": 60,
+    "ts1": 60,
+    "q": "LONG_BUILD",
+    "mag": "down"
+   },
+   "msg": {
+    "title": "▲ LONG ETH · phá kháng cự giảm H4",
+    "body": "📊 50/100 · hạng C · INTRADAY · ⚖️ ĐỨNG NGOÀI\n🚩 R:R tới TP1 = 0.42 < 1,5\n🚩 Sổ lệnh OKX có tường bán lớn ~1.4M$ tại 2300.00, chặn trước TP1\nHạ 1 hạng: ngược khung xác nhận 1W\nĐóng cửa 2,298.51 trên đường 2,282.62 · mô hình 77 nến, 3 chạm. Volume x2.9 so với trung bình 20 nến — volume lớn ✓.\nChưa vượt đỉnh cũ 2,318.09.\nNến H4 19:00–23:00\nEntry 2,298.51 · SL 2,251.79 (2.03%) · TP1 2,318.09 · TP2 2,401.30 · R:R 0.42",
+    "url": "./#s=ETH-USDT-SWAP&ev=BREAK&t=1793707200000&tf=4H",
+    "tag": "ETH-USDT-SWAP|BREAK|1793707200000|4H"
+   }
+  },
+  {
+   "at": "19:00 03/11",
+   "tf": "1H",
+   "coin": "XRP",
+   "type": "CONFIRM",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 61,
+   "touches": 3,
+   "cls": null,
+   "follow": null,
+   "score": "57 C",
+   "sc": {
+    "v": 1,
+    "s": 57,
+    "g": "C",
+    "in": 0,
+    "st": "INTRADAY",
+    "ttf": "4H",
+    "ctf": "1D",
+    "L": [
+     [
+      0,
+      20,
+      [
+       "4H: EMA xếp tầng NGƯỢC hướng (0)",
+       "nhịp ngắn M→ W↓ 1D↓ 4H→ 1H↑ · khung xác nhận 1D ↓ (+0)",
+       "ADX 4H 15 < 18 (0)"
+      ]
+     ],
+     [
+      16,
+      20,
+      [
+       "32/13/5 = 62 đúng vị thế Long (+10)",
+       "10/5/5 dốc 39° thuận chiều (+6)"
+      ]
+     ],
+     [
+      20,
+      20,
+      [
+       "kháng cự giảm 61 nến, 3 chạm, không cắt thân (+7)",
+       "không có Hộp Tím / ổ thanh khoản tại điểm phá (0)",
+       "đã gãy cấu trúc (đóng qua đỉnh/đáy cũ) + Stoch dốc thuận + volume ≥ 1,2× (+7)",
+       "Thưởng cấu trúc trưởng thành: H1 45–90 nến, ≥ 3 chạm, phá cùng EMA200 ở nến xác nhận (20/20)"
+      ]
+     ],
+     [
+      3,
+      15,
+      [
+       "giá vào không nằm trong OTE / OB / FVG (0)",
+       "không có mẫu nến đảo chiều / phân kỳ (0)",
+       "không dính nến nước rút ngược chiều (+3)"
+      ]
+     ],
+     [
+      10,
+      15,
+      [
+       "volume 8.1× MA20 ✓ · CVD 6h mua chủ động ✓ (+5)",
+       "🟢 Giá ↑ + OI ↑: tiền mới vào cửa mua (12h: giá 2.54%, OI 1.78%) (+5)",
+       "nam châm thanh lý phía dưới — chưa thuận (0)"
+      ]
+     ],
+     [
+      8,
+      10,
+      [
+       "dòng tiền sàn (ví 28c / TDqSq / BTC netflow / whale alert): nghiêng tăng (+2) (+5)",
+       "ma trận BTC.D × USDT.D: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu) (+3)"
+      ]
+     ]
+    ],
+    "f": [
+     "R:R tới TP1 = 1.25 < 1,5",
+     "Xu hướng 4H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: Phân kỳ)",
+     "Vào trễ: giá cách đỉnh cũ vừa vượt 2.4 ATR > 1,2 ATR",
+     "Sổ lệnh OKX có tường bán lớn ~632K$ tại 1.28900, chặn trước TP1"
+    ],
+    "k": [],
+    "w": [],
+    "n": [],
+    "dn": [
+     "ngược khung xác nhận 1D",
+     "ADX 1H 20 < 20 (đi ngang)"
+    ],
+    "en": 1.2816,
+    "sl": 1.2526195,
+    "tp1": 1.3179,
+    "tp2": 1.3453571,
+    "rr": 1.25,
+    "rp": 2.26,
+    "tw": "đỉnh swing chưa bị vượt",
+    "rk": 0,
+    "cf": 6,
+    "mg": [
+     "+0,6R (1.29899): thu hẹp 50% SL → 1.26711",
+     "TP1 1.31790: chốt 50%, dời SL về 1.28595 (Entry + 0,15R, bù phí)",
+     "TP2 1.34536: chốt thêm 30%",
+     "Đóng theo thời gian: 60 giờ chưa tới TP1 thì đóng hoà vốn"
+    ],
+    "ts": 60,
+    "ts1": 60,
+    "q": "LONG_BUILD",
+    "mag": "down"
+   },
+   "msg": {
+    "title": "✓ Xác nhận LONG XRP",
+    "body": "📊 57/100 · hạng C · INTRADAY · ⚖️ ĐỨNG NGOÀI\n🚩 R:R tới TP1 = 1.25 < 1,5\n🚩 Xu hướng 4H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: Phân kỳ) (+2 lý do)\nHạ 1 hạng: ngược khung xác nhận 1D, ADX 1H 20 < 20 (đi ngang)\nĐóng cửa 1.2816 vượt đỉnh cũ 1.2611 — cấu trúc đã gãy. Phá kháng cự giảm 61 nến lúc 16:00.\nNến H1 19:00\nEntry 1.2816 · SL 1.2526 (2.26%) · TP1 1.3179 · TP2 1.3454 · R:R 1.25",
+    "url": "./#s=XRP-USDT-SWAP&ev=CONFIRM&t=1793707200000",
+    "tag": "XRP-USDT-SWAP|CONFIRM|1793707200000|1H"
+   }
+  },
+  {
+   "at": "19:00 03/11",
+   "tf": "1H",
+   "coin": "LINK",
+   "type": "BREAK",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 64,
+   "touches": 3,
+   "cls": "clean",
+   "follow": true,
+   "score": "49 C",
+   "sc": {
+    "v": 1,
+    "s": 49,
+    "g": "C",
+    "in": 0,
+    "st": "INTRADAY",
+    "ttf": "4H",
+    "ctf": "1D",
+    "L": [
+     [
+      0,
+      20,
+      [
+       "4H: EMA xếp tầng NGƯỢC hướng (0)",
+       "nhịp ngắn M↓ W→ 1D↓ 4H↓ 1H→ · khung xác nhận 1D ↓ (+0)",
+       "ADX 4H 17 < 18 (0)"
+      ]
+     ],
+     [
+      16,
+      20,
+      [
+       "32/13/5 = 26 đúng vị thế Long (+10)",
+       "10/5/5 dốc 49° thuận chiều (+6)"
+      ]
+     ],
+     [
+      13,
+      20,
+      [
+       "kháng cự giảm 64 nến, 3 chạm, không cắt thân (+7)",
+       "điểm phá trùng Hộp Tím (có POC) (+6)",
+       "chưa có nến 2 xác nhận (vào ở nến phá là dễ dính bẫy — chờ nến 1H kế tiếp giữ ngoài đường) (0)"
+      ]
+     ],
+     [
+      7,
+      15,
+      [
+       "giá vào không nằm trong OTE / OB / FVG (0)",
+       "phân kỳ Stoch/RSI (+4)",
+       "không dính nến nước rút ngược chiều (+3)"
+      ]
+     ],
+     [
+      5,
+      15,
+      [
+       "volume 1.8× MA20 ✓ · CVD 6h bán chủ động (+3)",
+       "OI đi ngang (12h: giá 0.86%, OI -0.30%) (+2)",
+       "nam châm thanh lý cân bằng — chưa thuận (0)"
+      ]
+     ],
+     [
+      8,
+      10,
+      [
+       "dòng tiền sàn (ví 28c / TDqSq / BTC netflow / whale alert): nghiêng tăng (+2) (+5)",
+       "ma trận BTC.D × USDT.D: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu) (+3)"
+      ]
+     ]
+    ],
+    "f": [
+     "Kênh on-chain báo cá voi xả LINK trong 12 giờ qua: “MM Cumberland DRW đang có động thái rất đáng chú ý 🆕 🆕 🆕 | | Trước đó, MM hold rất nhiề…”"
+    ],
+    "k": [],
+    "w": [],
+    "n": [],
+    "dn": [
+     "ngược khung xác nhận 1D"
+    ],
+    "en": 11.212,
+    "sl": 11.073909,
+    "tp1": 11.423,
+    "tp2": 11.515801,
+    "rr": 1.53,
+    "rp": 1.23,
+    "tw": "đỉnh swing chưa bị vượt",
+    "rk": 0,
+    "cf": 5,
+    "mg": [
+     "+0,6R (11.2949): thu hẹp 50% SL → 11.1430",
+     "TP1 11.4230: chốt 50%, dời SL về 11.2327 (Entry + 0,15R, bù phí)",
+     "TP2 11.5158: chốt thêm 30%",
+     "Đóng theo thời gian: 60 giờ chưa tới TP1 thì đóng hoà vốn"
+    ],
+    "ts": 60,
+    "ts1": 60,
+    "q": "FLAT",
+    "mag": "none"
+   },
+   "msg": {
+    "title": "▲ LONG LINK · phá kháng cự giảm",
+    "body": "📊 49/100 · hạng C · INTRADAY · ⚖️ ĐỨNG NGOÀI\n🚩 Kênh on-chain báo cá voi xả LINK trong 12 giờ qua: “MM Cumberland DRW đang có động thái rất đáng chú ý 🆕 🆕 🆕 | | Trước đó, MM hold rất nhiề…”\nHạ 1 hạng: ngược khung xác nhận 1D\nĐóng cửa 11.212 trên đường 11.132 · mô hình 64 nến, 3 chạm. Volume x1.8 so với trung bình 20 nến.\nChưa vượt đỉnh cũ 11.423.\nNến H1 19:00\nEntry 11.212 · SL 11.074 (1.23%) · TP1 11.423 · TP2 11.516 · R:R 1.53",
+    "url": "./#s=LINK-USDT-SWAP&ev=BREAK&t=1793707200000",
+    "tag": "LINK-USDT-SWAP|BREAK|1793707200000|1H"
+   }
+  },
+  {
+   "at": "19:00 03/11",
+   "tf": "1H",
+   "coin": "ADA",
+   "type": "RETEST",
+   "dir": "SHORT",
+   "kind": "hỗ trợ ngang",
+   "span": 64,
+   "touches": 2,
+   "cls": null,
+   "follow": null,
+   "score": "58 C",
+   "sc": {
+    "v": 1,
+    "s": 58,
+    "g": "C",
+    "in": 0,
+    "st": "INTRADAY",
+    "ttf": "4H",
+    "ctf": "1D",
+    "L": [
+     [
+      20,
+      20,
+      [
+       "4H: EMA21/55/144 xếp tầng giảm + giá dưới EMA200 (+10)",
+       "nhịp ngắn M↓ W↓ 1D↓ 4H↓ 1H→ · khung xác nhận 1D ↓ (+5)",
+       "ADX 4H 36 ≥ 22 (+5)"
+      ]
+     ],
+     [
+      10,
+      20,
+      [
+       "32/13/5 = 29 đúng vị thế Short (+10)",
+       "10/5/5 = 68 chưa cắt thuận chiều (0)"
+      ]
+     ],
+     [
+      14,
+      20,
+      [
+       "hỗ trợ ngang 64 nến, 2 chạm (+4)",
+       "điểm phá trùng Hộp Tím  (+6)",
+       "retest giữ được đường vừa phá (+4) — thiếu: Stoch chưa dốc thuận ≥ 35°"
+      ]
+     ],
+     [
+      3,
+      15,
+      [
+       "giá vào không nằm trong OTE / OB / FVG (0)",
+       "không có mẫu nến đảo chiều / phân kỳ (0)",
+       "không dính nến nước rút ngược chiều (+3)"
+      ]
+     ],
+     [
+      8,
+      15,
+      [
+       "volume 2.1× MA20 ✓ · CVD 6h mua chủ động (+3)",
+       "🟢 Giá ↑ + OI ↑: tiền mới vào cửa mua (12h: giá 0.63%, OI 0.99%) (+0)",
+       "nam châm thanh lý phía dưới ~0.180947 (+5)"
+      ]
+     ],
+     [
+      3,
+      10,
+      [
+       "dòng tiền sàn (ví 28c / TDqSq / BTC netflow / whale alert): nghiêng tăng (+2) (+0)",
+       "ma trận BTC.D × USDT.D: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu) (+3)"
+      ]
+     ]
+    ],
+    "f": [],
+    "k": [],
+    "w": [
+     "Spread 0.053% > 0,05% — dễ trượt giá",
+     "Khối lượng 24h 24.6M$ < 25M$ — thanh khoản mỏng"
+    ],
+    "n": [],
+    "dn": [],
+    "en": 0.1906,
+    "sl": 0.19246806,
+    "tp1": 0.186,
+    "tp2": 0.1853,
+    "rr": 2.46,
+    "rp": 0.98,
+    "tw": "đáy swing chưa bị vượt",
+    "rk": 0,
+    "cf": 6,
+    "mg": [
+     "+0,6R (0.189479): thu hẹp 50% SL → 0.191534",
+     "TP1 0.186000: chốt 50%, dời SL về 0.190320 (Entry − 0,15R, bù phí)",
+     "TP2 0.185300: chốt thêm 30%",
+     "Đóng theo thời gian: 60 giờ chưa tới TP1 thì đóng hoà vốn"
+    ],
+    "ts": 60,
+    "ts1": 60,
+    "q": "LONG_BUILD",
+    "mag": "down"
+   },
+   "msg": {
+    "title": "↺ Retest SHORT ADA",
+    "body": "📊 58/100 · hạng C · INTRADAY · ⚖️ ĐỨNG NGOÀI (dưới 88 điểm)\nSpread 0.053% > 0,05% — dễ trượt giá\nGiá quay về chạm biên sideway 64 nến vừa phá (0.1911) và đóng cửa giữ được ở 0.1906.\nNến H1 19:00\nEntry 0.1906 · SL 0.1925 (0.98%) · TP1 0.1860 · TP2 0.1853 · R:R 2.46",
+    "url": "./#s=ADA-USDT-SWAP&ev=RETEST&t=1793707200000",
+    "tag": "ADA-USDT-SWAP|RETEST|1793707200000|1H"
+   }
+  },
+  {
+   "at": "19:00 03/11",
+   "tf": "1H",
+   "coin": "CRO",
+   "type": "RETEST",
+   "dir": "SHORT",
+   "kind": "hỗ trợ ngang",
+   "span": 68,
+   "touches": 2,
+   "cls": null,
+   "follow": null,
+   "score": "63 C",
+   "sc": {
+    "v": 1,
+    "s": 63,
+    "g": "C",
+    "in": 0,
+    "st": "INTRADAY",
+    "ttf": "4H",
+    "ctf": "1D",
+    "L": [
+     [
+      20,
+      20,
+      [
+       "4H: EMA21/55/144 xếp tầng giảm + giá dưới EMA200 (+10)",
+       "nhịp ngắn M↓ W↓ 1D↓ 4H↓ 1H→ · khung xác nhận 1D ↓ (+5)",
+       "ADX 4H 28 ≥ 22 (+5)"
+      ]
+     ],
+     [
+      10,
+      20,
+      [
+       "32/13/5 = 18 đúng vị thế Short (+10)",
+       "10/5/5 = 83 chưa cắt thuận chiều (0)"
+      ]
+     ],
+     [
+      14,
+      20,
+      [
+       "hỗ trợ ngang 68 nến, 2 chạm (+4)",
+       "điểm phá trùng Hộp Tím  (+6)",
+       "retest giữ được đường vừa phá (+4) — thiếu: Stoch chưa dốc thuận ≥ 35°, volume < 1,2×"
+      ]
+     ],
+     [
+      11,
+      15,
+      [
+       "giá vào nằm trong Order Block (+8)",
+       "không có mẫu nến đảo chiều / phân kỳ (0)",
+       "không dính nến nước rút ngược chiều (+3)"
+      ]
+     ],
+     [
+      5,
+      15,
+      [
+       "volume 0.9× MA20 · CVD 6h mua chủ động (+0)",
+       "🟡 Giá ↑ + OI ↓: Short bị ép đóng, thiếu tiền mua mới (12h: giá 0.86%, OI -1.70%) (+0)",
+       "vừa quét cụm thanh lý Short lớn (+5)"
+      ]
+     ],
+     [
+      3,
+      10,
+      [
+       "dòng tiền sàn (ví 28c / TDqSq / BTC netflow / whale alert): nghiêng tăng (+2) (+0)",
+       "ma trận BTC.D × USDT.D: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu) (+3)"
+      ]
+     ]
+    ],
+    "f": [],
+    "k": [],
+    "w": [
+     "Khối lượng 24h 0.6M$ < 25M$ — thanh khoản mỏng"
+    ],
+    "n": [],
+    "dn": [],
+    "en": 0.05052,
+    "sl": 0.050755148,
+    "tp1": 0.05006,
+    "tp2": 0.050002674,
+    "rr": 1.96,
+    "rp": 0.47,
+    "tw": "đáy tuần trước (PWL)",
+    "rk": 0,
+    "cf": 6,
+    "mg": [
+     "+0,6R (0.0503789): thu hẹp 50% SL → 0.0506376",
+     "TP1 0.0500600: chốt 50%, dời SL về 0.0504847 (Entry − 0,15R, bù phí)",
+     "TP2 0.0500027: chốt thêm 30%",
+     "Đóng theo thời gian: 60 giờ chưa tới TP1 thì đóng hoà vốn"
+    ],
+    "ts": 60,
+    "ts1": 60,
+    "q": "SHORT_COVER",
+    "mag": "up"
+   },
+   "msg": {
+    "title": "↺ Retest SHORT CRO",
+    "body": "📊 63/100 · hạng C · INTRADAY · ⚖️ ĐỨNG NGOÀI (dưới 88 điểm)\nKhối lượng 24h 0.6M$ < 25M$ — thanh khoản mỏng\nGiá quay về chạm biên sideway 68 nến vừa phá (0.05054) và đóng cửa giữ được ở 0.05052.\nNến H1 19:00\nEntry 0.05052 · SL 0.05076 (0.47%) · TP1 0.05006 · TP2 0.05000 · R:R 1.96",
+    "url": "./#s=CRO-USDT-SWAP&ev=RETEST&t=1793707200000",
+    "tag": "CRO-USDT-SWAP|RETEST|1793707200000|1H"
+   }
+  },
+  {
+   "at": "19:00 03/11",
+   "tf": "1H",
+   "coin": "CRO",
+   "type": "BREAK",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 47,
+   "touches": 2,
+   "cls": "clean",
+   "follow": true,
+   "score": "47 C",
+   "sc": {
+    "v": 1,
+    "s": 47,
+    "g": "C",
+    "in": 0,
+    "st": "INTRADAY",
+    "ttf": "4H",
+    "ctf": "1D",
+    "L": [
+     [
+      5,
+      20,
+      [
+       "4H: EMA xếp tầng NGƯỢC hướng (0)",
+       "nhịp ngắn M↓ W↓ 1D↓ 4H↓ 1H→ · khung xác nhận 1D ↓ (+0)",
+       "ADX 4H 28 ≥ 22 (+5)"
+      ]
+     ],
+     [
+      16,
+      20,
+      [
+       "32/13/5 = 18 đúng vị thế Long (+10)",
+       "10/5/5 dốc 37° thuận chiều (+6)"
+      ]
+     ],
+     [
+      4,
+      20,
+      [
+       "kháng cự giảm 47 nến, 2 chạm (+4)",
+       "không có Hộp Tím / ổ thanh khoản tại điểm phá (0)",
+       "chưa có nến 2 xác nhận (vào ở nến phá là dễ dính bẫy — chờ nến 1H kế tiếp giữ ngoài đường) (0)"
+      ]
+     ],
+     [
+      7,
+      15,
+      [
+       "giá vào không nằm trong OTE / OB / FVG (0)",
+       "phân kỳ Stoch/RSI (+4)",
+       "không dính nến nước rút ngược chiều (+3)"
+      ]
+     ],
+     [
+      7,
+      15,
+      [
+       "volume 0.9× MA20 · CVD 6h mua chủ động ✓ (+2)",
+       "🟡 Giá ↑ + OI ↓: Short bị ép đóng, thiếu tiền mua mới (12h: giá 0.86%, OI -1.70%) (+0)",
+       "nam châm thanh lý phía trên ~0.0519538 (+5)"
+      ]
+     ],
+     [
+      8,
+      10,
+      [
+       "dòng tiền sàn (ví 28c / TDqSq / BTC netflow / whale alert): nghiêng tăng (+2) (+5)",
+       "ma trận BTC.D × USDT.D: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu) (+3)"
+      ]
+     ]
+    ],
+    "f": [
+     "R:R tới TP1 = 1.09 < 1,5",
+     "Xu hướng 4H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: CHoCH)"
+    ],
+    "k": [
+     "Giá ↑ + OI ↓ (Short cover) — cấm LONG đuổi"
+    ],
+    "w": [
+     "Khối lượng 24h 0.6M$ < 25M$ — thanh khoản mỏng"
+    ],
+    "n": [],
+    "dn": [
+     "ngược khung xác nhận 1D"
+    ],
+    "en": 0.05052,
+    "sl": 0.050004852,
+    "tp1": 0.05108,
+    "tp2": 0.051653326,
+    "rr": 1.09,
+    "rp": 1.02,
+    "tw": "ổ thanh khoản 💧",
+    "rk": 0,
+    "cf": 5,
+    "mg": [
+     "+0,6R (0.0508291): thu hẹp 50% SL → 0.0502624",
+     "TP1 0.0510800: chốt 50%, dời SL về 0.0505973 (Entry + 0,15R, bù phí)",
+     "TP2 0.0516533: chốt thêm 30%",
+     "Đóng theo thời gian: 60 giờ chưa tới TP1 thì đóng hoà vốn"
+    ],
+    "ts": 60,
+    "ts1": 60,
+    "q": "SHORT_COVER",
+    "mag": "up"
+   },
+   "msg": {
+    "title": "▲ LONG CRO · phá kháng cự giảm",
+    "body": "📊 47/100 · hạng C · INTRADAY · ⚖️ ĐỨNG NGOÀI\n🚩 R:R tới TP1 = 1.09 < 1,5\n🚩 Xu hướng 4H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: CHoCH) (+1 lý do)\nHạ 1 hạng: ngược khung xác nhận 1D\nKhối lượng 24h 0.6M$ < 25M$ — thanh khoản mỏng\nĐóng cửa 0.05052 trên đường 0.05034 · mô hình 47 nến, 2 chạm. Volume x0.9 so với trung bình 20 nến.\nChưa vượt đỉnh cũ 0.05161.\nNến H1 19:00\nEntry 0.05052 · SL 0.05000 (1.02%) · TP1 0.05108 · TP2 0.05165 · R:R 1.09",
+    "url": "./#s=CRO-USDT-SWAP&ev=BREAK&t=1793707200000",
+    "tag": "CRO-USDT-SWAP|BREAK|1793707200000|1H"
+   }
+  },
+  {
+   "at": "19:00 03/11",
+   "tf": "1H",
+   "coin": "PUMP",
+   "type": "CONFIRM",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 45,
+   "touches": 3,
+   "cls": null,
+   "follow": null,
+   "score": "52 C",
+   "sc": {
+    "v": 1,
+    "s": 52,
+    "g": "C",
+    "in": 0,
+    "st": "INTRADAY",
+    "ttf": "4H",
+    "ctf": "1D",
+    "L": [
+     [
+      0,
+      20,
+      [
+       "4H: EMA xếp tầng NGƯỢC hướng (0)",
+       "nhịp ngắn M→ W↑ 1D↓ 4H→ 1H→ · khung xác nhận 1D ↓ (+0)",
+       "ADX 4H 10 < 18 (0)"
+      ]
+     ],
+     [
+      16,
+      20,
+      [
+       "32/13/5 = 33 đúng vị thế Long (+10)",
+       "10/5/5 dốc 56° thuận chiều (+6)"
+      ]
+     ],
+     [
+      20,
+      20,
+      [
+       "kháng cự giảm 45 nến, 3 chạm, không cắt thân (+7)",
+       "điểm phá trùng Hộp Tím  (+6)",
+       "đã gãy cấu trúc (đóng qua đỉnh/đáy cũ) + Stoch dốc thuận + volume ≥ 1,2× (+7)",
+       "Thưởng cấu trúc trưởng thành: H1 45–90 nến, ≥ 3 chạm, phá cùng EMA200 ở nến xác nhận (20/20)"
+      ]
+     ],
+     [
+      0,
+      15,
+      [
+       "giá vào không nằm trong OTE / OB / FVG (0)",
+       "không có mẫu nến đảo chiều / phân kỳ (0)",
+       "có nến nước rút đỏ volume > 2,5× lúc 22:00 (0)"
+      ]
+     ],
+     [
+      8,
+      15,
+      [
+       "volume 2.7× MA20 ✓ · CVD 6h bán chủ động (+3)",
+       "🟢 Giá ↑ + OI ↑: tiền mới vào cửa mua (12h: giá 7.22%, OI 7.21%) (+5)",
+       "nam châm thanh lý phía dưới — chưa thuận (0)"
+      ]
+     ],
+     [
+      8,
+      10,
+      [
+       "dòng tiền sàn (ví 28c / TDqSq / BTC netflow / whale alert): nghiêng tăng (+2) (+5)",
+       "ma trận BTC.D × USDT.D: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu) (+3)"
+      ]
+     ]
+    ],
+    "f": [
+     "R:R tới TP1 = 0.11 < 1,5",
+     "Xu hướng 4H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: Phân kỳ)",
+     "SL rộng 4.14% > 3.20%"
+    ],
+    "k": [],
+    "w": [],
+    "n": [],
+    "dn": [
+     "ngược khung xác nhận 1D"
+    ],
+    "en": 0.004279,
+    "sl": 0.0041020461,
+    "tp1": 0.004298,
+    "tp2": 0.0046682987,
+    "rr": 0.11,
+    "rp": 4.14,
+    "tw": "đỉnh swing chưa bị vượt",
+    "rk": 0,
+    "cf": 5,
+    "mg": [
+     "+0,6R (0.00438517): thu hẹp 50% SL → 0.00419052",
+     "TP1 0.00429800: chốt 50%, dời SL về 0.00430554 (Entry + 0,15R, bù phí)",
+     "TP2 0.00466830: chốt thêm 30%",
+     "Đóng theo thời gian: 60 giờ chưa tới TP1 thì đóng hoà vốn"
+    ],
+    "ts": 60,
+    "ts1": 60,
+    "q": "LONG_BUILD",
+    "mag": "down"
+   },
+   "msg": {
+    "title": "✓ Xác nhận LONG PUMP",
+    "body": "📊 52/100 · hạng C · INTRADAY · ⚖️ ĐỨNG NGOÀI\n🚩 R:R tới TP1 = 0.11 < 1,5\n🚩 Xu hướng 4H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: Phân kỳ) (+1 lý do)\nHạ 1 hạng: ngược khung xác nhận 1D\nĐóng cửa 0.004279 vượt đỉnh cũ 0.004222 — cấu trúc đã gãy. Phá kháng cự giảm 45 nến lúc 17:00.\nNến H1 19:00\nEntry 0.004279 · SL 0.004102 (4.14%) · TP1 0.004298 · TP2 0.004668 · R:R 0.11",
+    "url": "./#s=PUMP-USDT-SWAP&ev=CONFIRM&t=1793707200000",
+    "tag": "PUMP-USDT-SWAP|CONFIRM|1793707200000|1H"
+   }
+  },
+  {
+   "at": "19:00 03/11",
+   "tf": "1H",
+   "coin": "VVV",
+   "type": "BREAK",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 59,
+   "touches": 2,
+   "cls": "weak",
+   "follow": true,
+   "score": "45 C",
+   "sc": {
+    "v": 1,
+    "s": 45,
+    "g": "C",
+    "in": 0,
+    "st": "INTRADAY",
+    "ttf": "4H",
+    "ctf": "1D",
+    "L": [
+     [
+      3,
+      20,
+      [
+       "4H: EMA xếp tầng NGƯỢC hướng (0)",
+       "nhịp ngắn M→ W→ 1D→ 4H↓ 1H→ · khung xác nhận 1D → (+1)",
+       "ADX 4H 18 (+2)"
+      ]
+     ],
+     [
+      20,
+      20,
+      [
+       "32/13/5 = 20 đúng vị thế Long (+10)",
+       "10/5/5 cắt lên từ < 25, góc 66° (+10)"
+      ]
+     ],
+     [
+      10,
+      20,
+      [
+       "kháng cự giảm 59 nến, 2 chạm (+4)",
+       "điểm phá trùng Hộp Tím  (+6)",
+       "chưa có nến 2 xác nhận (vào ở nến phá là dễ dính bẫy — chờ nến 1H kế tiếp giữ ngoài đường) (0)"
+      ]
+     ],
+     [
+      4,
+      15,
+      [
+       "giá vào không nằm trong OTE / OB / FVG (0)",
+       "phân kỳ Stoch/RSI (+4)",
+       "có nến nước rút đỏ volume > 2,5× lúc 13:00 (0)"
+      ]
+     ],
+     [
+      0,
+      15,
+      [
+       "volume 1.2× MA20 · CVD 6h bán chủ động (+0)",
+       "🟡 Giá ↑ + OI ↓: Short bị ép đóng, thiếu tiền mua mới (12h: giá 1.51%, OI -5.39%) (+0)",
+       "nam châm thanh lý cân bằng — chưa thuận (0)"
+      ]
+     ],
+     [
+      8,
+      10,
+      [
+       "dòng tiền sàn (ví 28c / TDqSq / BTC netflow / whale alert): nghiêng tăng (+2) (+5)",
+       "ma trận BTC.D × USDT.D: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu) (+3)"
+      ]
+     ]
+    ],
+    "f": [
+     "R:R tới TP1 = 0.84 < 1,5"
+    ],
+    "k": [
+     "Giá ↑ + OI ↓ (Short cover) — cấm LONG đuổi"
+    ],
+    "w": [
+     "Khối lượng 24h 10.1M$ < 25M$ — thanh khoản mỏng"
+    ],
+    "n": [],
+    "dn": [],
+    "en": 22.007,
+    "sl": 21.371675,
+    "tp1": 22.541,
+    "tp2": 23.404714,
+    "rr": 0.84,
+    "rp": 2.89,
+    "tw": "ổ thanh khoản 💧",
+    "rk": 0,
+    "cf": 5,
+    "mg": [
+     "+0,6R (22.3882): thu hẹp 50% SL → 21.6893",
+     "TP1 22.5410: chốt 50%, dời SL về 22.1023 (Entry + 0,15R, bù phí)",
+     "TP2 23.4047: chốt thêm 30%",
+     "Đóng theo thời gian: 60 giờ chưa tới TP1 thì đóng hoà vốn"
+    ],
+    "ts": 60,
+    "ts1": 60,
+    "q": "SHORT_COVER",
+    "mag": "none"
+   },
+   "msg": {
+    "title": "▲ LONG VVV · phá kháng cự giảm",
+    "body": "📊 45/100 · hạng C · INTRADAY · ⚖️ ĐỨNG NGOÀI\n🚩 R:R tới TP1 = 0.84 < 1,5\n🔒 Giá ↑ + OI ↓ (Short cover) — cấm LONG đuổi\nKhối lượng 24h 10.1M$ < 25M$ — thanh khoản mỏng\nĐóng cửa 22.007 trên đường 21.967 · mô hình 59 nến, 2 chạm. Volume x1.2 so với trung bình 20 nến.\nChưa vượt đỉnh cũ 23.260.\nNến H1 19:00\nEntry 22.007 · SL 21.372 (2.89%) · TP1 22.541 · TP2 23.405 · R:R 0.84",
+    "url": "./#s=VVV-USDT-SWAP&ev=BREAK&t=1793707200000",
+    "tag": "VVV-USDT-SWAP|BREAK|1793707200000|1H"
+   }
+  },
+  {
+   "at": "19:00 03/11",
+   "tf": "4H",
+   "coin": "VVV",
+   "type": "RETEST",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 86,
+   "touches": 2,
+   "cls": null,
+   "follow": null,
+   "score": "40 C",
+   "sc": {
+    "v": 1,
+    "s": 40,
+    "g": "C",
+    "in": 0,
+    "st": "INTRADAY",
+    "ttf": "1D",
+    "ctf": "1W",
+    "L": [
+     [
+      3,
+      20,
+      [
+       "khung 1D chưa đủ 150 nến",
+       "1D: EMA chưa xếp tầng (0)",
+       "nhịp ngắn M→ W→ 1D→ 4H→ · khung xác nhận 1W → (+1)",
+       "ADX 1D 18 (+2)"
+      ]
+     ],
+     [
+      10,
+      20,
+      [
+       "32/13/5 = 15 đúng vị thế Short (+10)",
+       "10/5/5 = 28 chưa cắt thuận chiều (0)"
+      ]
+     ],
+     [
+      14,
+      20,
+      [
+       "hỗ trợ tăng 86 nến, 2 chạm (+4)",
+       "điểm phá trùng Hộp Tím  (+6)",
+       "retest giữ được đường vừa phá (+4) — thiếu: Stoch chưa dốc thuận ≥ 35°"
+      ]
+     ],
+     [
+      0,
+      15,
+      [
+       "giá vào không nằm trong OTE / OB / FVG (0)",
+       "không có mẫu nến đảo chiều / phân kỳ (0)",
+       "có nến nước rút xanh volume > 2,5× lúc 07:00 (0)"
+      ]
+     ],
+     [
+      10,
+      15,
+      [
+       "volume 1.7× MA20 ✓ · CVD 6h bán chủ động ✓ (+5)",
+       "🟡 Giá ↑ + OI ↓: Short bị ép đóng, thiếu tiền mua mới (12h: giá 3.95%, OI -4.22%) (+0)",
+       "vừa quét cụm thanh lý Short lớn (+5)"
+      ]
+     ],
+     [
+      3,
+      10,
+      [
+       "dòng tiền sàn (ví 28c / TDqSq / BTC netflow / whale alert): nghiêng tăng (+2) (+0)",
+       "ma trận BTC.D × USDT.D: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu) (+3)"
+      ]
+     ]
+    ],
+    "f": [
+     "R:R tới TP1 = 1.05 < 1,5"
+    ],
+    "k": [
+     "Nhịp hồi có nến nước rút bơm mạnh ngược chiều — chặn lệnh bắt hồi"
+    ],
+    "w": [
+     "Khối lượng 24h 10.1M$ < 25M$ — thanh khoản mỏng"
+    ],
+    "n": [],
+    "dn": [
+     "ADX 4H 18 < 20 (đi ngang)"
+    ],
+    "en": 22.341,
+    "sl": 22.859879,
+    "tp1": 21.794,
+    "tp2": 21.199467,
+    "rr": 1.05,
+    "rp": 2.32,
+    "tw": "đáy tuần trước (PWL)",
+    "rk": 0,
+    "cf": 4,
+    "mg": [
+     "+0,6R (22.0297): thu hẹp 50% SL → 22.6004",
+     "TP1 21.7940: chốt 50%, dời SL về 22.2632 (Entry − 0,15R, bù phí)",
+     "TP2 21.1995: chốt thêm 30%",
+     "Đóng theo thời gian: 60 giờ chưa tới TP1 thì đóng hoà vốn"
+    ],
+    "ts": 60,
+    "ts1": 60,
+    "q": "SHORT_COVER",
+    "mag": "none"
+   },
+   "msg": {
+    "title": "↺ Retest SHORT VVV H4",
+    "body": "📊 40/100 · hạng C · INTRADAY · ⚖️ ĐỨNG NGOÀI\n🚩 R:R tới TP1 = 1.05 < 1,5\n🔒 Nhịp hồi có nến nước rút bơm mạnh ngược chiều — chặn lệnh bắt hồi\nHạ 1 hạng: ADX 4H 18 < 20 (đi ngang)\nKhối lượng 24h 10.1M$ < 25M$ — thanh khoản mỏng\nGiá quay về chạm hỗ trợ tăng 86 nến vừa phá (22.557) và đóng cửa giữ được ở 22.341.\nNến H4 19:00–23:00\nEntry 22.341 · SL 22.860 (2.32%) · TP1 21.794 · TP2 21.199 · R:R 1.05",
+    "url": "./#s=VVV-USDT-SWAP&ev=RETEST&t=1793707200000&tf=4H",
+    "tag": "VVV-USDT-SWAP|RETEST|1793707200000|4H"
+   }
+  },
+  {
+   "at": "19:00 03/11",
+   "tf": "1H",
+   "coin": "POL",
+   "type": "BREAK",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 86,
+   "touches": 5,
+   "cls": "weak",
+   "follow": false,
+   "score": "48 C",
+   "sc": {
+    "v": 1,
+    "s": 48,
+    "g": "C",
+    "in": 0,
+    "st": "INTRADAY",
+    "ttf": "4H",
+    "ctf": "1D",
+    "L": [
+     [
+      2,
+      20,
+      [
+       "4H: EMA xếp tầng NGƯỢC hướng (0)",
+       "nhịp ngắn M→ W↓ 1D↓ 4H↓ 1H↓ · khung xác nhận 1D ↓ (+0)",
+       "ADX 4H 22 (+2)"
+      ]
+     ],
+     [
+      16,
+      20,
+      [
+       "32/13/5 = 17 đúng vị thế Long (+10)",
+       "10/5/5 dốc 39° thuận chiều (+6)"
+      ]
+     ],
+     [
+      7,
+      20,
+      [
+       "kháng cự giảm 86 nến, 5 chạm, không cắt thân (+7)",
+       "không có Hộp Tím / ổ thanh khoản tại điểm phá (0)",
+       "chưa có nến 2 xác nhận (vào ở nến phá là dễ dính bẫy — chờ nến 1H kế tiếp giữ ngoài đường) (0)"
+      ]
+     ],
+     [
+      7,
+      15,
+      [
+       "giá vào không nằm trong OTE / OB / FVG (0)",
+       "Nhấn chìm tăng + phân kỳ Stoch/RSI (+4)",
+       "không dính nến nước rút ngược chiều (+3)"
+      ]
+     ],
+     [
+      8,
+      15,
+      [
+       "volume 2.2× MA20 ✓ · CVD 6h bán chủ động (+3)",
+       "⚪ Giá ↓ + OI ↓: tiền rút, đà giảm sắp cạn (12h: giá -0.19%, OI -1.93%) (+0)",
+       "vừa quét ổ thanh khoản 💧 rồi rút chân (+5)"
+      ]
+     ],
+     [
+      8,
+      10,
+      [
+       "dòng tiền sàn (ví 28c / TDqSq / BTC netflow / whale alert): nghiêng tăng (+2) (+5)",
+       "ma trận BTC.D × USDT.D: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu) (+3)"
+      ]
+     ]
+    ],
+    "f": [
+     "R:R tới TP1 = 0.33 < 1,5",
+     "Xu hướng 4H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: CHoCH, Climax Volume)"
+    ],
+    "k": [],
+    "w": [
+     "Khối lượng 24h 4.9M$ < 25M$ — thanh khoản mỏng"
+    ],
+    "n": [],
+    "dn": [
+     "ngược khung xác nhận 1D"
+    ],
+    "en": 0.08787,
+    "sl": 0.08720188,
+    "tp1": 0.08809,
+    "tp2": 0.089339865,
+    "rr": 0.33,
+    "rp": 0.76,
+    "tw": "ổ thanh khoản 💧",
+    "rk": 0,
+    "cf": 5,
+    "mg": [
+     "+0,6R (0.0882709): thu hẹp 50% SL → 0.0875359",
+     "TP1 0.0880900: chốt 50%, dời SL về 0.0879702 (Entry + 0,15R, bù phí)",
+     "TP2 0.0893399: chốt thêm 30%",
+     "Đóng theo thời gian: 60 giờ chưa tới TP1 thì đóng hoà vốn"
+    ],
+    "ts": 60,
+    "ts1": 60,
+    "q": "LONG_LIQ",
+    "mag": "none"
+   },
+   "msg": {
+    "title": "▲ LONG POL · phá kháng cự giảm",
+    "body": "📊 48/100 · hạng C · INTRADAY · ⚖️ ĐỨNG NGOÀI\n🚩 R:R tới TP1 = 0.33 < 1,5\n🚩 Xu hướng 4H đang GIẢM mà báo LONG, chưa đủ chuỗi đảo chiều 4 bước (thiếu: CHoCH, Climax Volume)\nHạ 1 hạng: ngược khung xác nhận 1D\nKhối lượng 24h 4.9M$ < 25M$ — thanh khoản mỏng\nĐóng cửa 0.08787 trên đường 0.08777 · mô hình 86 nến, 5 chạm. Volume x2.2 so với trung bình 20 nến — volume lớn ✓.\nChưa vượt đỉnh cũ 0.08982.\nNến H1 19:00\nEntry 0.08787 · SL 0.08720 (0.76%) · TP1 0.08809 · TP2 0.08934 · R:R 0.33",
+    "url": "./#s=POL-USDT-SWAP&ev=BREAK&t=1793707200000",
+    "tag": "POL-USDT-SWAP|BREAK|1793707200000|1H"
+   }
+  },
+  {
+   "at": "19:00 03/11",
+   "tf": "1H",
+   "coin": "ALGO",
+   "type": "BREAK",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 69,
+   "touches": 2,
+   "cls": "clean",
+   "follow": true,
+   "score": "48 C",
+   "sc": {
+    "v": 1,
+    "s": 48,
+    "g": "C",
+    "in": 0,
+    "st": "INTRADAY",
+    "ttf": "4H",
+    "ctf": "1D",
+    "L": [
+     [
+      5,
+      20,
+      [
+       "4H: EMA xếp tầng NGƯỢC hướng (0)",
+       "nhịp ngắn M↓ W↓ 1D↓ 4H↓ 1H→ · khung xác nhận 1D ↓ (+0)",
+       "ADX 4H 33 ≥ 22 (+5)"
+      ]
+     ],
+     [
+      16,
+      20,
+      [
+       "32/13/5 = 32 đúng vị thế Long (+10)",
+       "10/5/5 dốc 55° thuận chiều (+6)"
+      ]
+     ],
+     [
+      10,
+      20,
+      [
+       "kháng cự giảm 69 nến, 2 chạm (+4)",
+       "điểm phá trùng Hộp Tím  (+6)",
+       "chưa có nến 2 xác nhận (vào ở nến phá là dễ dính bẫy — chờ nến 1H kế tiếp giữ ngoài đường) (0)"
+      ]
+     ],
+     [
+      4,
+      15,
+      [
+       "giá vào không nằm trong OTE / OB / FVG (0)",
+       "phân kỳ Stoch/RSI (+4)",
+       "có nến nước rút đỏ volume > 2,5× lúc 09:00 (0)"
+      ]
+     ],
+     [
+      5,
+      15,
+      [
+       "volume 1.7× MA20 ✓ · CVD 6h mua chủ động ✓ (+5)",
+       "🟡 Giá ↑ + OI ↓: Short bị ép đóng, thiếu tiền mua mới (12h: giá 2.60%, OI -1.67%) (+0)",
+       "nam châm thanh lý phía dưới — chưa thuận (0)"
+      ]
+     ],
+     [
+      8,
+      10,
+      [
+       "dòng tiền sàn (ví 28c / TDqSq / BTC netflow / whale alert): nghiêng tăng (+2) (+5)",
+       "ma trận BTC.D × USDT.D: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu) (+3)"
+      ]
+     ]
+    ],
+    "f": [
+     "R:R tới TP1 = 0.78 < 1,5",
+     "Vào trễ: giá cách điểm phá 1.3 ATR > 1,2 ATR"
+    ],
+    "k": [
+     "Giá ↑ + OI ↓ (Short cover) — cấm LONG đuổi"
+    ],
+    "w": [
+     "Khối lượng 24h 2.2M$ < 25M$ — thanh khoản mỏng"
+    ],
+    "n": [],
+    "dn": [
+     "ngược khung xác nhận 1D"
+    ],
+    "en": 0.09358,
+    "sl": 0.092122893,
+    "tp1": 0.09472,
+    "tp2": 0.096785636,
+    "rr": 0.78,
+    "rp": 1.56,
+    "tw": "đỉnh swing chưa bị vượt",
+    "rk": 0,
+    "cf": 5,
+    "mg": [
+     "+0,6R (0.0944543): thu hẹp 50% SL → 0.0928514",
+     "TP1 0.0947200: chốt 50%, dời SL về 0.0937986 (Entry + 0,15R, bù phí)",
+     "TP2 0.0967856: chốt thêm 30%",
+     "Đóng theo thời gian: 60 giờ chưa tới TP1 thì đóng hoà vốn"
+    ],
+    "ts": 60,
+    "ts1": 60,
+    "q": "SHORT_COVER",
+    "mag": "down"
+   },
+   "msg": {
+    "title": "▲ LONG ALGO · phá kháng cự giảm",
+    "body": "📊 48/100 · hạng C · INTRADAY · ⚖️ ĐỨNG NGOÀI\n🚩 R:R tới TP1 = 0.78 < 1,5\n🚩 Vào trễ: giá cách điểm phá 1.3 ATR > 1,2 ATR (+1 lý do)\nHạ 1 hạng: ngược khung xác nhận 1D\nKhối lượng 24h 2.2M$ < 25M$ — thanh khoản mỏng\nĐóng cửa 0.09358 trên đường 0.09247 · mô hình 69 nến, 2 chạm. Volume x1.7 so với trung bình 20 nến.\nChưa vượt đỉnh cũ 0.09472.\nNến H1 19:00\nEntry 0.09358 · SL 0.09212 (1.56%) · TP1 0.09472 · TP2 0.09679 · R:R 0.78",
+    "url": "./#s=ALGO-USDT-SWAP&ev=BREAK&t=1793707200000",
+    "tag": "ALGO-USDT-SWAP|BREAK|1793707200000|1H"
+   }
+  },
+  {
+   "at": "19:00 03/11",
+   "tf": "4H",
+   "coin": "LIT",
+   "type": "CONFIRM",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 60,
+   "touches": 2,
+   "cls": null,
+   "follow": null,
+   "score": "51 C",
+   "sc": {
+    "v": 1,
+    "s": 51,
+    "g": "C",
+    "in": 0,
+    "st": "INTRADAY",
+    "ttf": "1D",
+    "ctf": "1W",
+    "L": [
+     [
+      5,
+      20,
+      [
+       "1D: giá trên EMA200, EMA chưa xếp tầng (+4)",
+       "nhịp ngắn M→ W→ 1D↓ 4H↑ · khung xác nhận 1W → (+1)",
+       "ADX 1D 14 < 18 (0)"
+      ]
+     ],
+     [
+      20,
+      20,
+      [
+       "32/13/5 = 72 đúng vị thế Long (+10)",
+       "10/5/5 cắt lên từ < 25, góc 55° (+10)"
+      ]
+     ],
+     [
+      8,
+      20,
+      [
+       "kháng cự giảm 60 nến, 2 chạm (+4)",
+       "không có Hộp Tím / ổ thanh khoản tại điểm phá (0)",
+       "đã gãy cấu trúc (đóng qua đỉnh/đáy cũ) (+4) — thiếu: Stoch chưa dốc thuận ≥ 35°"
+      ]
+     ],
+     [
+      0,
+      15,
+      [
+       "giá vào không nằm trong OTE / OB / FVG (0)",
+       "không có mẫu nến đảo chiều / phân kỳ (0)",
+       "có nến nước rút đỏ volume > 2,5× lúc 23:00 (0)"
+      ]
+     ],
+     [
+      10,
+      15,
+      [
+       "volume 2.8× MA20 ✓ · CVD 6h mua chủ động ✓ (+5)",
+       "🟢 Giá ↑ + OI ↑: tiền mới vào cửa mua (12h: giá 10.57%, OI 7.38%) (+5)",
+       "nam châm thanh lý phía dưới — chưa thuận (0)"
+      ]
+     ],
+     [
+      8,
+      10,
+      [
+       "dòng tiền sàn (ví 28c / TDqSq / BTC netflow / whale alert): nghiêng tăng (+2) (+5)",
+       "ma trận BTC.D × USDT.D: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu) (+3)"
+      ]
+     ]
+    ],
+    "f": [
+     "SL rộng 10.36% > 6.40%"
+    ],
+    "k": [],
+    "w": [],
+    "n": [],
+    "dn": [],
+    "en": 3.4175,
+    "sl": 3.0635187,
+    "tp1": 3.9863,
+    "tp2": 4.1962589,
+    "rr": 1.61,
+    "rp": 10.36,
+    "tw": "đỉnh swing chưa bị vượt",
+    "rk": 0,
+    "cf": 5,
+    "mg": [
+     "+0,6R (3.62989): thu hẹp 50% SL → 3.24051",
+     "TP1 3.98630: chốt 50%, dời SL về 3.47060 (Entry + 0,15R, bù phí)",
+     "TP2 4.19626: chốt thêm 30%",
+     "Đóng theo thời gian: 60 giờ chưa tới TP1 thì đóng hoà vốn"
+    ],
+    "ts": 60,
+    "ts1": 60,
+    "q": "LONG_BUILD",
+    "mag": "down"
+   },
+   "msg": {
+    "title": "✓ Xác nhận LONG LIT H4",
+    "body": "📊 51/100 · hạng C · INTRADAY · ⚖️ ĐỨNG NGOÀI\n🚩 SL rộng 10.36% > 6.40%\nĐóng cửa 3.4175 vượt đỉnh cũ 3.3519 — cấu trúc đã gãy. Phá kháng cự giảm 60 nến lúc 03:00.\nNến H4 19:00–23:00\nEntry 3.4175 · SL 3.0635 (10.36%) · TP1 3.9863 · TP2 4.1963 · R:R 1.61",
+    "url": "./#s=LIT-USDT-SWAP&ev=CONFIRM&t=1793707200000&tf=4H",
+    "tag": "LIT-USDT-SWAP|CONFIRM|1793707200000|4H"
+   }
+  },
+  {
+   "at": "19:00 03/11",
+   "tf": "4H",
+   "coin": "LIT",
+   "type": "BREAK",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 76,
+   "touches": 2,
+   "cls": "clean",
+   "follow": null,
+   "score": "56 C",
+   "sc": {
+    "v": 1,
+    "s": 56,
+    "g": "C",
+    "in": 0,
+    "st": "INTRADAY",
+    "ttf": "1D",
+    "ctf": "1W",
+    "L": [
+     [
+      5,
+      20,
+      [
+       "1D: giá trên EMA200, EMA chưa xếp tầng (+4)",
+       "nhịp ngắn M→ W→ 1D↓ 4H↑ · khung xác nhận 1W → (+1)",
+       "ADX 1D 14 < 18 (0)"
+      ]
+     ],
+     [
+      20,
+      20,
+      [
+       "32/13/5 = 72 đúng vị thế Long (+10)",
+       "10/5/5 cắt lên từ < 25, góc 55° (+10)"
+      ]
+     ],
+     [
+      10,
+      20,
+      [
+       "kháng cự giảm 76 nến, 2 chạm (+4)",
+       "điểm phá trùng Hộp Tím (có POC) (+6)",
+       "chưa có nến 2 xác nhận (vào ở nến phá là dễ dính bẫy — chờ nến H1/H4 kế tiếp giữ ngoài đường) (0)"
+      ]
+     ],
+     [
+      3,
+      15,
+      [
+       "giá vào không nằm trong OTE / OB / FVG (0)",
+       "không có mẫu nến đảo chiều / phân kỳ (0)",
+       "không dính nến nước rút ngược chiều (+3)"
+      ]
+     ],
+     [
+      10,
+      15,
+      [
+       "volume 2.8× MA20 ✓ · CVD 6h mua chủ động ✓ (+5)",
+       "🟢 Giá ↑ + OI ↑: tiền mới vào cửa mua (12h: giá 10.57%, OI 7.38%) (+5)",
+       "nam châm thanh lý phía dưới — chưa thuận (0)"
+      ]
+     ],
+     [
+      8,
+      10,
+      [
+       "dòng tiền sàn (ví 28c / TDqSq / BTC netflow / whale alert): nghiêng tăng (+2) (+5)",
+       "ma trận BTC.D × USDT.D: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu) (+3)"
+      ]
+     ]
+    ],
+    "f": [
+     "Vào trễ: giá cách điểm phá 1.9 ATR > 1,2 ATR",
+     "SL rộng 10.36% > 6.40%"
+    ],
+    "k": [],
+    "w": [],
+    "n": [],
+    "dn": [],
+    "en": 3.4175,
+    "sl": 3.0635187,
+    "tp1": 3.9863,
+    "tp2": 4.1962589,
+    "rr": 1.61,
+    "rp": 10.36,
+    "tw": "đỉnh swing chưa bị vượt",
+    "rk": 0,
+    "cf": 6,
+    "mg": [
+     "+0,6R (3.62989): thu hẹp 50% SL → 3.24051",
+     "TP1 3.98630: chốt 50%, dời SL về 3.47060 (Entry + 0,15R, bù phí)",
+     "TP2 4.19626: chốt thêm 30%",
+     "Đóng theo thời gian: 60 giờ chưa tới TP1 thì đóng hoà vốn"
+    ],
+    "ts": 60,
+    "ts1": 60,
+    "q": "LONG_BUILD",
+    "mag": "down"
+   },
+   "msg": {
+    "title": "▲ LONG LIT · phá kháng cự giảm H4",
+    "body": "📊 56/100 · hạng C · INTRADAY · ⚖️ ĐỨNG NGOÀI\n🚩 Vào trễ: giá cách điểm phá 1.9 ATR > 1,2 ATR\n🚩 SL rộng 10.36% > 6.40%\nĐóng cửa 3.4175 trên đường 3.1375 · mô hình 76 nến, 2 chạm. Volume x2.8 so với trung bình 20 nến — volume lớn ✓.\nĐã vượt đỉnh cũ 3.3674 ✓\nNến H4 19:00–23:00\nEntry 3.4175 · SL 3.0635 (10.36%) · TP1 3.9863 · TP2 4.1963 · R:R 1.61",
+    "url": "./#s=LIT-USDT-SWAP&ev=BREAK&t=1793707200000&tf=4H",
+    "tag": "LIT-USDT-SWAP|BREAK|1793707200000|4H"
+   }
+  },
+  {
+   "at": "19:00 03/11",
+   "tf": "1H",
+   "coin": "INJ",
+   "type": "CONFIRM",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 67,
+   "touches": 2,
+   "cls": null,
+   "follow": null,
+   "score": "51 C",
+   "sc": {
+    "v": 1,
+    "s": 51,
+    "g": "C",
+    "in": 0,
+    "st": "INTRADAY",
+    "ttf": "4H",
+    "ctf": "1D",
+    "L": [
+     [
+      1,
+      20,
+      [
+       "4H: EMA xếp tầng NGƯỢC hướng (0)",
+       "nhịp ngắn M→ W→ 1D→ 4H→ 1H→ · khung xác nhận 1D → (+1)",
+       "ADX 4H 14 < 18 (0)"
+      ]
+     ],
+     [
+      13,
+      20,
+      [
+       "32/13/5 = 46 đúng vị thế Long (+10)",
+       "10/5/5 = 90 trên đường tín hiệu thuận chiều, góc 27° (+3)"
+      ]
+     ],
+     [
+      14,
+      20,
+      [
+       "kháng cự giảm 67 nến, 2 chạm (+4)",
+       "điểm phá trùng Hộp Tím  (+6)",
+       "đã gãy cấu trúc (đóng qua đỉnh/đáy cũ) (+4) — thiếu: Stoch chưa dốc thuận ≥ 35°, chưa qua EMA200"
+      ]
+     ],
+     [
+      7,
+      15,
+      [
+       "giá vào không nằm trong OTE / OB / FVG (0)",
+       "phân kỳ Stoch/RSI (+4)",
+       "không dính nến nước rút ngược chiều (+3)"
+      ]
+     ],
+     [
+      8,
+      15,
+      [
+       "volume 2.3× MA20 ✓ · CVD 6h bán chủ động (+3)",
+       "🟡 Giá ↑ + OI ↓: Short bị ép đóng, thiếu tiền mua mới (12h: giá 5.63%, OI -2.95%) (+0)",
+       "nam châm thanh lý phía trên ~7.68583 (+5)"
+      ]
+     ],
+     [
+      8,
+      10,
+      [
+       "dòng tiền sàn (ví 28c / TDqSq / BTC netflow / whale alert): nghiêng tăng (+2) (+5)",
+       "ma trận BTC.D × USDT.D: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu) (+3)"
+      ]
+     ]
+    ],
+    "f": [
+     "R:R tới TP1 = 0.20 < 1,5"
+    ],
+    "k": [
+     "Giá ↑ + OI ↓ (Short cover) — cấm LONG đuổi"
+    ],
+    "w": [
+     "Khối lượng 24h 17.1M$ < 25M$ — thanh khoản mỏng"
+    ],
+    "n": [],
+    "dn": [
+     "ADX 1H 19 < 20 (đi ngang)"
+    ],
+    "en": 7.392,
+    "sl": 7.1913864,
+    "tp1": 7.432,
+    "tp2": 7.83335,
+    "rr": 0.2,
+    "rp": 2.71,
+    "tw": "đỉnh swing chưa bị vượt",
+    "rk": 0,
+    "cf": 5,
+    "mg": [
+     "+0,6R (7.51237): thu hẹp 50% SL → 7.29169",
+     "TP1 7.43200: chốt 50%, dời SL về 7.42209 (Entry + 0,15R, bù phí)",
+     "TP2 7.83335: chốt thêm 30%",
+     "Đóng theo thời gian: 60 giờ chưa tới TP1 thì đóng hoà vốn"
+    ],
+    "ts": 60,
+    "ts1": 60,
+    "q": "SHORT_COVER",
+    "mag": "up"
+   },
+   "msg": {
+    "title": "✓ Xác nhận LONG INJ",
+    "body": "📊 51/100 · hạng C · INTRADAY · ⚖️ ĐỨNG NGOÀI\n🚩 R:R tới TP1 = 0.20 < 1,5\n🔒 Giá ↑ + OI ↓ (Short cover) — cấm LONG đuổi\nHạ 1 hạng: ADX 1H 19 < 20 (đi ngang)\nKhối lượng 24h 17.1M$ < 25M$ — thanh khoản mỏng\nĐóng cửa 7.392 vượt đỉnh cũ 7.307 — cấu trúc đã gãy. Phá kháng cự giảm 67 nến lúc 18:00.\nNến H1 19:00\nEntry 7.392 · SL 7.191 (2.71%) · TP1 7.432 · TP2 7.833 · R:R 0.2",
+    "url": "./#s=INJ-USDT-SWAP&ev=CONFIRM&t=1793707200000",
+    "tag": "INJ-USDT-SWAP|CONFIRM|1793707200000|1H"
+   }
+  },
+  {
+   "at": "19:00 03/11",
+   "tf": "1H",
+   "coin": "PYTH",
+   "type": "RETEST",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 89,
+   "touches": 2,
+   "cls": null,
+   "follow": null,
+   "score": "46 C",
+   "sc": {
+    "v": 1,
+    "s": 46,
+    "g": "C",
+    "in": 0,
+    "st": "INTRADAY",
+    "ttf": "4H",
+    "ctf": "1D",
+    "L": [
+     [
+      11,
+      20,
+      [
+       "4H: EMA21/55/144 xếp tầng giảm + giá dưới EMA200 (+10)",
+       "nhịp ngắn M→ W→ 1D→ 4H↓ 1H→ · khung xác nhận 1D → (+1)",
+       "ADX 4H 14 < 18 (0)"
+      ]
+     ],
+     [
+      10,
+      20,
+      [
+       "32/13/5 = 23 đúng vị thế Short (+10)",
+       "10/5/5 = 83 chưa cắt thuận chiều (0)"
+      ]
+     ],
+     [
+      14,
+      20,
+      [
+       "hỗ trợ tăng 89 nến, 2 chạm (+4)",
+       "điểm phá trùng Hộp Tím  (+6)",
+       "retest giữ được đường vừa phá (+4) — thiếu: Stoch chưa dốc thuận ≥ 35°"
+      ]
+     ],
+     [
+      3,
+      15,
+      [
+       "giá vào không nằm trong OTE / OB / FVG (0)",
+       "không có mẫu nến đảo chiều / phân kỳ (0)",
+       "không dính nến nước rút ngược chiều (+3)"
+      ]
+     ],
+     [
+      5,
+      15,
+      [
+       "volume 1.3× MA20 · CVD 6h mua chủ động (+0)",
+       "🟡 Giá ↑ + OI ↓: Short bị ép đóng, thiếu tiền mua mới (12h: giá 2.63%, OI -0.32%) (+0)",
+       "vừa quét cụm thanh lý Short lớn + vừa quét ổ thanh khoản 💧 rồi rút chân + nam châm thanh lý phía dưới ~0.0611050 (+5)"
+      ]
+     ],
+     [
+      3,
+      10,
+      [
+       "dòng tiền sàn (ví 28c / TDqSq / BTC netflow / whale alert): nghiêng tăng (+2) (+0)",
+       "ma trận BTC.D × USDT.D: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu) (+3)"
+      ]
+     ]
+    ],
+    "f": [],
+    "k": [],
+    "w": [
+     "Spread 0.075% > 0,05% — dễ trượt giá",
+     "Khối lượng 24h 3.3M$ < 25M$ — thanh khoản mỏng"
+    ],
+    "n": [],
+    "dn": [],
+    "en": 0.06398,
+    "sl": 0.064661787,
+    "tp1": 0.06181,
+    "tp2": 0.06155,
+    "rr": 3.18,
+    "rp": 1.07,
+    "tw": "đáy ngày trước (PDL)",
+    "rk": 0,
+    "cf": 5,
+    "mg": [
+     "+0,6R (0.0635709): thu hẹp 50% SL → 0.0643209",
+     "TP1 0.0618100: chốt 50%, dời SL về 0.0638777 (Entry − 0,15R, bù phí)",
+     "TP2 0.0615500: chốt thêm 30%",
+     "Đóng theo thời gian: 60 giờ chưa tới TP1 thì đóng hoà vốn"
+    ],
+    "ts": 60,
+    "ts1": 60,
+    "q": "SHORT_COVER",
+    "mag": "down"
+   },
+   "msg": {
+    "title": "↺ Retest SHORT PYTH",
+    "body": "📊 46/100 · hạng C · INTRADAY · ⚖️ ĐỨNG NGOÀI (dưới 88 điểm)\nSpread 0.075% > 0,05% — dễ trượt giá\nGiá quay về chạm hỗ trợ tăng 89 nến vừa phá (0.06439) và đóng cửa giữ được ở 0.06398.\nNến H1 19:00\nEntry 0.06398 · SL 0.06466 (1.07%) · TP1 0.06181 · TP2 0.06155 · R:R 3.18",
+    "url": "./#s=PYTH-USDT-SWAP&ev=RETEST&t=1793707200000",
+    "tag": "PYTH-USDT-SWAP|RETEST|1793707200000|1H"
+   }
+  },
+  {
+   "at": "19:00 03/11",
+   "tf": "4H",
+   "coin": "CL",
+   "type": "BREAK",
+   "dir": "SHORT",
+   "kind": "hỗ trợ ngang",
+   "span": 77,
+   "touches": 2,
+   "cls": "clean",
+   "follow": null,
+   "score": "42 C",
+   "sc": {
+    "v": 1,
+    "s": 42,
+    "g": "C",
+    "in": 0,
+    "st": "INTRADAY",
+    "ttf": "1D",
+    "ctf": "1W",
+    "L": [
+     [
+      6,
+      20,
+      [
+       "1D: EMA xếp tầng NGƯỢC hướng (0)",
+       "nhịp ngắn M→ W→ 1D→ 4H↓ · khung xác nhận 1W → (+1)",
+       "ADX 1D 36 ≥ 22 (+5)"
+      ]
+     ],
+     [
+      10,
+      20,
+      [
+       "32/13/5 = 26 đúng vị thế Short (+10)",
+       "10/5/5 = 28 chưa cắt thuận chiều (0)"
+      ]
+     ],
+     [
+      10,
+      20,
+      [
+       "hỗ trợ ngang 77 nến, 2 chạm (+4)",
+       "điểm phá trùng Hộp Tím  (+6)",
+       "chưa có nến 2 xác nhận (vào ở nến phá là dễ dính bẫy — chờ nến H1/H4 kế tiếp giữ ngoài đường) (0)"
+      ]
+     ],
+     [
+      3,
+      15,
+      [
+       "giá vào không nằm trong OTE / OB / FVG (0)",
+       "không có mẫu nến đảo chiều / phân kỳ (0)",
+       "không dính nến nước rút ngược chiều (+3)"
+      ]
+     ],
+     [
+      10,
+      15,
+      [
+       "volume 7.4× MA20 ✓ · CVD 6h bán chủ động ✓ (+5)",
+       "⚪ Giá ↓ + OI ↓: tiền rút, đà giảm sắp cạn (12h: giá -0.95%, OI -4.06%) (+0)",
+       "vừa quét cụm thanh lý Short lớn + nam châm thanh lý phía dưới ~92.5452 (+5)"
+      ]
+     ],
+     [
+      3,
+      10,
+      [
+       "dòng tiền sàn (ví 28c / TDqSq / BTC netflow / whale alert): nghiêng tăng (+2) (+0)",
+       "ma trận BTC.D × USDT.D: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu) (+3)"
+      ]
+     ]
+    ],
+    "f": [
+     "R:R tới TP1 = 0.14 < 1,5",
+     "Xu hướng 1D đang TĂNG mà báo SHORT, chưa đủ chuỗi đảo chiều 4 bước (thiếu: Phân kỳ)",
+     "Sổ lệnh OKX có tường mua lớn ~390K$ tại 95.5600, chặn trước TP1"
+    ],
+    "k": [
+     "Giá ↓ + OI ↓ (Long thanh lý) — cấm SHORT đuổi ở đáy"
+    ],
+    "w": [],
+    "n": [],
+    "dn": [],
+    "en": 95.84,
+    "sl": 99.545764,
+    "tp1": 95.33,
+    "tp2": 87.687319,
+    "rr": 0.14,
+    "rp": 3.87,
+    "tw": "đáy swing chưa bị vượt",
+    "rk": 0,
+    "cf": 4,
+    "mg": [
+     "+0,6R (93.6165): thu hẹp 50% SL → 97.6929",
+     "TP1 95.3300: chốt 50%, dời SL về 95.2841 (Entry − 0,15R, bù phí)",
+     "TP2 87.6873: chốt thêm 30%",
+     "Đóng theo thời gian: 60 giờ chưa tới TP1 thì đóng hoà vốn"
+    ],
+    "ts": 60,
+    "ts1": 60,
+    "q": "LONG_LIQ",
+    "mag": "down"
+   },
+   "msg": {
+    "title": "▼ SHORT Dầu WTI CL · phá biên sideway H4",
+    "body": "📊 42/100 · hạng C · INTRADAY · ⚖️ ĐỨNG NGOÀI\n🚩 R:R tới TP1 = 0.14 < 1,5\n🚩 Xu hướng 1D đang TĂNG mà báo SHORT, chưa đủ chuỗi đảo chiều 4 bước (thiếu: Phân kỳ) (+2 lý do)\nĐóng cửa 95.84 dưới đáy biên 96.40 · đi ngang 77 nến, 2 chạm.\nVolume x7.4 so với trung bình 20 nến — volume lớn ✓.\nNến H4 19:00–23:00\nEntry 95.84 · SL 99.55 (3.87%) · TP1 95.33 · TP2 87.69 · R:R 0.14",
+    "url": "./#s=CL-USDT-SWAP&ev=BREAK&t=1793707200000&tf=4H",
+    "tag": "CL-USDT-SWAP|BREAK|1793707200000|4H"
+   }
+  },
+  {
+   "at": "19:00 03/11",
+   "tf": "30m",
+   "coin": "HYPE",
+   "type": "CONFIRM",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 52,
+   "touches": 2,
+   "cls": null,
+   "follow": null,
+   "score": "52 C",
+   "sc": {
+    "v": 1,
+    "s": 52,
+    "g": "C",
+    "in": 0,
+    "st": "SCALP",
+    "ttf": "1H",
+    "ctf": "4H",
+    "L": [
+     [
+      6,
+      20,
+      [
+       "1H: EMA chưa xếp tầng (0)",
+       "nhịp ngắn M→ W↑ 1D↑ 4H→ 1H→ · khung xác nhận 4H → (+1)",
+       "ADX 1H 23 ≥ 22 (+5)"
+      ]
+     ],
+     [
+      13,
+      20,
+      [
+       "32/13/5 = 57 đúng vị thế Long (+10)",
+       "10/5/5 = 90 trên đường tín hiệu thuận chiều, góc 5° (+3)"
+      ]
+     ],
+     [
+      8,
+      20,
+      [
+       "kháng cự giảm 52 nến, 2 chạm (+4)",
+       "không có Hộp Tím / ổ thanh khoản tại điểm phá (0)",
+       "đã gãy cấu trúc (đóng qua đỉnh/đáy cũ) (+4) — thiếu: Stoch chưa dốc thuận ≥ 35°, chưa qua EMA200"
+      ]
+     ],
+     [
+      7,
+      15,
+      [
+       "giá vào không nằm trong OTE / OB / FVG (0)",
+       "phân kỳ Stoch/RSI (+4)",
+       "không dính nến nước rút ngược chiều (+3)"
+      ]
+     ],
+     [
+      10,
+      15,
+      [
+       "volume 2.3× MA20 ✓ · CVD 3h mua chủ động ✓ (+5)",
+       "🟢 Giá ↑ + OI ↑: tiền mới vào cửa mua (4h: giá 1.01%, OI 3.07%) (+5)",
+       "nam châm thanh lý phía dưới — chưa thuận (0)"
+      ]
+     ],
+     [
+      8,
+      10,
+      [
+       "dòng tiền sàn (ví 28c / TDqSq / BTC netflow / whale alert): nghiêng tăng (+2) (+5)",
+       "ma trận BTC.D × USDT.D: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu) (+3)"
+      ]
+     ]
+    ],
+    "f": [
+     "Sổ lệnh OKX có tường bán lớn ~369K$ tại 86.4710, chặn trước TP1"
+    ],
+    "k": [],
+    "w": [],
+    "n": [],
+    "dn": [
+     "ADX 30m 18 < 20 (đi ngang)"
+    ],
+    "en": 84.783,
+    "sl": 84.246525,
+    "tp1": 86.61,
+    "tp2": 88.675,
+    "rr": 3.41,
+    "rp": 0.63,
+    "tw": "đỉnh swing chưa bị vượt",
+    "rk": 0,
+    "cf": 5,
+    "mg": [
+     "+0,6R (85.1049): thu hẹp 50% SL → 84.5148",
+     "TP1 86.6100: chốt 50%, dời SL về 84.8635 (Entry + 0,15R, bù phí)",
+     "TP2 88.6750: chốt thêm 30%",
+     "Đóng theo thời gian: 16 giờ chưa tới TP1 thì đóng hoà vốn (sau TP1: 32 giờ)"
+    ],
+    "ts": 16,
+    "ts1": 32,
+    "q": "LONG_BUILD",
+    "mag": "down"
+   },
+   "msg": {
+    "title": "✓ Xác nhận LONG HYPE M30",
+    "body": "📊 52/100 · hạng C · SCALP · ⚖️ ĐỨNG NGOÀI\n🚩 Sổ lệnh OKX có tường bán lớn ~369K$ tại 86.4710, chặn trước TP1\nHạ 1 hạng: ADX 30m 18 < 20 (đi ngang)\nĐóng cửa 84.783 vượt đỉnh cũ 84.725 — cấu trúc đã gãy. Phá kháng cự giảm 52 nến lúc 13:00.\nNến M30 19:00–19:30\nEntry 84.783 · SL 84.247 (0.63%) · TP1 86.610 · TP2 88.675 · R:R 3.41",
+    "url": "./#s=HYPE-USDT-SWAP&ev=CONFIRM&t=1793707200000&tf=30m",
+    "tag": "HYPE-USDT-SWAP|CONFIRM|1793707200000|30m"
+   }
+  },
+  {
+   "at": "18:00 03/11",
+   "tf": "1H",
+   "coin": "DOGE",
+   "type": "RETEST",
+   "dir": "SHORT",
+   "kind": "hỗ trợ ngang",
+   "span": 71,
+   "touches": 4,
+   "cls": null,
+   "follow": null,
+   "score": "64 C",
+   "sc": {
+    "v": 1,
+    "s": 64,
+    "g": "C",
+    "in": 0,
+    "st": "INTRADAY",
+    "ttf": "4H",
+    "ctf": "1D",
+    "L": [
+     [
+      20,
+      20,
+      [
+       "4H: EMA21/55/144 xếp tầng giảm + giá dưới EMA200 (+10)",
+       "nhịp ngắn M↓ W↓ 1D↓ 4H↓ 1H→ · khung xác nhận 1D ↓ (+5)",
+       "ADX 4H 26 ≥ 22 (+5)"
+      ]
+     ],
+     [
+      10,
+      20,
+      [
+       "32/13/5 = 31 đúng vị thế Short (+10)",
+       "10/5/5 = 59 chưa cắt thuận chiều (0)"
+      ]
+     ],
+     [
+      17,
+      20,
+      [
+       "hỗ trợ ngang 71 nến, 4 chạm, không cắt thân (+7)",
+       "điểm phá trùng Hộp Tím  (+6)",
+       "retest giữ được đường vừa phá (+4) — thiếu: Stoch chưa dốc thuận ≥ 35°, volume < 1,2×"
+      ]
+     ],
+     [
+      7,
+      15,
+      [
+       "giá vào không nằm trong OTE / OB / FVG (0)",
+       "Sao băng (Shooting Star) (+4)",
+       "không dính nến nước rút ngược chiều (+3)"
+      ]
+     ],
+     [
+      7,
+      15,
+      [
+       "volume 0.9× MA20 · CVD 6h bán chủ động ✓ (+2)",
+       "🟢 Giá ↑ + OI ↑: tiền mới vào cửa mua (12h: giá 0.38%, OI 1.25%) (+0)",
+       "vừa quét ổ thanh khoản 💧 rồi rút chân + nam châm thanh lý phía dưới ~0.0727146 (+5)"
+      ]
+     ],
+     [
+      3,
+      10,
+      [
+       "dòng tiền sàn (ví 28c / TDqSq / BTC netflow / whale alert): nghiêng tăng (+2) (+0)",
+       "ma trận BTC.D × USDT.D: chưa đủ dữ liệu BTC.D/USDT.D (cần 24 giờ lưu) (+3)"
+      ]
+     ]
+    ],
+    "f": [],
+    "k": [],
+    "w": [],
+    "n": [],
+    "dn": [],
+    "en": 0.07448,
+    "sl": 0.074976557,
+    "tp1": 0.07348,
+    "tp2": 0.073387575,
+    "rr": 2.01,
+    "rp": 0.67,
+    "tw": "đáy swing chưa bị vượt",
+    "rk": 0,
+    "cf": 6,
+    "mg": [
+     "+0,6R (0.0741821): thu hẹp 50% SL → 0.0747283",
+     "TP1 0.0734800: chốt 50%, dời SL về 0.0744055 (Entry − 0,15R, bù phí)",
+     "TP2 0.0733876: chốt thêm 30%",
+     "Đóng theo thời gian: 60 giờ chưa tới TP1 thì đóng hoà vốn"
+    ],
+    "ts": 60,
+    "ts1": 60,
+    "q": "LONG_BUILD",
+    "mag": "down"
+   },
+   "msg": {
+    "title": "↺ Retest SHORT DOGE",
+    "body": "📊 64/100 · hạng C · INTRADAY · ⚖️ ĐỨNG NGOÀI (dưới 88 điểm)\nGiá quay về chạm biên sideway 71 nến vừa phá (0.07482) và đóng cửa giữ được ở 0.07448.\nNến H1 18:00\nEntry 0.07448 · SL 0.07498 (0.67%) · TP1 0.07348 · TP2 0.07339 · R:R 2.01",
+    "url": "./#s=DOGE-USDT-SWAP&ev=RETEST&t=1793703600000",
+    "tag": "DOGE-USDT-SWAP|RETEST|1793703600000|1H"
+   }
+  },
+  {
+   "at": "18:00 03/11",
+   "tf": "1H",
+   "coin": "UNI",
+   "type": "BREAK",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 45,
+   "touches": 3,
+   "cls": "weak",
+   "follow": true,
+   "score": null,
+   "sc": null,
+   "msg": {
+    "title": "▲ LONG UNI · phá kháng cự giảm",
+    "body": "Đóng cửa 7.188 trên đường 7.156 · mô hình 45 nến, 3 chạm. Volume x1.2 so với trung bình 20 nến.\nChưa vượt đỉnh cũ 7.294.\nNến H1 18:00",
+    "url": "./#s=UNI-USDT-SWAP&ev=BREAK&t=1793703600000",
+    "tag": "UNI-USDT-SWAP|BREAK|1793703600000|1H"
+   }
+  },
+  {
+   "at": "18:00 03/11",
+   "tf": "1H",
+   "coin": "INJ",
+   "type": "BREAK",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 67,
+   "touches": 2,
+   "cls": "clean",
+   "follow": true,
+   "score": null,
+   "sc": null,
+   "msg": {
+    "title": "▲ LONG INJ · phá kháng cự giảm",
+    "body": "Đóng cửa 7.276 trên đường 7.135 · mô hình 67 nến, 2 chạm. Volume x1.6 so với trung bình 20 nến.\nChưa vượt đỉnh cũ 7.307.\nNến H1 18:00",
+    "url": "./#s=INJ-USDT-SWAP&ev=BREAK&t=1793703600000",
+    "tag": "INJ-USDT-SWAP|BREAK|1793703600000|1H"
+   }
+  },
+  {
+   "at": "18:00 03/11",
+   "tf": "1H",
+   "coin": "STRK",
+   "type": "RETEST",
+   "dir": "SHORT",
+   "kind": "hỗ trợ tăng",
+   "span": 77,
+   "touches": 2,
+   "cls": null,
+   "follow": null,
+   "score": null,
+   "sc": null,
+   "msg": {
+    "title": "↺ Retest SHORT STRK",
+    "body": "Giá quay về chạm hỗ trợ tăng 77 nến vừa phá (0.04380) và đóng cửa giữ được ở 0.04375.\nNến H1 18:00",
+    "url": "./#s=STRK-USDT-SWAP&ev=RETEST&t=1793703600000",
+    "tag": "STRK-USDT-SWAP|RETEST|1793703600000|1H"
+   }
+  },
+  {
+   "at": "18:00 03/11",
+   "tf": "1H",
+   "coin": "STRK",
+   "type": "BREAK",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 68,
+   "touches": 2,
+   "cls": "clean",
+   "follow": true,
+   "score": null,
+   "sc": null,
+   "msg": {
+    "title": "▲ LONG STRK · phá kháng cự giảm",
+    "body": "Đóng cửa 0.04375 trên đường 0.04165 · mô hình 68 nến, 2 chạm. Volume x9.7 so với trung bình 20 nến — volume lớn ✓.\nChưa vượt đỉnh cũ 0.04389.\nNến H1 18:00",
+    "url": "./#s=STRK-USDT-SWAP&ev=BREAK&t=1793703600000",
+    "tag": "STRK-USDT-SWAP|BREAK|1793703600000|1H"
+   }
+  },
+  {
+   "at": "18:00 03/11",
+   "tf": "30m",
+   "coin": "SHIB",
+   "type": "CONFIRM",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 58,
+   "touches": 4,
+   "cls": null,
+   "follow": null,
+   "score": null,
+   "sc": null,
+   "msg": {
+    "title": "✓ Xác nhận LONG SHIB M30",
+    "body": "Đóng cửa 0.000004591 vượt đỉnh cũ 0.000004579 — cấu trúc đã gãy. Phá kháng cự giảm 58 nến lúc 15:30.\nNến M30 18:00–18:30",
+    "url": "./#s=SHIB-USDT-SWAP&ev=CONFIRM&t=1793703600000&tf=30m",
+    "tag": "SHIB-USDT-SWAP|CONFIRM|1793703600000|30m"
+   }
+  },
+  {
+   "at": "18:00 03/11",
+   "tf": "30m",
+   "coin": "ATOM",
+   "type": "BREAK",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 54,
+   "touches": 3,
+   "cls": "clean",
+   "follow": false,
+   "score": null,
+   "sc": null,
+   "msg": {
+    "title": "▲ LONG ATOM · phá kháng cự giảm M30",
+    "body": "Đóng cửa 1.431 trên đường 1.426 · mô hình 54 nến, 3 chạm. Volume x0.5 so với trung bình 20 nến.\nChưa vượt đỉnh cũ 1.446.\nNến M30 18:00–18:30",
+    "url": "./#s=ATOM-USDT-SWAP&ev=BREAK&t=1793703600000&tf=30m",
+    "tag": "ATOM-USDT-SWAP|BREAK|1793703600000|30m"
+   }
+  },
+  {
+   "at": "18:00 03/11",
+   "tf": "30m",
+   "coin": "BEAT",
+   "type": "RETEST",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 51,
+   "touches": 2,
+   "cls": null,
+   "follow": null,
+   "score": null,
+   "sc": null,
+   "msg": {
+    "title": "↺ Retest LONG BEAT M30",
+    "body": "Giá quay về chạm kháng cự giảm 51 nến vừa phá (0.10240) và đóng cửa giữ được ở 0.10323.\nNến M30 18:00–18:30",
+    "url": "./#s=BEAT-USDT-SWAP&ev=RETEST&t=1793703600000&tf=30m",
+    "tag": "BEAT-USDT-SWAP|RETEST|1793703600000|30m"
+   }
+  },
+  {
+   "at": "17:00 03/11",
+   "tf": "1H",
+   "coin": "PUMP",
+   "type": "BREAK",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 45,
+   "touches": 3,
+   "cls": "clean",
+   "follow": true,
+   "score": null,
+   "sc": null,
+   "msg": {
+    "title": "▲ LONG PUMP · phá kháng cự giảm",
+    "body": "Đóng cửa 0.004100 trên đường 0.004044 · mô hình 45 nến, 3 chạm. Volume x1.2 so với trung bình 20 nến.\nChưa vượt đỉnh cũ 0.004222.\nNến H1 17:00",
+    "url": "./#s=PUMP-USDT-SWAP&ev=BREAK&t=1793700000000",
+    "tag": "PUMP-USDT-SWAP|BREAK|1793700000000|1H"
+   }
+  },
+  {
+   "at": "17:00 03/11",
+   "tf": "1H",
+   "coin": "ASTER",
+   "type": "CONFIRM",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 64,
+   "touches": 4,
+   "cls": null,
+   "follow": null,
+   "score": null,
+   "sc": null,
+   "msg": {
+    "title": "✓ Xác nhận LONG ASTER",
+    "body": "Đóng cửa 0.6984 vượt đỉnh cũ 0.6980 — cấu trúc đã gãy. Phá kháng cự giảm 64 nến lúc 16:00.\nNến H1 17:00",
+    "url": "./#s=ASTER-USDT-SWAP&ev=CONFIRM&t=1793700000000",
+    "tag": "ASTER-USDT-SWAP|CONFIRM|1793700000000|1H"
+   }
+  },
+  {
+   "at": "17:00 03/11",
+   "tf": "1H",
+   "coin": "FIL",
+   "type": "BREAK",
+   "dir": "LONG",
+   "kind": "kháng cự giảm",
+   "span": 66,
+   "touches": 5,
+   "cls": "clean",
+   "follow": false,
+   "score": null,
+   "sc": null,
+   "msg": {
+    "title": "▲ LONG FIL · phá kháng cự giảm",
+    "body": "Đóng cửa 0.8738 trên đường 0.8711 · mô hình 66 nến, 5 chạm. Volume x1.2 so với trung bình 20 nến.\nĐã vượt đỉnh cũ 0.8727 ✓\nNến H1 17:00",
+    "url": "./#s=FIL-USDT-SWAP&ev=BREAK&t=1793700000000",
+    "tag": "FIL-USDT-SWAP|BREAK|1793700000000|1H"
+   }
+  }
+ ],
+ "timing": {
+  "prefetchMs": 56755,
+  "analyzeMs": 2105,
+  "scoreMs": 29595
+ }
+}

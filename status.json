@@ -1,0 +1,188 @@
+{
+ "version": 5,
+ "mode": "scan",
+ "stage": "m30",
+ "trigger": "workflow_dispatch",
+ "startedAt": 1793901621140,
+ "cfg": {
+  "window": 1000,
+  "top": 67,
+  "topVol": 36,
+  "pinned": [
+   "XAU-USDT-SWAP",
+   "CL-USDT-SWAP"
+  ],
+  "alerts": [
+   "BREAK",
+   "CONFIRM",
+   "RETEST"
+  ],
+  "minPattern": 45
+ },
+ "host": "https://www.okx.com",
+ "m30lines": {
+  "at": 1793903408265,
+  "target": 1793901600000,
+  "lines": 478,
+  "events": 0,
+  "pushed": 0,
+  "waiting": 0,
+  "skipped": 0,
+  "sent": 0,
+  "doneAfterCloseMs": 8265
+ },
+ "result": "ok",
+ "finishedAt": 1793903408285,
+ "devices": [
+  {
+   "id": "f7c42102ff92",
+   "at": 1793901616932,
+   "name": "iPhone 2026-10-27",
+   "src": "secret",
+   "ok": true,
+   "status": 201
+  },
+  {
+   "id": "bfc8c7c51868",
+   "at": 1793901616933,
+   "name": "Máy 2026-11-04",
+   "src": "app",
+   "ok": true,
+   "status": 201
+  }
+ ],
+ "push": {
+  "configured": 2,
+  "ids": [
+   "f7c42102ff92",
+   "bfc8c7c51868"
+  ],
+  "dead": [],
+  "vapidPub": "BCEL0t7GnY2eHjF8Sx6ksoWfm-bJ_-kd37uWJNQNk-mABtMzBPyIP6vcnFE__EdG-Gyoh_hk68-XYS7X6Dqlo-w",
+  "ntfy": "https://ntfy.sh/bottrade-duylong06-7f3k9q2m",
+  "fromApp": 1
+ },
+ "pending": [],
+ "following": [],
+ "market": {
+  "at": 1793901508516,
+  "dom": {
+   "btc": 59.175,
+   "usdt": 6.896,
+   "dBtc": -0.342,
+   "dUsdt": 0.328,
+   "total": 2569568109029
+  },
+  "scenario": {
+   "id": 3,
+   "text": "RISK-OFF: USDT.D tăng + BTC giảm — tiền tháo về USDT. Khoá LONG toàn thị trường, chỉ canh SHORT",
+   "riskOff": true,
+   "altLong": -1,
+   "btcLong": -1
+  },
+  "blackout": {
+   "active": false
+  },
+  "nextRed": [
+   {
+    "title": "Average Hourly Earnings m/m",
+    "at": 1793971800000,
+    "hhmm": "20:30"
+   },
+   {
+    "title": "Non-Farm Employment Change",
+    "at": 1793971800000,
+    "hhmm": "20:30"
+   },
+   {
+    "title": "Unemployment Rate",
+    "at": 1793971800000,
+    "hhmm": "20:30"
+   }
+  ],
+  "totalVsBtc": "chưa đủ 7 ngày dữ liệu TOTAL",
+  "flow": {
+   "bias": 0,
+   "s28c": 1404381,
+   "tron": 646,
+   "btcEx": 557811.44,
+   "stable24hWallet": 0,
+   "stable7dWallet": null,
+   "stableIn24": -432497251,
+   "mint24": 1350532399,
+   "btcEx24": 203704706.99699965,
+   "btcIn2h": 130194478,
+   "btcOut2h": 214090980
+  },
+  "whale": [
+   {
+    "c": "USDT",
+    "in24": 619622599,
+    "out24": 1314857329
+   },
+   {
+    "c": "BTC",
+    "in24": 239272532,
+    "out24": 695721783
+   },
+   {
+    "c": "USDC",
+    "in24": 262737479,
+    "out24": 0
+   },
+   {
+    "c": "TRX",
+    "in24": 0,
+    "out24": 48705076
+   }
+  ],
+  "insight": [
+   {
+    "coins": [
+     "CT"
+    ],
+    "t": 1793865887000,
+    "text": "Đường giá của $CT đang đối diện tương lai vô cùng u ám 🦈 🦈 🦈 🦈 | | Ít giờ trước, phát hiện một whale đã dep 3M $CT có giá trị hơn 400K USD lên sàn Gate. | | Tuy đường giá $CT đã giảm khá sâu nhưng"
+   }
+  ],
+  "report": "BTC.D 59.175% (-0.342) · USDT.D 6.896% (+0.328) · 24h\nKịch bản: RISK-OFF: USDT.D tăng + BTC giảm — tiền tháo về USDT. Khoá LONG toàn thị trường, chỉ canh SHORT\nStablecoin ví 28c + TDqSq: 24h +0M$ · 7 ngày — · whale alert ròng vào sàn 24h −432M$, mint +1.35B$\nBTC ví sàn (Binance, Bitfinex): 24h +204M$ (nạp lên sàn — áp lực bán)\nCá voi ròng 24h: BTC −456M$ ra sàn, TRX −49M$ ra sàn\nTin Đỏ 24h tới: 20:30 Average Hourly Earnings m/m · 20:30 Non-Farm Employment Change · 20:30 Unemployment Rate\nTOTAL vs BTC: chưa đủ 7 ngày dữ liệu TOTAL",
+  "errors": []
+ },
+ "trades": [],
+ "tradeLog": [],
+ "lastScan": {
+  "at": 1793901617007,
+  "target": 1793898000000,
+  "closeAt": 1793901600000,
+  "trigger": "workflow_dispatch",
+  "host": "https://www.okx.com",
+  "readyAfterCloseMs": 6952,
+  "pushDoneAfterCloseMs": 10876,
+  "counts": {
+   "coins": 76,
+   "lines": 1846,
+   "lines4": 0,
+   "events": 2,
+   "h4": false
+  },
+  "signals": 2,
+  "pushes": 2,
+  "sent": 2,
+  "skipped": 0,
+  "waiting": 0,
+  "followN": 0,
+  "universe": {
+   "src": "vốn hoá CoinGecko + top 36 khối lượng OKX (thêm 7)",
+   "n": 76
+  }
+ },
+ "m30": {
+  "at": 1793896218064,
+  "closeAt": 1793896200000,
+  "checked": 3,
+  "pushed": 3,
+  "skipped": 0,
+  "sent": 3,
+  "doneAfterCloseMs": 18064
+ }
+}
