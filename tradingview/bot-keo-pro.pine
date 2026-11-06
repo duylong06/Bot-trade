@@ -1,0 +1,2433 @@
+//@version=6
+indicator("Bot Kèo Pro — Entry / SL / TP + Kết luận", shorttitle = "Kèo Pro", overlay = true, max_labels_count = 500, max_lines_count = 500, max_boxes_count = 500, max_bars_back = 500)
+// =====================================================================================================
+// BOT KEO PRO (goi 94) - chi bao MOI gop moi setup da lam: 4 setup cua Tu Ra Keo (goi 83-89) + bo loc pro anh them (04/11).
+//   KHONG CO BANG. Tren chart chi co: moc Entry / SL / TP1 / TP2 cua keo dang chay (+ nhan setup, hang), vung OB / FVG gan gia,
+//   CHoCH / BOS + dinh / day manh - yeu, trendline chinh (khung chart + khung lon), o thanh khoan (vang) + cu quet,
+//   dinh / day ngay - tuan - thang truoc, EMA 21 / 55 / 144, phan ky RSI, MUI TEN DU PHONG duong di (gia -> entry -> TP1 -> TP2)
+//   va 1 NHAN KET LUAN gon canh gia: nghieng LONG / SHORT / dung ngoai + diem, xu huong, cau truc, vung, VIEC CAN LAM.
+// 4 setup: (1) SMC: nen DONG pha cau truc (BOS / CHoCH) -> LIMIT o mep OB trong nua chiet khau cua song
+//          (2) VUNG VANG 4 Cua: EMA 21/55/144 khung lon xep tang, hoi 0.5-0.618 + nen tin hieu (bua, nhan chim, sao mai, 3 doji)
+//          (3) PHA VO + retest (chu N): tich luc -> nen pha cham /5 -> hoi lai giu moc -> nen xac nhan
+//          (4) NEM 3 DAY / High 2 - Low 2 trong nhip hoi cua xu huong
+// Bo loc: thuan xu huong khung lon, da khung (khung xac nhan), BTC 1D cho altcoin, CHAN NGUOC LUC (khong short khi tang manh,
+//   khong long khi giam manh), entry khong qua xa gia (x ATR), ADX (di ngang -> ha hang), phien Killzone, size theo % rui ro.
+// KET LUAN = cham diem: xu huong khung lon x2 + khung xac nhan + cau truc + da khung nhip ngan + luc + phan ky RSI (+ BTC 1D voi alt).
+//   >= +4 LONG MANH · +2..+3 NGHIENG LONG · -1..+1 TRUNG LAP (dung ngoai) · -2..-3 NGHIENG SHORT · <= -4 SHORT MANH.
+//   Co keo dang chay -> nhan ghi dat LIMIT / dang trong lenh / da TP1; chua co keo -> KICH BAN CHO (vung OB / FVG phia hoi + muc tieu
+//   thanh khoan + muc hong). Re chuot vao nhan = chi tiet (diem tung yeu to, trendline, thanh khoan, thong ke setup tren chart).
+// Luat may cua bot - KHONG phai loi khuyen dau tu. AI cua bot chi chay tren Telegram (alert JSON gui bot).
+// =====================================================================================================
+
+// ----------------------------------------------------------------------------- INPUTS
+G0 = "Setup"
+useSMC = input.bool(true, "① SMC: phá cấu trúc → hồi về vùng OB", group = G0, display = display.none)
+useGold = input.bool(true, "② Vùng vàng 4 Cửa (0.5–0.618 + nến tín hiệu)", group = G0, display = display.none)
+useBO = input.bool(true, "③ Phá vỡ + retest (chữ N)", group = G0, display = display.none)
+useH2 = input.bool(true, "④ Nêm 3 đẩy / High 2 – Low 2", group = G0, display = display.none)
+gradeIn = input.string("A+ và A (khuyên dùng)", "Hiện kèo hạng", options = ["A+ và A (khuyên dùng)", "Chỉ A+", "Tất cả (cả B — để học)"], group = G0, display = display.none)
+styleIn = input.string("Tự động theo khung chart", "Phong cách giao dịch", options = ["Tự động theo khung chart", "Scalp (lướt nhanh)", "Intraday (trong ngày)", "Swing (vài ngày)"], group = G0, display = display.none, tooltip = "Tự động: chart 1–15m = Scalp · 30m–2H = Intraday · 4H trở lên = Swing. Khung xu hướng + khung xác nhận: Scalp 1H + 4H · Intraday 4H + 1D · Swing 1D + 1W. Phong cách đổi cả hạn chờ khớp và time stop; mỗi kèo / alert ghi rõ phong cách.")
+trendOn = input.bool(true, "Chỉ vào THUẬN xu hướng khung lớn", group = G0, display = display.none, tooltip = "Khung lớn (khung xu hướng) theo phong cách: Scalp 1H · Intraday 4H · Swing 1D (chart lớn hơn thì lấy khung kế trên). Xu hướng lớn = EMA 21/55/144 của khung lớn xếp tầng (như Setup 4 Cửa) — đổi chậm, chỉ đổi khi nến khung lớn đóng. Bật: kèo ngược xu hướng lớn bị hạ hạng B (mặc định không hiện). Tắt: kèo SMC / Nêm-H2 ngược xu hướng vẫn có thể đạt A nếu đủ điểm (Vùng vàng luôn cần thuận xu hướng).")
+mtfOn = input.bool(true, "Lọc đa khung: ngược khung xác nhận → hạ 1 hạng · thuận cả 2 khung → +1 điểm", group = G0, display = display.none, tooltip = "Khung xác nhận = khung trên khung xu hướng: Scalp 4H · Intraday 1D · Swing 1W. Nhịp ngắn 1 khung = giá trên/dưới EMA21 và EMA21 trên/dưới EMA55 (nến đã đóng) — đổi nhanh hơn xu hướng lớn (EMA xếp tầng), nên có lúc xu hướng lớn 1D TĂNG mà nhịp D chỉ đi ngang.")
+btcLoc = input.bool(true, "Altcoin: chỉ vào khi BTC 1D cùng hướng", group = G0, display = display.none)
+btcSym = input.symbol("BINANCE:BTCUSDT", "Mã BTC tham chiếu", group = G0, display = display.none)
+
+G1 = "Quản lý lệnh"
+iMinRR = input.float(1.5, "R:R tối thiểu tới TP1", minval = 0.5, step = 0.1, group = G1, display = display.none)
+iBuf = input.float(0.2, "Đệm SL ngoài đáy / đỉnh / vùng (× ATR)", minval = 0.0, step = 0.05, group = G1, display = display.none)
+iExpH = input.float(0, "Kèo chờ giá hồi: hết hạn sau … giờ (0 = theo phong cách)", minval = 0, step = 1, group = G1, display = display.none, tooltip = "0 = theo phong cách: Scalp 8 giờ · Intraday 30 giờ · Swing 5 ngày.")
+iTsH = input.float(0, "Đã vào mà chưa tới TP1 sau … giờ → đóng (0 = theo phong cách)", minval = 0, step = 1, group = G1, display = display.none, tooltip = "0 = theo phong cách: Scalp 16 giờ · Intraday 60 giờ · Swing 10 ngày. Sau TP1 được thêm gấp đôi.")
+iBE = input.bool(true, "Chạm TP1: chốt 50% + dời SL về entry", group = G1, display = display.none)
+
+G2 = "Cấu trúc & tham số setup"
+swLen = input.int(5, "SMC: đỉnh/đáy cấu trúc (số nến mỗi bên)", minval = 2, maxval = 20, group = G2, display = display.none)
+iLeg = input.int(120, "Vùng vàng: số nến tìm sóng chính", minval = 30, maxval = 300, group = G2, display = display.none)
+iLegAtr = input.float(3.0, "Vùng vàng: sóng tối thiểu (× ATR)", minval = 1.0, step = 0.5, group = G2, display = display.none)
+iUse382 = input.bool(true, "Vùng vàng: trend khung lớn đủ 3/3 thì nhận cả 0.382", group = G2, display = display.none)
+iMaxBar = input.float(1.8, "Nến tín hiệu dài tối đa (× ATR)", minval = 0.5, step = 0.1, group = G2, display = display.none)
+iMaxEntry = input.float(1.5, "Entry cách giá tối đa (× ATR) — xa hơn thì bỏ kèo", minval = 0.3, maxval = 10.0, step = 0.1, group = G2, display = display.none, tooltip = "Kèo chờ hồi (SMC limit) đặt entry ở vùng OB; nếu OB cách giá hiện tại quá xa -> BỎ, không đề xuất lệnh không thực tế. Tăng = nhận kèo xa hơn; giảm = chỉ nhận entry sát giá.")
+
+G3 = "Hiển thị"
+iShowN = input.int(0, "Kèo ĐÃ ĐÓNG giữ lại trên chart (0 = chỉ vẽ kèo đang chạy)", minval = 0, maxval = 40, group = G3, display = display.none, tooltip = "Mặc định 0: chart chỉ còn mốc Entry / SL / TP của kèo đang chạy hoặc đang chờ khớp. Muốn xem lại kèo cũ (mờ, chỉ giữ nhãn kết quả) thì tăng lên.")
+showStruct = input.bool(true, "BOS / CHoCH + đỉnh/đáy mạnh–yếu", group = G3, display = display.none)
+showEma = input.bool(true, "EMA 21 / 55 / 144 (xu hướng)", group = G3, display = display.none)
+txtSize = input.string("Vừa", "Cỡ chữ nhãn trên chart (Entry / SL / TP, trendline, vùng)", options = ["Nhỏ", "Vừa", "Lớn"], group = G3, display = display.none)
+lnSize = input.string("Đậm", "Độ đậm đường kẻ (lệnh, trendline, cấu trúc)", options = ["Mảnh", "Vừa", "Đậm"], group = G3, display = display.none)
+fadeOld = input.bool(true, "Kèo đã đóng: làm mờ + ẩn nhãn Entry / SL / TP (chỉ giữ nhãn kết quả)", group = G3, display = display.none)
+
+G10 = "Kết luận + đường đi (không có bảng)"
+concOn = input.bool(true, "Nhãn KẾT LUẬN gọn cạnh giá", group = G10, display = display.none, tooltip = "1 nhãn 6 dòng ngay trên / dưới các nến gần nhất: nghiêng LONG / SHORT / đứng ngoài + điểm, xu hướng đa khung, cấu trúc (CHoCH / BOS, Premium / Discount, ADX, lực, phân kỳ RSI, BTC), vùng OB / FVG + thanh khoản gần nhất và VIỆC CẦN LÀM. Rê chuột vào nhãn = chi tiết từng điểm + thống kê setup.")
+concPos = input.string("Tự động", "Vị trí nhãn kết luận", options = ["Tự động", "Trên giá", "Dưới giá"], group = G10, display = display.none, tooltip = "Tự động: kèo / nghiêng LONG -> đặt DƯỚI các nến (phía trên để dành cho TP + mũi tên); SHORT -> đặt TRÊN.")
+concSize = input.string("Nhỏ", "Cỡ chữ nhãn kết luận", options = ["Nhỏ", "Vừa", "Lớn"], group = G10, display = display.none)
+pathOn = input.bool(true, "Mũi tên dự phóng đường đi (giá → entry → TP1 → TP2, nhánh đỏ = chạm SL)", group = G10, display = display.none, tooltip = "Có kèo: nét đứt từ giá hiện tại về Entry (kèo chờ), rồi tới TP1, mũi tên tới TP2; nhánh đỏ ngắn = kịch bản hỏng (chạm SL). Chưa có kèo nhưng đang nghiêng 1 phía: nét xám về vùng OB / FVG chờ hồi + mũi tên tới mục tiêu thanh khoản. Chỉ là hình minh hoạ kế hoạch, không phải dự báo thời gian.")
+
+G5 = "Trendline · OB · FVG · đỉnh/đáy kỳ trước (chỉ vẽ thêm, không đổi kèo)"
+lvlIn = input.string("Ngày + tuần + tháng", "Đỉnh / đáy kỳ trước", options = ["Ngày + tuần + tháng", "Tuần + tháng", "Tắt"], group = G5, display = display.none, tooltip = "Đường đỉnh / đáy của ngày trước, tuần trước, tháng trước — mốc hỗ trợ / kháng cự lớn (chỉ vẽ kỳ lớn hơn khung chart).")
+showTL = input.bool(true, "Trendline chính: hỗ trợ / kháng cự (số chạm, ĐÃ GÃY)", group = G5, display = display.none)
+showOB = input.bool(true, "OB còn hiệu lực (chưa bị nến đóng xuyên qua)", group = G5, display = display.none)
+showFVG = input.bool(true, "FVG chưa lấp (giá chưa quay lại)", group = G5, display = display.none)
+zHTF = input.bool(true, "Gồm cả khung lớn (trendline + OB / FVG của khung lớn)", group = G5, display = display.none, tooltip = "Khung lớn = khung dùng để xét xu hướng: chart 15m → 1H · 1H → 4H · 4H → 1D.")
+zMax = input.int(2, "Số vùng OB / FVG gần giá nhất mỗi phía", minval = 1, maxval = 6, group = G5, display = display.none, tooltip = "Mỗi phía (trên giá / dưới giá) chỉ vẽ ngần này vùng GẦN GIÁ NHẤT, gộp cả khung chart và khung lớn — chart điện thoại đỡ rối.")
+
+G6 = "Vùng thanh khoản (chỉ vẽ thêm, không đổi kèo)"
+liqOn = input.bool(true, "Ổ thanh khoản: cụm ≥ 2 đỉnh / đáy gần bằng nhau (stop tụ)", group = G6, display = display.none, tooltip = "Giống bot: đỉnh / đáy ±2 nến trong N nến gần nhất, lệch nhau ≤ x% (khung nhỏ tự thu hẹp theo 0,5 ATR), cụm ≥ 2 và CHƯA bị giá vượt qua. Trên giá = stop phe bán khống tụ (thanh khoản phía mua), dưới giá = stop phe mua tụ (thanh khoản phía bán). Giá thường quét qua đây trước khi chạy.")
+liqHTF = input.bool(true, "Gồm cả ổ thanh khoản khung lớn", group = G6, display = display.none, tooltip = "Khung lớn = khung xu hướng của phong cách (chart 4H swing → 1D). Lấy theo nến khung lớn đã đóng.")
+liqSw = input.bool(true, "Đánh dấu cú quét: râu xuyên ổ thanh khoản / đỉnh-đáy ngày, tuần rồi đóng ngược lại", group = G6, display = display.none, tooltip = "Nến ĐÃ ĐÓNG có râu vượt hết ổ (hoặc đỉnh / đáy ngày trước, tuần trước) rồi đóng lại phía trong = quét stop (stop hunt), hay đảo chiều nếu có CHoCH. Đóng vượt luôn = phá (không đánh dấu).")
+liqLook = input.int(60, "Ổ thanh khoản: tìm trong … nến gần nhất", minval = 20, maxval = 300, group = G6, display = display.none, tooltip = "Bot dùng 60 nến.")
+liqTol = input.float(0.35, "Đỉnh / đáy lệch nhau tối đa (%)", minval = 0.05, maxval = 2.0, step = 0.05, group = G6, display = display.none, tooltip = "Bot dùng 0,35%. Khung nhỏ tự thu hẹp: không quá 0,5 ATR.")
+liqMax = input.int(2, "Số ổ gần giá nhất mỗi phía (gộp khung chart + khung lớn)", minval = 1, maxval = 4, group = G6, display = display.none)
+liqKeep = input.int(6, "Số cú quét gần nhất hiện trên chart", minval = 1, maxval = 20, group = G6, display = display.none)
+liqCol = input.color(#ffeb3b, "Màu vùng thanh khoản", group = G6, display = display.none, tooltip = "Mặc định VÀNG cho mọi thứ thuộc thanh khoản: hộp ổ thanh khoản (ổ khung lớn viền đậm hơn) và nhãn ⚡ quét.")
+
+G7 = "Thị trường — lọc trend/range (ADX)"
+regimeOn = input.bool(false, "Lọc kèo theo ADX (range → hạ 1 hạng)", group = G7, display = display.none, tooltip = "ADX dưới ngưỡng = thị trường lình xình / đi ngang → hạ 1 hạng kèo (A+→A, A→B). Tắt = không lọc. Pro trader KHÔNG đánh khi thị trường đi ngang.")
+adxLen = input.int(14, "ADX: độ dài", minval = 7, maxval = 50, group = G7, display = display.none)
+adxMin = input.float(20.0, "ADX tối thiểu để coi là TREND", minval = 10.0, maxval = 40.0, step = 1.0, group = G7, display = display.none, tooltip = "ADX ≥ 25 = xu hướng rõ, 20-25 = yếu, < 20 = đi ngang (range).")
+
+G8 = "Phiên (Killzone) · Size theo % rủi ro · Phân kỳ RSI"
+sessOn = input.bool(false, "Chỉ ra kèo trong phiên London/NY (Killzone)", group = G8, display = display.none, tooltip = "Bật: chỉ tạo kèo MỚI trong khung giờ vàng thanh khoản (mặc định London 07-10h + NY 12-15h UTC). Ngoài phiên KHÔNG ra kèo mới (kèo cũ vẫn quản lý bình thường).")
+killzone = input.string("0700-1000,1200-1500", "Giờ phiên (UTC, dạng HHMM-HHMM, nhiều phiên cách dấu phẩy)", group = G8, display = display.none, tooltip = "Ví dụ: 0700-1000,1200-1500 = London 7-10h + New York 12-15h (giờ UTC).")
+accSize = input.float(1000, "Vốn tài khoản ($) — để tính size", minval = 1, step = 100, group = G8, display = display.none)
+riskPct = input.float(1.0, "Rủi ro mỗi lệnh (% vốn)", minval = 0.1, maxval = 10, step = 0.1, group = G8, display = display.none, tooltip = "Pro trader chỉ rủi ro 0,5–2% vốn mỗi lệnh. Size tự tính = (vốn × %rủi ro) ÷ |entry − SL|.")
+rsiDivOn = input.bool(true, "Hiện phân kỳ RSI", group = G8, display = display.none)
+rsiDivLen = input.int(14, "RSI: độ dài", minval = 5, maxval = 50, group = G8, display = display.none)
+
+G9 = "Chặn kèo NGƯỢC lực (momentum guard)"
+momOn = input.bool(true, "Chặn SHORT khi tăng mạnh / LONG khi giảm mạnh", group = G9, display = display.none, tooltip = "Bật: KHÔNG cho bot báo SHORT khi lực tăng đang quá mạnh (và ngược lại). Sửa lỗi 'short đúng đỉnh' giữa sóng tăng do EMA xu hướng bị trễ.")
+momLen = input.int(20, "Đo lực: số nến", minval = 5, maxval = 100, group = G9, display = display.none)
+momRocPct = input.float(3.0, "Lực mạnh: giá đổi ≥ % trong N nến", minval = 0.5, maxval = 30, step = 0.5, group = G9, display = display.none, tooltip = "Ví dụ 3% trong 20 nến = lực tăng/giảm mạnh. Kèo ngược chiều sẽ bị chặn.")
+momAdx = input.float(25.0, "ADX coi là xu hướng mạnh", minval = 15.0, maxval = 50.0, step = 1.0, group = G9, display = display.none)
+momBarAtr = input.float(1.8, "Nến bùng nổ ≥ ×ATR", minval = 1.0, maxval = 5.0, step = 0.1, group = G9, display = display.none)
+
+G4 = "Alert — tạo 1 lần mỗi coin: Điều kiện = Kèo Pro → Any alert() function call"
+alNew = input.bool(true, "Báo kèo mới", group = G4, display = display.none)
+alFill = input.bool(true, "Báo khớp entry (kèo chờ giá hồi)", group = G4, display = display.none)
+alExit = input.bool(true, "Báo TP1 / TP2 / SL / hết hạn", group = G4, display = display.none)
+alSweep = input.bool(true, "Báo quét thanh khoản (khi bật đánh dấu cú quét)", group = G4, display = display.none)
+alFmt = input.string("Chữ dễ đọc (điện thoại)", "Kiểu tin alert", options = ["Chữ dễ đọc (điện thoại)", "JSON gửi bot (webhook / email)"], group = G4, display = display.none, tooltip = "JSON gửi bot: kèo mới (bot chạy AI duyệt rồi trả thẻ đồng thuận trên Telegram) + khớp / TP / SL / hết hạn (bot chuyển thẳng lên Telegram, không chạy AI). Chữ dễ đọc: thông báo app TradingView trên điện thoại.")
+
+// ----------------------------------------------------------------------------- HANG SO
+cLong = #22c55e
+cShort = #ef4444
+cEntry = #7c3aed
+cTp2 = #475569
+cInk = #e5e7eb
+cMuted = #94a3b8
+cGold = #eab308
+cUpS = #14b8a6
+cDnS = #f43f5e
+chSec = timeframe.in_seconds()
+htf = chSec <= 300 ? "15" : chSec <= 900 ? "60" : chSec <= 1800 ? "120" : chSec <= 3600 ? "240" : chSec <= 14400 ? "D" : chSec <= 86400 ? "W" : "M"
+styleCode = styleIn == "Scalp (lướt nhanh)" ? 1 : styleIn == "Intraday (trong ngày)" ? 2 : styleIn == "Swing (vài ngày)" ? 3 : chSec <= 900 ? 1 : chSec <= 7200 ? 2 : 3
+styleTxt = styleCode == 1 ? "SCALP" : styleCode == 2 ? "INTRADAY" : "SWING"
+styleKey = styleCode == 1 ? "scalp" : styleCode == 2 ? "intraday" : "swing"
+stTf = styleCode == 1 ? "60" : styleCode == 2 ? "240" : "D"
+trendTf = timeframe.in_seconds(stTf) > chSec ? stTf : htf
+confTf = trendTf == "60" ? "240" : trendTf == "120" or trendTf == "240" ? "D" : trendTf == "D" ? "W" : trendTf == "15" ? "60" : "M"
+iExp = math.max(3, math.round((iExpH > 0 ? iExpH : styleCode == 1 ? 8.0 : styleCode == 2 ? 30.0 : 120.0) * 3600 / chSec))
+iTimeStop = math.max(5, math.round((iTsH > 0 ? iTsH : styleCode == 1 ? 16.0 : styleCode == 2 ? 60.0 : 240.0) * 3600 / chSec))
+isAlt = str.upper(syminfo.basecurrency) != "BTC"
+minRank = gradeIn == "Chỉ A+" ? 2 : gradeIn == "Tất cả (cả B — để học)" ? 0 : 1
+jsonOn = alFmt == "JSON gửi bot (webhook / email)"
+htfSec = timeframe.in_seconds(trendTf)
+cLvD = #60a5fa
+cLvW = #fbbf24
+cLvM = #c084fc
+BAR_MS = timeframe.in_seconds() * 1000
+cObL = #3b82f6
+cObS = #f59e0b
+cFvL = #2dd4bf
+cFvS = #f472b6
+cTlS = #26a69a
+cTlR = #ef5350
+cTp2L = #94a3b8
+szMain = txtSize == "Nhỏ" ? size.small : txtSize == "Lớn" ? size.large : size.normal
+szSub = txtSize == "Nhỏ" ? size.tiny : txtSize == "Lớn" ? size.normal : size.small
+wTrade = lnSize == "Mảnh" ? 1 : lnSize == "Vừa" ? 2 : 3
+wLine = lnSize == "Mảnh" ? 1 : 2
+
+// ----------------------------------------------------------------------------- TIEN ICH CHU
+f_p(float x) =>
+    na(x) ? "—" : str.tostring(x, format.mintick)
+
+f_pct(float x) =>
+    na(x) ? "—" : str.tostring(x, "#.##") + "%"
+
+f_tfTxt(string tf) =>
+    tf == "D" or tf == "1D" ? "1D" : tf == "W" or tf == "1W" ? "1W" : tf == "240" ? "4H" : tf == "60" ? "1H" : tf == "120" ? "2H" : tf == "30" ? "30m" : tf == "15" ? "15m" : tf == "5" ? "5m" : tf == "M" ? "1M" : tf
+
+f_rank(string g) =>
+    g == "A+" ? 2 : g == "A" ? 1 : 0
+
+f_grade(bool must, float sc) =>
+    not must ? "B" : sc >= 8 ? "A+" : sc >= 6 ? "A" : "B"
+
+f_setupTxt(int s) =>
+    s == 1 ? "SMC" : s == 2 ? "Vùng vàng" : s == 3 ? "Phá vỡ" : "Nêm/H2"
+
+f_dirTxt(int d) =>
+    d == 1 ? "LONG" : "SHORT"
+
+f_r(float x) =>
+    (x >= 0 ? "+" : "−") + str.tostring(math.abs(x), "#.##") + "R"
+
+// ----------------------------------------------------------------------------- (0) XU HUONG KHUNG LON (nen da dong, khong nhin truoc)
+f_htf() =>
+    float e1 = ta.ema(close, 21)
+    float e2 = ta.ema(close, 55)
+    float e3 = ta.ema(close, 144)
+    [mLine, mSig, mHist] = ta.macd(close, 12, 26, 9)
+    float rs = ta.rsi(close, 14)
+    float ph_ = ta.pivothigh(high, 3, 3)
+    float pl_ = ta.pivotlow(low, 3, 3)
+    var float h1 = na
+    var float h0 = na
+    var float l1 = na
+    var float l0 = na
+    if not na(ph_)
+        h0 := h1
+        h1 := ph_
+    if not na(pl_)
+        l0 := l1
+        l1 := pl_
+    bool stUp = not na(h0) and not na(l0) and h1 > h0 and l1 > l0
+    bool stDn = not na(h0) and not na(l0) and h1 < h0 and l1 < l0
+    [e1[1], e2[1], e3[1], mLine[1], rs[1], stUp[1], stDn[1]]
+
+f_btcD() =>
+    float b1 = ta.ema(close, 21)
+    float b2 = ta.ema(close, 55)
+    bool up = close > b2 and b1 > b2
+    bool dn = close < b2 and b1 < b2
+    [up[1], dn[1]]
+
+[hE1, hE2, hE3, hMacd, hRsi, hStUp, hStDn] = request.security(syminfo.tickerid, trendTf, f_htf(), lookahead = barmerge.lookahead_on)
+[btcUp, btcDn] = request.security(btcSym, "D", f_btcD(), lookahead = barmerge.lookahead_on)
+
+// (goi 86) xu huong tung khung (nen DA DONG): TANG = gia tren EMA21 va EMA21 tren EMA55; thieu lich su EMA55 -> so EMA21 voi 3 nen truoc
+f_tr() =>
+    float e1 = ta.ema(close, 21)
+    float e2 = ta.ema(close, 55)
+    int d = 0
+    if not na(e2)
+        d := close > e1 and e1 > e2 ? 1 : close < e1 and e1 < e2 ? -1 : 0
+    else if not na(e1[3])
+        d := close > e1 and e1 > e1[3] ? 1 : close < e1 and e1 < e1[3] ? -1 : 0
+    d[1]
+
+// khung >= khung chart moi xin du lieu (khung nho hon khung chart: dung chinh khung chart, khong hien)
+f_tfOk(string tf) =>
+    timeframe.in_seconds(tf) >= chSec
+
+trM = request.security(syminfo.tickerid, f_tfOk("M") ? "M" : timeframe.period, f_tr(), lookahead = barmerge.lookahead_on)
+trW = request.security(syminfo.tickerid, f_tfOk("W") ? "W" : timeframe.period, f_tr(), lookahead = barmerge.lookahead_on)
+trD = request.security(syminfo.tickerid, f_tfOk("D") ? "D" : timeframe.period, f_tr(), lookahead = barmerge.lookahead_on)
+tr4H = request.security(syminfo.tickerid, f_tfOk("240") ? "240" : timeframe.period, f_tr(), lookahead = barmerge.lookahead_on)
+tr1H = request.security(syminfo.tickerid, f_tfOk("60") ? "60" : timeframe.period, f_tr(), lookahead = barmerge.lookahead_on)
+trConf = request.security(syminfo.tickerid, confTf, f_tr(), lookahead = barmerge.lookahead_on)
+[pdH, pdL, pdT] = request.security(syminfo.tickerid, f_tfOk("D") ? "D" : timeframe.period, [high[1], low[1], time], lookahead = barmerge.lookahead_on)
+[pwH, pwL, pwT] = request.security(syminfo.tickerid, f_tfOk("W") ? "W" : timeframe.period, [high[1], low[1], time], lookahead = barmerge.lookahead_on)
+[pmH, pmL, pmT] = request.security(syminfo.tickerid, f_tfOk("M") ? "M" : timeframe.period, [high[1], low[1], time], lookahead = barmerge.lookahead_on)
+
+stackUp = hE1 > hE2 and hE2 > hE3
+stackDn = hE1 < hE2 and hE2 < hE3
+momUp = hMacd > 0 and hRsi > 50
+momDn = hMacd < 0 and hRsi < 50
+bias = stackUp ? 1 : stackDn ? -1 : 0
+g1 = bias == 1 ? 1 + (hStUp ? 1 : 0) + (momUp ? 1 : 0) : bias == -1 ? 1 + (hStDn ? 1 : 0) + (momDn ? 1 : 0) : 0
+strong = g1 == 3
+btcOkL = not btcLoc or not isAlt or btcUp
+btcOkS = not btcLoc or not isAlt or btcDn
+
+atr = ta.atr(14)
+ce1 = ta.ema(close, 21)
+ce2 = ta.ema(close, 55)
+ce3 = ta.ema(close, 144)
+volMa = ta.sma(volume, 20)
+body = math.abs(close - open)
+rngBar = high - low
+tooLong = rngBar > iMaxBar * atr
+trendBull = close > open and body >= 0.5 * rngBar and close > high[1]
+trendBear = close < open and body >= 0.5 * rngBar and close < low[1]
+
+// ----------------------------------------------------------------------------- PRO TRADER: ADX — chế độ thị trường trend/range (chỉ vẽ, không đổi luật nếu tắt lọc)
+[diPlus, diMinus, adxVal] = ta.dmi(adxLen, adxLen)
+regimeTrend = adxVal >= adxMin
+regimeDir = diPlus > diMinus ? "nghiêng TĂNG" : diMinus > diPlus ? "nghiêng GIẢM" : "không rõ hướng"
+regimeTxt = adxVal >= 40 ? "TREND MẠNH" : regimeTrend ? "TREND" : adxVal >= 15 ? "YẾU" : "RANGE"
+
+// --- PRO TRADER: Phiên giao dịch (Killzone) — chỉ ra kèo trong giờ thanh khoản mạnh ---
+sessionOk = not sessOn or chSec >= 86400 or not na(time(timeframe.period, killzone, "UTC"))
+
+// --- PRO TRADER: Phân kỳ RSI (bullish/bearish divergence) — bắt đảo chiều sớm ---
+rsiDivV = ta.rsi(close, rsiDivLen)
+plPiv = ta.pivotlow(low, 5, 5)
+phPiv = ta.pivothigh(high, 5, 5)
+var float plP1 = na
+var float plP2 = na
+var float rlP1 = na
+var float rlP2 = na
+var float phP1 = na
+var float phP2 = na
+var float rhP1 = na
+var float rhP2 = na
+if not na(plPiv)
+    plP2 := plP1
+    plP1 := plPiv
+    rlP2 := rlP1
+    rlP1 := rsiDivV[5]
+if not na(phPiv)
+    phP2 := phP1
+    phP1 := phPiv
+    rhP2 := rhP1
+    rhP1 := rsiDivV[5]
+bullDiv = not na(plP2) and not na(rlP2) and plP1 < plP2 and rlP1 > rlP2
+bearDiv = not na(phP2) and not na(rhP2) and phP1 > phP2 and rhP1 < rhP2
+// (goi 94) ve phan ky RSI ngay tai day / dinh vua xac nhan (nen da dong) + nho lan gan nhat cho nhan ket luan
+var array<label> DVL = array.new<label>()
+var int dvBar = na
+var int dvDir = 0
+if barstate.isconfirmed and not na(plPiv) and bullDiv
+    dvBar := bar_index - 5
+    dvDir := 1
+    if rsiDivOn
+        array.push(DVL, label.new(bar_index - 5, plPiv, "PK↑ RSI", style = label.style_label_up, color = color.new(cLong, 30), textcolor = color.white, size = size.tiny, tooltip = "Phân kỳ TĂNG: đáy giá thấp hơn (" + f_p(plP2) + " → " + f_p(plP1) + ") nhưng RSI cao hơn (" + str.tostring(rlP2, "#") + " → " + str.tostring(rlP1, "#") + ") — lực bán yếu dần, dễ hồi / đảo chiều lên (cần CHoCH xác nhận)."))
+if barstate.isconfirmed and not na(phPiv) and bearDiv
+    dvBar := bar_index - 5
+    dvDir := -1
+    if rsiDivOn
+        array.push(DVL, label.new(bar_index - 5, phPiv, "PK↓ RSI", style = label.style_label_down, color = color.new(cShort, 30), textcolor = color.white, size = size.tiny, tooltip = "Phân kỳ GIẢM: đỉnh giá cao hơn (" + f_p(phP2) + " → " + f_p(phP1) + ") nhưng RSI thấp hơn (" + str.tostring(rhP2, "#") + " → " + str.tostring(rhP1, "#") + ") — lực mua yếu dần, dễ điều chỉnh / đảo chiều xuống (cần CHoCH xác nhận)."))
+while array.size(DVL) > 8
+    label.delete(array.shift(DVL))
+
+// --- PRO TRADER: CHẶN NGƯỢC LỰC — không short khi tăng mạnh, không long khi giảm mạnh ---
+momEmaF = ta.ema(close, 8)
+momEmaS = ta.ema(close, 21)
+float momRoc = na(close[momLen]) or close[momLen] == 0 ? 0.0 : (close - close[momLen]) / close[momLen] * 100
+momUpBase = close > momEmaF and momEmaF > momEmaS and (momRoc >= momRocPct or (adxVal >= momAdx and diPlus > diMinus))
+momDnBase = close < momEmaF and momEmaF < momEmaS and (momRoc <= -momRocPct or (adxVal >= momAdx and diMinus > diPlus))
+momBarUp = close > open and (close - open) >= momBarAtr * atr and close > momEmaS
+momBarDn = close < open and (open - close) >= momBarAtr * atr and close < momEmaS
+momUpStrong = momUpBase or momBarUp
+momDnStrong = momDnBase or momBarDn
+momBlockS = momOn and momUpStrong
+momBlockL = momOn and momDnStrong
+
+// ----------------------------------------------------------------------------- CAU TRUC: dinh/day swLen, BOS/CHoCH (nen DONG qua), manh/yeu
+ph = ta.pivothigh(high, swLen, swLen)
+pl = ta.pivotlow(low, swLen, swLen)
+var float sH = na
+var int sHb = na
+var bool sHx = true
+var float pH = na
+var float sL = na
+var int sLb = na
+var bool sLx = true
+var float pL = na
+var int trd = 0
+if not na(ph)
+    pH := sH
+    sH := ph
+    sHb := bar_index - swLen
+    sHx := false
+if not na(pl)
+    pL := sL
+    sL := pl
+    sLb := bar_index - swLen
+    sLx := false
+bool brkUp = false
+bool brkDn = false
+bool bosUp = false
+bool bosDn = false
+int pivUp = na
+int pivDn = na
+float lvUp = na
+float lvDn = na
+if barstate.isconfirmed
+    if not sHx and not na(sH) and close > sH
+        brkUp := true
+        bosUp := trd == 1
+        pivUp := sHb
+        lvUp := sH
+        sHx := true
+        trd := 1
+    if not sLx and not na(sL) and close < sL
+        brkDn := true
+        bosDn := trd == -1
+        pivDn := sLb
+        lvDn := sL
+        sLx := true
+        trd := -1
+
+var float wkHi = na
+var int wkHiB = na
+var float stLo = na
+var int stLoB = na
+var float wkLo = na
+var int wkLoB = na
+var float stHi = na
+var int stHiB = na
+if brkUp
+    int sp = math.max(0, math.min(bar_index - pivUp, 300))
+    float m = low
+    int mo = 0
+    for i = 0 to sp
+        if low[i] < m
+            m := low[i]
+            mo := i
+    stLo := m
+    stLoB := bar_index - mo
+    wkHi := high
+    wkHiB := bar_index
+if brkDn
+    int sp = math.max(0, math.min(bar_index - pivDn, 300))
+    float m = high
+    int mo = 0
+    for i = 0 to sp
+        if high[i] > m
+            m := high[i]
+            mo := i
+    stHi := m
+    stHiB := bar_index - mo
+    wkLo := low
+    wkLoB := bar_index
+if barstate.isconfirmed
+    if trd == 1 and not na(wkHi) and high > wkHi
+        wkHi := high
+        wkHiB := bar_index
+    if trd == -1 and not na(wkLo) and low < wkLo
+        wkLo := low
+        wkLoB := bar_index
+
+var array<line> SLN = array.new<line>()
+var array<label> SLB = array.new<label>()
+f_structDraw(int x1, int x2, float y, string txt, bool up) =>
+    color col = up ? cUpS : cDnS
+    array.push(SLN, line.new(x1, y, x2, y, color = color.new(col, 15), style = line.style_dashed, width = wLine))
+    array.push(SLB, label.new(math.round((x1 + x2) / 2), y, txt, style = up ? label.style_label_down : label.style_label_up, color = color.new(color.black, 100), textcolor = col, size = szSub))
+    if array.size(SLN) > 24
+        line.delete(array.shift(SLN))
+    if array.size(SLB) > 24
+        label.delete(array.shift(SLB))
+    true
+// (goi 94) nho lan pha cau truc gan nhat -> nhan ket luan
+var string lbTxt = ""
+var float lbLv = na
+var int lbBar = na
+var int lbDir = 0
+if brkUp
+    lbTxt := bosUp ? "BOS" : "CHoCH"
+    lbLv := lvUp
+    lbBar := bar_index
+    lbDir := 1
+if brkDn
+    lbTxt := bosDn ? "BOS" : "CHoCH"
+    lbLv := lvDn
+    lbBar := bar_index
+    lbDir := -1
+if showStruct and brkUp
+    f_structDraw(pivUp, bar_index, lvUp, bosUp ? "BOS" : "CHoCH", true)
+if showStruct and brkDn
+    f_structDraw(pivDn, bar_index, lvDn, bosDn ? "BOS" : "CHoCH", false)
+
+// ----------------------------------------------------------------------------- (1) SMC: pha cau truc -> hoi ve OB (viet cho phia LONG; phia SHORT goi voi gia LAT DAU)
+// brk: nen nay vua dong qua dinh cau truc · pivB: nen cua dinh bi pha · swA/swB: day cau truc gan nhat / truoc do (de biet quet thanh khoan)
+f_smc(bool brk, int pivB, float o, float h, float l, float c, float a, int bT, bool stg, bool bos, float swA, float swB, float vol, float vma) =>
+    bool sig = false
+    float e = na
+    float sl = na
+    float t1 = na
+    float t2 = na
+    float sc = 0.0
+    string nm = ""
+    if brk and not na(pivB) and a > 0
+        int span = math.max(1, math.min(bar_index - pivB, 200))
+        float lgLo = l
+        int lgOff = 0
+        for i = 0 to span
+            if l[i] < lgLo
+                lgLo := l[i]
+                lgOff := i
+        float lgHi = h
+        for i = 0 to lgOff
+            lgHi := math.max(lgHi, h[i])
+        float lgR = lgHi - lgLo
+        float mid = lgLo + 0.5 * lgR
+        int ob = -1
+        if lgOff >= 1
+            for i = 1 to lgOff
+                if c[i] < o[i] and h[i] <= mid
+                    ob := i
+                    break
+        if ob < 0
+            for i = lgOff to lgOff + 3
+                if c[i] < o[i]
+                    ob := i
+                    break
+        if ob < 0
+            ob := lgOff
+        float zt = h[ob]
+        float zb = l[ob]
+        float s0 = (ob >= lgOff ? math.min(zb, lgLo) : zb) - iBuf * a
+        s0 := math.min(s0, zt - 0.3 * a)
+        float risk = zt - s0
+        bool fvg = false
+        if lgOff >= 2
+            for i = 0 to lgOff - 2
+                if l[i] > h[i + 2]
+                    fvg := true
+                    break
+        bool disp = fvg or (math.abs(c - o) >= 0.6 * (h - l) and (h - l) >= 1.2 * a)
+        float prevSw = not na(swA) and swA == lgLo ? swB : swA
+        bool sweep = not na(prevSw) and lgLo < prevSw and lgLo > prevSw - 3 * a
+        bool volOk = vol > 1.5 * vma
+        bool disc = zt <= mid
+        float rr0 = risk > 0 ? (lgHi - zt) / risk : 0.0
+        if risk > 0 and risk <= 3 * a and lgR >= 1.5 * a and c > zt
+            e := zt
+            sl := s0
+            t1 := lgHi
+            t2 := lgHi + (lgHi - zt)
+            sc := 1 + (bT == 1 ? 3 : 0) + (bT == 1 and stg ? 1 : 0) + (bos or sweep ? 1 : 0) + (disp ? 1 : 0) + (volOk ? 1 : 0) + (disc ? 1 : 0) + (rr0 >= 2 ? 1 : 0)
+            nm := (bos ? "BOS" : sweep ? "quét đáy + CHoCH" : "CHoCH") + " → hồi về OB"
+            sig := true
+    [sig, e, sl, t1, t2, sc, nm]
+
+// ----------------------------------------------------------------------------- (2) VUNG VANG 4 CUA (chep Setup 4 Cua: song chinh, vung vang, nen tin hieu, cham /10)
+hiOff = nz(-ta.highestbars(high, iLeg))
+loOff = nz(-ta.lowestbars(low, iLeg))
+pbLoAll = ta.lowest(low, math.max(hiOff, 1))
+pbHiAll = ta.highest(high, math.max(loOff, 1))
+lo5 = ta.lowest(low, 5)
+hi5 = ta.highest(high, 5)
+upOk = bias == 1 and loOff >= hiOff and hiOff >= 2
+dnOk = bias == -1 and hiOff >= loOff and loOff >= 2
+legHi = upOk or dnOk ? high[hiOff] : na
+legLo = upOk or dnOk ? low[loOff] : na
+legR = legHi - legLo
+legOk = (upOk or dnOk) and not na(legR) and legR >= iLegAtr * atr
+pbLo = upOk and hiOff > 0 ? pbLoAll : na
+pbHi = dnOk and loOff > 0 ? pbHiAll : na
+z382 = legOk ? (upOk ? legHi - 0.382 * legR : legLo + 0.382 * legR) : na
+z50 = legOk ? (upOk ? legHi - 0.5 * legR : legLo + 0.5 * legR) : na
+z618 = legOk ? (upOk ? legHi - 0.618 * legR : legLo + 0.618 * legR) : na
+use382 = iUse382 and strong
+zNear = use382 ? z382 : z50
+touchL = upOk and legOk and lo5 <= zNear and lo5 >= z618 - 0.5 * atr and close > legLo
+touchS = dnOk and legOk and hi5 >= zNear and hi5 <= z618 + 0.5 * atr and close < legHi
+inGoldL = upOk and legOk and lo5 <= z50 and lo5 >= z618 - 0.5 * atr
+inGoldS = dnOk and legOk and hi5 >= z50 and hi5 <= z618 + 0.5 * atr
+
+// muc tung do/chan gia (dinh/day co lap 5 nen) -> doi vai
+var array<float> pvLv = array.new<float>()
+pvH = ta.pivothigh(high, 5, 5)
+pvL = ta.pivotlow(low, 5, 5)
+if not na(pvH)
+    array.push(pvLv, pvH)
+if not na(pvL)
+    array.push(pvLv, pvL)
+if array.size(pvLv) > 24
+    array.shift(pvLv)
+
+// FVG khung chart (vung trong 3 nen, cham lai = da lap)
+var array<int> fK = array.new<int>()
+var array<float> fB = array.new<float>()
+var array<float> fT = array.new<float>()
+var array<int> fX = array.new<int>()
+if barstate.isconfirmed
+    int nf = array.size(fK)
+    if nf > 0
+        for i = nf - 1 to 0
+            if low <= array.get(fT, i) and high >= array.get(fB, i)
+                array.remove(fK, i)
+                array.remove(fB, i)
+                array.remove(fT, i)
+                array.remove(fX, i)
+    if low > high[2]
+        array.push(fK, 1)
+        array.push(fB, high[2])
+        array.push(fT, low)
+        array.push(fX, bar_index - 1)
+    if high < low[2]
+        array.push(fK, -1)
+        array.push(fB, high)
+        array.push(fT, low[2])
+        array.push(fX, bar_index - 1)
+    while array.size(fK) > 8
+        array.shift(fK)
+        array.shift(fB)
+        array.shift(fT)
+        array.shift(fX)
+
+// OB khung chart (dong nen pha swing 2/2 -> nen nguoc chieu cuoi cung trong 10 nen truoc)
+var array<int> oK = array.new<int>()
+var array<float> oB = array.new<float>()
+var array<float> oT = array.new<float>()
+var array<int> oI = array.new<int>()
+var float swH = na
+var float swL = na
+var bool swHdone = true
+var bool swLdone = true
+ph2 = ta.pivothigh(high, 2, 2)
+pl2 = ta.pivotlow(low, 2, 2)
+if not na(ph2)
+    swH := ph2
+    swHdone := false
+if not na(pl2)
+    swL := pl2
+    swLdone := false
+f_obPush(int k, float b, float t, int ix) =>
+    if not array.includes(oI, ix)
+        array.push(oK, k)
+        array.push(oB, b)
+        array.push(oT, t)
+        array.push(oI, ix)
+    while array.size(oK) > 6
+        array.shift(oK)
+        array.shift(oB)
+        array.shift(oT)
+        array.shift(oI)
+    true
+if barstate.isconfirmed
+    int no = array.size(oK)
+    if no > 0
+        for i = no - 1 to 0
+            int k_ = array.get(oK, i)
+            float b_ = array.get(oB, i)
+            float t_ = array.get(oT, i)
+            if (k_ == 1 and close < b_) or (k_ == -1 and close > t_)
+                array.remove(oK, i)
+                array.remove(oB, i)
+                array.remove(oT, i)
+                array.remove(oI, i)
+    if not swHdone and not na(swH) and close > swH
+        swHdone := true
+        int kk = -1
+        for k = 1 to 10
+            if close[k] < open[k]
+                kk := k
+                break
+        if kk > 0
+            f_obPush(1, low[kk], high[kk], bar_index - kk)
+    if not swLdone and not na(swL) and close < swL
+        swLdone := true
+        int kk = -1
+        for k = 1 to 10
+            if close[k] > open[k]
+                kk := k
+                break
+        if kk > 0
+            f_obPush(-1, low[kk], high[kk], bar_index - kk)
+
+// hop luu trong vung vang: EMA 55/144, doi vai, OB/FVG cung chieu
+f_hopLuu(float zA, float zB, float a, float e2v, float e3v, int dir) =>
+    float lo = math.min(zA, zB) - 0.3 * a
+    float hi = math.max(zA, zB) + 0.3 * a
+    bool ok = (e2v >= lo and e2v <= hi) or (e3v >= lo and e3v <= hi)
+    int n = array.size(pvLv)
+    if n > 0 and not ok
+        for i = 0 to n - 1
+            float v = array.get(pvLv, i)
+            if v >= lo and v <= hi
+                ok := true
+    int nf = array.size(fK)
+    if nf > 0 and not ok
+        for i = 0 to nf - 1
+            if array.get(fK, i) == dir and array.get(fT, i) >= lo and array.get(fB, i) <= hi
+                ok := true
+    int no = array.size(oK)
+    if no > 0 and not ok
+        for i = 0 to no - 1
+            if array.get(oK, i) == dir and array.get(oT, i) >= lo and array.get(oB, i) <= hi
+                ok := true
+    ok
+
+// nen tin hieu (chi nen da dong)
+upW = high - math.max(open, close)
+loW = math.min(open, close) - low
+f_doji(int i) =>
+    (high[i] - low[i]) > 0 and math.abs(close[i] - open[i]) <= 0.3 * (high[i] - low[i])
+f_dojiL(int i) =>
+    f_doji(i) and (math.min(open[i], close[i]) - low[i]) >= 0.5 * (high[i] - low[i])
+f_dojiS(int i) =>
+    f_doji(i) and (high[i] - math.max(open[i], close[i])) >= 0.5 * (high[i] - low[i])
+dL0 = f_dojiL(0)
+dL1 = f_dojiL(1)
+dL2 = f_dojiL(2)
+dL3 = f_dojiL(3)
+dS0 = f_dojiS(0)
+dS1 = f_dojiS(1)
+dS2 = f_dojiS(2)
+dS3 = f_dojiS(3)
+hammer = rngBar > 0 and loW >= 2 * body and upW <= math.max(body, 0.25 * rngBar) and (close - low) >= 0.6 * rngBar
+star = rngBar > 0 and upW >= 2 * body and loW <= math.max(body, 0.25 * rngBar) and (high - close) >= 0.6 * rngBar
+bullEng = close > open and close[1] < open[1] and close >= open[1] and open <= close[1] and body > math.abs(close[1] - open[1])
+bearEng = close < open and close[1] > open[1] and close <= open[1] and open >= close[1] and body > math.abs(close[1] - open[1])
+mStar = close[2] < open[2] and math.abs(close[2] - open[2]) >= 0.5 * (high[2] - low[2]) and math.abs(close[1] - open[1]) <= 0.3 * (high[1] - low[1]) and close > open and close > (open[2] + close[2]) / 2
+eStar = close[2] > open[2] and math.abs(close[2] - open[2]) >= 0.5 * (high[2] - low[2]) and math.abs(close[1] - open[1]) <= 0.3 * (high[1] - low[1]) and close < open and close < (open[2] + close[2]) / 2
+low3span = math.max(low, low[1], low[2]) - math.min(low, low[1], low[2])
+high3span = math.max(high, high[1], high[2]) - math.min(high, high[1], high[2])
+doji3L = dL0 and dL1 and dL2 and not dL3 and low3span <= 0.5 * atr
+doji3S = dS0 and dS1 and dS2 and not dS3 and high3span <= 0.5 * atr
+
+var int tBarL = na
+var float tHiL = na
+var float tLoL = na
+var string tNameL = ""
+var int tBarS = na
+var float tLoS = na
+var float tHiS = na
+var string tNameS = ""
+trigL = touchL and (hammer or bullEng or mStar or doji3L)
+trigS = touchS and (star or bearEng or eStar or doji3S)
+nameL = hammer ? "Búa" : bullEng ? "Nhấn chìm tăng" : mStar ? "Sao mai" : "3 doji vàng"
+nameS = star ? "Sao băng" : bearEng ? "Nhấn chìm giảm" : eStar ? "Sao hôm" : "3 doji vàng"
+immL = trigL and bullEng and close > high[1] and not tooLong
+immS = trigS and bearEng and close < low[1] and not tooLong
+confL = not na(tBarL) and bar_index > tBarL and bar_index - tBarL <= 3 and trendBull and close > tHiL and not tooLong and upOk
+confS = not na(tBarS) and bar_index > tBarS and bar_index - tBarS <= 3 and trendBear and close < tLoS and not tooLong and dnOk
+
+var float sigLegL = na
+var float sigLegS = na
+raw2L = barstate.isconfirmed and useGold and (immL or confL) and (na(sigLegL) or legHi != sigLegL)
+raw2S = barstate.isconfirmed and useGold and (immS or confS) and (na(sigLegS) or legLo != sigLegS)
+slL2 = (confL and not na(tLoL) ? math.min(lo5, tLoL) : lo5) - iBuf * atr
+slS2 = (confS and not na(tHiS) ? math.max(hi5, tHiS) : hi5) + iBuf * atr
+rrL2 = close - slL2 > 0 ? (legHi - close) / (close - slL2) : 0.0
+rrS2 = slS2 - close > 0 ? (close - legLo) / (slS2 - close) : 0.0
+tp2L2 = na(pbLo) ? legHi : math.max(legHi, pbLo + legR)
+tp2S2 = na(pbHi) ? legLo : math.min(legLo, pbHi - legR)
+rr2L2 = close - slL2 > 0 ? (tp2L2 - close) / (close - slL2) : 0.0
+rr2S2 = slS2 - close > 0 ? (close - tp2S2) / (slS2 - close) : 0.0
+
+// nhip hoi co nen volume dot bien NGUOC chieu lenh -> phe kia con luc
+f_nuocRut(int dir, int n) =>
+    bool bad = false
+    if n > 0
+        for i = 0 to math.min(n, 30) - 1
+            if dir == 1 and close[i] < open[i] and volume[i] > 2.5 * volMa[i] and (close[i] - low[i]) <= 0.25 * (high[i] - low[i])
+                bad := true
+            if dir == -1 and close[i] > open[i] and volume[i] > 2.5 * volMa[i] and (high[i] - close[i]) <= 0.25 * (high[i] - low[i])
+                bad := true
+    bad
+
+nrL = f_nuocRut(1, hiOff)
+nrS = f_nuocRut(-1, loOff)
+hlL = legOk and upOk and f_hopLuu(z50, z618, atr, ce2, ce3, 1)
+hlS = legOk and dnOk and f_hopLuu(z50, z618, atr, ce2, ce3, -1)
+impL = upOk ? loOff - hiOff : 0
+impS = dnOk ? hiOff - loOff : 0
+calmL = upOk and hiOff >= 0.5 * impL and not nrL
+calmS = dnOk and loOff >= 0.5 * impS and not nrS
+score2L = g1 + (inGoldL or (use382 and touchL) ? 1 : 0) + (hlL ? 1 : 0) + 1 + 1 + (calmL ? 1 : 0) + (rrL2 >= iMinRR ? 1 : 0) + (rrL2 >= 2.5 or rr2L2 >= 3 ? 1 : 0)
+score2S = math.abs(g1) + (inGoldS or (use382 and touchS) ? 1 : 0) + (hlS ? 1 : 0) + 1 + 1 + (calmS ? 1 : 0) + (rrS2 >= iMinRR ? 1 : 0) + (rrS2 >= 2.5 or rr2S2 >= 3 ? 1 : 0)
+must2L = bias == 1 and btcOkL and touchL and rrL2 >= iMinRR
+must2S = bias == -1 and btcOkS and touchS and rrS2 >= iMinRR
+grade2L = f_grade(must2L, score2L)
+grade2S = f_grade(must2S, score2S)
+
+// ----------------------------------------------------------------------------- (3) PHA VO + RETEST (mau B Setup 4 Cua, cham /5) - phia LONG; SHORT = gia lat dau
+f_bo(bool on, float o, float h, float l, float c, float e1, float e2, float e3, float a, int bT, bool okDir) =>
+    float rH = ta.highest(h, 20)[1]
+    float rL = ta.lowest(l, 20)[1]
+    float rh = rH - rL
+    bool fan = e1 > e2 and e2 > e3 and (e1 - e2) > (e1[3] - e2[3])
+    bool tB = c > o and math.abs(c - o) >= 0.5 * (h - l) and c > h[1]
+    bool trendOk = not trendOn or bT == 1
+    bool boNow = on and trendOk and rh <= 4 * a and c > rH and c[1] <= rH and tB
+    var int bb = na
+    var float lv = na
+    var float hh = na
+    var int scB = 0
+    var bool armed = false
+    var float rlo = na
+    bool sig = false
+    float e = na
+    float sl = na
+    float t1 = na
+    float t2 = na
+    if barstate.isconfirmed and boNow
+        bb := bar_index
+        lv := rH
+        hh := rh
+        scB := 0
+        armed := false
+        rlo := na
+    if barstate.isconfirmed and not na(bb) and bar_index - bb == 2
+        int beh = c[1] > lv and c[1] > o[1] ? 3 : 2
+        int env = fan ? 0 : -1
+        bool tr1 = c[1] > o[1] and l[1] > (o[2] + c[2]) / 2
+        bool tr2 = c > o and l > (o[1] + c[1]) / 2
+        bool hold = c > lv and c[1] > lv
+        int fol = tr1 and tr2 ? 2 : hold ? 1 : 0
+        scB := beh + env + fol
+        armed := scB >= 4
+    bool rt = armed and not na(bb) and bar_index - bb > 2 and bar_index - bb <= 14 and l <= lv + 0.3 * a and c > lv - 0.1 * a
+    if barstate.isconfirmed and rt
+        rlo := na(rlo) ? l : math.min(rlo, l)
+    if barstate.isconfirmed and armed and not na(rlo) and bar_index - bb <= 16 and tB and c > lv and trendOk and (h - l) <= iMaxBar * a and okDir
+        e := c
+        sl := rlo - iBuf * a
+        t1 := lv + hh
+        t2 := lv + 2 * hh
+        sig := e > sl and t1 > e
+        armed := false
+    [sig, e, sl, t1, t2, scB]
+
+// ----------------------------------------------------------------------------- (4) NEM 3 DAY / HIGH 2 (phia LONG; SHORT = gia lat dau -> Low 2)
+// nhip hoi trong song tang (EMA21 > EMA55): dem lan "thu lai" (dinh nen vuot dinh nen truoc sau 1 nen lui) = High 1, High 2;
+// dem so lan day xuong (moi lan day moi sau khi da bat len >= 1 ATR); 3 lan day khoang ha ngan dan = NEM -> nhan ca High 1;
+// >= 4 lan day = song mot chieu, khong bat. Vao khi pha dinh nen truoc (lenh cho mua), SL duoi day nhip hoi.
+f_h2(bool on, float o, float h, float l, float c, float e1, float e2, float e3, float a, int bT, bool stg, float stL) =>
+    var float top = na
+    var float pbl = na
+    var float st = na
+    var int hc = 0
+    var int pu = 0
+    var float plo = na
+    var bool reb = false
+    var float y1 = na
+    var float y2 = na
+    var float y3 = na
+    var bool used = false
+    bool sig = false
+    float e = na
+    float sl = na
+    float t1 = na
+    float t2 = na
+    float sc = 0.0
+    string nm = ""
+    int hcPrev = hc
+    bool hUp = h > h[1] and h[1] <= h[2]
+    float hPrev = h[1]
+    if barstate.isconfirmed
+        if not (on and e1 > e2)
+            top := na
+            pbl := na
+            st := na
+            hc := 0
+            pu := 0
+            plo := na
+            reb := false
+            y1 := na
+            y2 := na
+            y3 := na
+            used := false
+        else if na(top) or h >= top
+            if not na(pbl)
+                st := pbl
+            top := h
+            pbl := na
+            hc := 0
+            pu := 0
+            plo := na
+            reb := false
+            y1 := na
+            y2 := na
+            y3 := na
+            used := false
+        else
+            pbl := na(pbl) ? l : math.min(pbl, l)
+            if na(plo)
+                pu := 1
+                plo := l
+                y1 := l
+            else if l < plo
+                if reb
+                    pu += 1
+                    reb := false
+                plo := l
+                if pu == 1
+                    y1 := l
+                else if pu == 2
+                    y2 := l
+                else if pu == 3
+                    y3 := l
+            else if h - plo >= a
+                reb := true
+            if hUp
+                hc += 1
+            bool wedge = pu == 3 and not na(y1) and not na(y2) and not na(y3) and (y2 - y3) < (y1 - y2)
+            bool newH = hc > hcPrev
+            bool depthOk = top - pbl >= a and (na(st) or (pbl > st and top - pbl <= 0.786 * (top - st)))
+            bool structOk = na(stL) or pbl > stL
+            if not used and newH and (hc == 2 or (hc == 1 and wedge)) and pu <= 3 and depthOk and structOk and (h - l) <= iMaxBar * a
+                e := math.max(o, hPrev)
+                sl := pbl - iBuf * a
+                t1 := top
+                t2 := na(st) ? top + (top - e) : pbl + (top - st)
+                if t2 <= t1
+                    t2 := t1 + (t1 - e)
+                float rr = e - sl > 0 ? (t1 - e) / (e - sl) : 0.0
+                bool emaPb = pbl <= e1 + 0.2 * a and pbl >= e3 - 0.5 * a
+                bool strongBar = c > o and (h - c) <= 0.3 * (h - l)
+                sc := 1 + (bT == 1 ? 3 : 0) + (bT == 1 and stg ? 1 : 0) + (emaPb ? 1 : 0) + (wedge ? 2 : 1) + (strongBar ? 1 : 0) + (rr >= 2.5 ? 1 : 0)
+                nm := wedge ? (hc == 1 ? "Nêm 3 đẩy → High 1" : "Nêm 3 đẩy → High 2") : "High 2 (hồi 2 nhịp)"
+                sig := e > sl and t1 > e
+                used := true
+    [sig, e, sl, t1, t2, sc, nm]
+
+// ----------------------------------------------------------------------------- GOI 4 SETUP CHO 2 PHIA (SHORT: o/h/l/c lat dau -> dung chung luat LONG)
+[s1L, e1L, sl1L, t11L, t21L, sc1L, nm1L] = f_smc(brkUp and useSMC, pivUp, open, high, low, close, atr, bias, strong, bosUp, sL, pL, volume, volMa)
+[s1Sm, e1Sm, sl1Sm, t11Sm, t21Sm, sc1S, nm1S] = f_smc(brkDn and useSMC, pivDn, -open, -low, -high, -close, atr, -bias, strong, bosDn, -sH, -pH, volume, volMa)
+[s3L, e3L, sl3L, t13L, t23L, b3L] = f_bo(useBO, open, high, low, close, ce1, ce2, ce3, atr, bias, btcOkL)
+[s3Sm, e3Sm, sl3Sm, t13Sm, t23Sm, b3S] = f_bo(useBO, -open, -low, -high, -close, -ce1, -ce2, -ce3, atr, -bias, btcOkS)
+[s4L, e4L, sl4L, t14L, t24L, sc4L, nm4L] = f_h2(useH2, open, high, low, close, ce1, ce2, ce3, atr, bias, strong, trd == 1 ? stLo : na)
+[s4Sm, e4Sm, sl4Sm, t14Sm, t24Sm, sc4S, nm4S] = f_h2(useH2, -open, -low, -high, -close, -ce1, -ce2, -ce3, atr, -bias, strong, trd == -1 ? -stHi : na)
+
+// ----------------------------------------------------------------------------- KEO: tao, theo doi, ve, thong ke
+type Keo
+    int setup
+    int dir
+    string nm
+    string grade
+    float sc
+    bool lim
+    bool trail
+    float entry
+    float sl
+    float tp1
+    float tp2
+    float rr
+    int bar0
+    int status
+    int fillBar
+    int exitBar
+    float exitPx
+    bool hitT1 = false
+    float r1 = 0.0
+    float rRes = 0.0
+    label lbN
+    label lbE
+    label lbSL
+    label lbT1
+    label lbT2
+    line lnE
+    line lnSL
+    line lnT1
+    line lnT2
+    box bxR
+    box bxW
+
+// status: 0 cho gia hoi (limit) · 1 da vao · 2 da cham TP1 (SL ve entry) · 10 TP2 · 11 SL · 12 ve entry sau TP1 · 13 time stop
+//         20 het han · 21 chay mat (toi TP1 truoc khi khop) · 22 cau truc dao chieu · 23 R:R luc khop thap · 24 thay bang keo moi
+var array<Keo> KEO = array.new<Keo>()
+var array<int> stN = array.new<int>(5, 0)
+var array<int> stW = array.new<int>(5, 0)
+var array<float> stR = array.new<float>(5, 0.0)
+var array<int> stX = array.new<int>(5, 0)
+var array<string> NOTE = array.from("")
+var array<int> NOTEB = array.from(0)
+
+f_txtNew(Keo k) =>
+    (k.dir == 1 ? "▲ LONG" : "▼ SHORT") + " · " + f_setupTxt(k.setup) + " (" + k.nm + ") · hạng " + k.grade + " " + str.tostring(k.sc, "#") + "/10 · " + styleTxt
+
+f_head(Keo k) =>
+    syminfo.ticker + " " + f_tfTxt(timeframe.period) + " " + styleTxt + " · " + (k.dir == 1 ? "▲ " : "▼ ") + f_setupTxt(k.setup) + " " + k.grade
+
+// (goi 87) R:R neu vao NGAY o gia hien tai thay vi cho gia hoi ve entry: loi toi TP1 / rui ro toi SL (0 = gia da qua TP1 hoac qua SL)
+f_rrNow(Keo k) =>
+    bool L = k.dir == 1
+    float rk = L ? close - k.sl : k.sl - close
+    float rw = L ? k.tp1 - close : close - k.tp1
+    rk > 0 ? math.max(rw, 0.0) / rk : 0.0
+
+f_nowTxt(Keo k) =>
+    bool L = k.dir == 1
+    float rk = L ? close - k.sl : k.sl - close
+    float rr_ = f_rrNow(k)
+    rk <= 0 ? "⛔ Giá đang vượt SL — đừng vào" : rr_ >= iMinRR ? "✅ Vào ngay " + f_p(close) + " cũng được: R:R 1:" + str.tostring(rr_, "#.##") : "⛔ Không đuổi giá: vào ngay " + f_p(close) + " R:R chỉ 1:" + str.tostring(rr_, "#.##") + " (cần ≥ 1:" + str.tostring(iMinRR, "#.#") + ")"
+
+f_nowShort(Keo k) =>
+    float rr_ = f_rrNow(k)
+    rr_ >= iMinRR ? "vào ngay cũng được, R:R 1:" + str.tostring(rr_, "#.##") : "vào ngay R:R chỉ 1:" + str.tostring(rr_, "#.##") + " → không đuổi giá"
+
+f_json(Keo k) =>
+    '{"nguon":"tradingview","ev":"new","ticker":"' + syminfo.tickerid + '","side":"' + (k.dir == 1 ? "long" : "short") + '","price":' + str.tostring(close, format.mintick) + ',"entry":' + str.tostring(k.entry, format.mintick) + ',"sl":' + str.tostring(k.sl, format.mintick) + ',"tp":' + str.tostring(k.tp1, format.mintick) + ',"tp2":' + str.tostring(k.tp2, format.mintick) + ',"lim":' + (k.lim ? "true" : "false") + ',"rr_now":' + str.tostring(f_rrNow(k), "#.##") + ',"rr_min":' + str.tostring(iMinRR, "#.##") + ',"tf":"' + timeframe.period + '","style":"' + styleKey + '","ten":"Kèo Pro · ' + f_setupTxt(k.setup) + ' · ' + k.grade + ' · ' + styleTxt + '"}'
+
+f_alert(string msg) =>
+    alert(msg, alert.freq_once_per_bar_close)
+    true
+
+f_xR(Keo k) =>
+    k.status < 10 ? bar_index + 3 : math.max(k.exitBar, k.bar0 + 1)
+
+f_place(Keo k) =>
+    int x = f_xR(k)
+    box.set_right(k.bxR, x)
+    box.set_right(k.bxW, x)
+    line.set_x2(k.lnE, x)
+    line.set_x2(k.lnSL, x)
+    line.set_x2(k.lnT1, x)
+    line.set_x2(k.lnT2, x)
+    label.set_x(k.lbE, x)
+    label.set_x(k.lbSL, x)
+    label.set_x(k.lbT1, x)
+    label.set_x(k.lbT2, x)
+    true
+
+f_levels(Keo k) =>
+    bool L = k.dir == 1
+    box.set_top(k.bxR, L ? k.entry : k.sl)
+    box.set_bottom(k.bxR, L ? k.sl : k.entry)
+    box.set_top(k.bxW, L ? k.tp2 : k.entry)
+    box.set_bottom(k.bxW, L ? k.entry : k.tp2)
+    line.set_y1(k.lnT1, k.tp1)
+    line.set_y2(k.lnT1, k.tp1)
+    line.set_y1(k.lnT2, k.tp2)
+    line.set_y2(k.lnT2, k.tp2)
+    label.set_y(k.lbT1, k.tp1)
+    label.set_y(k.lbT2, k.tp2)
+    label.set_text(k.lbT1, "TP1: " + f_p(k.tp1))
+    label.set_text(k.lbT2, "TP2: " + f_p(k.tp2))
+    true
+
+// (goi 85) nhan muc: phia TREN duong (Entry long, TP long, SL short) / phia DUOI duong (SL long, Entry short, TP short)
+//   -> nhan khong de len nhau; chu co gia; co chu theo "Co chu nhan", do day duong theo "Do dam duong ke"
+f_draw(Keo k) =>
+    bool L = k.dir == 1
+    int x0 = k.bar0
+    int x = bar_index + 3
+    string sTren = label.style_label_lower_left
+    string sDuoi = label.style_label_upper_left
+    k.bxR := box.new(x0, L ? k.entry : k.sl, x, L ? k.sl : k.entry, border_color = color.new(cShort, 55), bgcolor = color.new(cShort, 86))
+    k.bxW := box.new(x0, L ? k.tp2 : k.entry, x, L ? k.entry : k.tp2, border_color = color.new(cLong, 60), bgcolor = color.new(cLong, 90))
+    k.lnE := line.new(x0, k.entry, x, k.entry, color = cEntry, width = wTrade, style = k.lim ? line.style_dashed : line.style_solid)
+    k.lnSL := line.new(x0, k.sl, x, k.sl, color = cShort, width = wTrade)
+    k.lnT1 := line.new(x0, k.tp1, x, k.tp1, color = cLong, width = wTrade, style = line.style_dashed)
+    k.lnT2 := line.new(x0, k.tp2, x, k.tp2, color = cTp2L, width = math.max(wTrade - 1, 1), style = line.style_dashed)
+    k.lbE := label.new(x, k.entry, (k.lim ? "Entry (chờ): " : "Entry: ") + f_p(k.entry), style = L ? sTren : sDuoi, color = cEntry, textcolor = color.white, size = szMain)
+    k.lbSL := label.new(x, k.sl, "SL: " + f_p(k.sl), style = L ? sDuoi : sTren, color = cShort, textcolor = color.white, size = szMain)
+    k.lbT1 := label.new(x, k.tp1, "TP1: " + f_p(k.tp1), style = L ? sTren : sDuoi, color = cLong, textcolor = color.white, size = szMain)
+    k.lbT2 := label.new(x, k.tp2, "TP2: " + f_p(k.tp2), style = L ? sTren : sDuoi, color = cTp2, textcolor = color.white, size = szMain)
+    string tip = f_txtNew(k) + "\nEntry " + f_p(k.entry) + " · SL " + f_p(k.sl) + "\nTP1 " + f_p(k.tp1) + " · TP2 " + f_p(k.tp2) + " · R:R 1:" + str.tostring(k.rr, "#.#")
+    k.lbN := label.new(x0, L ? low - 0.5 * atr : high + 0.5 * atr, (L ? "▲ " : "▼ ") + f_setupTxt(k.setup) + " " + k.grade, style = L ? label.style_label_up : label.style_label_down, color = color.new(L ? cLong : cShort, 10), textcolor = color.white, size = szSub, tooltip = tip)
+    true
+
+f_erase(Keo k) =>
+    label.delete(k.lbN)
+    label.delete(k.lbE)
+    label.delete(k.lbSL)
+    label.delete(k.lbT1)
+    label.delete(k.lbT2)
+    line.delete(k.lnE)
+    line.delete(k.lnSL)
+    line.delete(k.lnT1)
+    line.delete(k.lnT2)
+    box.delete(k.bxR)
+    box.delete(k.bxW)
+    true
+
+f_kq(Keo k) =>
+    k.status == 10 ? "✅ TP2 " + f_r(k.rRes) : k.status == 11 ? "❌ SL −1R" : k.status == 12 ? "⚖️ về entry " + f_r(k.rRes) : k.status == 13 ? "⏱ đóng " + f_r(k.rRes) : k.status == 20 ? "⌛ hết hạn" : k.status == 21 ? "⏭ chạy mất" : k.status == 22 ? "✖ cấu trúc đảo" : k.status == 23 ? "✖ R:R thấp" : k.status == 24 ? "↺ có kèo mới" : ""
+
+// (goi 85) keo da dong: an 4 nhan muc (chi giu nhan ket qua o nen vao), duong mo + manh -> keo dang song noi bat
+f_fade(Keo k) =>
+    label.set_text(k.lbE, "")
+    label.set_text(k.lbSL, "")
+    label.set_text(k.lbT1, "")
+    label.set_text(k.lbT2, "")
+    label.set_style(k.lbE, label.style_none)
+    label.set_style(k.lbSL, label.style_none)
+    label.set_style(k.lbT1, label.style_none)
+    label.set_style(k.lbT2, label.style_none)
+    line.set_color(k.lnE, color.new(cEntry, 55))
+    line.set_color(k.lnSL, color.new(cShort, 55))
+    line.set_color(k.lnT1, color.new(cLong, 55))
+    line.set_color(k.lnT2, color.new(cTp2L, 60))
+    line.set_width(k.lnE, 1)
+    line.set_width(k.lnSL, 1)
+    line.set_width(k.lnT1, 1)
+    line.set_width(k.lnT2, 1)
+    box.set_border_color(k.bxR, color.new(cShort, 80))
+    box.set_border_color(k.bxW, color.new(cLong, 80))
+    true
+
+// ket thuc lenh: ghi thong ke + to mau ket qua
+f_close(Keo k, int st, float px, float rr_) =>
+    k.status := st
+    k.exitBar := bar_index
+    k.exitPx := px
+    k.rRes := rr_
+    array.set(stN, k.setup, array.get(stN, k.setup) + 1)
+    array.set(stW, k.setup, array.get(stW, k.setup) + (k.hitT1 ? 1 : 0))
+    array.set(stR, k.setup, array.get(stR, k.setup) + rr_)
+    if st == 10
+        label.set_text(k.lbT2, "TP2 ✓ " + f_p(k.tp2))
+        label.set_color(k.lbT2, cLong)
+    if st == 11
+        label.set_text(k.lbSL, "SL ✗ " + f_p(k.sl))
+    label.set_text(k.lbN, (k.dir == 1 ? "▲ " : "▼ ") + f_setupTxt(k.setup) + " " + k.grade + " · " + f_kq(k))
+    box.set_bgcolor(k.bxR, color.new(cShort, 92))
+    box.set_bgcolor(k.bxW, color.new(cLong, 94))
+    if fadeOld
+        f_fade(k)
+    f_place(k)
+    true
+
+// ket thuc keo CHUA khop (khong tinh thang/thua)
+f_cancel(Keo k, int st) =>
+    k.status := st
+    k.exitBar := bar_index
+    array.set(stX, k.setup, array.get(stX, k.setup) + 1)
+    array.set(NOTE, 0, (k.dir == 1 ? "▲ " : "▼ ") + f_setupTxt(k.setup) + " " + k.grade + " (entry " + f_p(k.entry) + ") · " + f_kq(k))
+    array.set(NOTEB, 0, bar_index)
+    true
+
+// 1 nen da dong cho 1 keo (gia lat dau cho SHORT de dung chung luat LONG) -> tra ma su kien cho alert
+f_step(Keo k) =>
+    bool L = k.dir == 1
+    float hi_ = L ? high : -low
+    float lo_ = L ? low : -high
+    float cl_ = L ? close : -close
+    float op_ = L ? open : -open
+    float e = L ? k.entry : -k.entry
+    float s = L ? k.sl : -k.sl
+    float t1 = L ? k.tp1 : -k.tp1
+    float t2 = L ? k.tp2 : -k.tp2
+    float risk = math.max(e - s, 1e-10)
+    string ev = ""
+    bool fillNow = false
+    if k.status == 0
+        if lo_ <= e
+            float rrF = (t1 - e) / risk
+            if rrF < iMinRR
+                f_cancel(k, 23)
+                ev := "cancel"
+            else
+                k.status := 1
+                k.fillBar := bar_index
+                k.rr := rrF
+                fillNow := true
+                ev := "fill"
+                label.set_text(k.lbE, "Entry: " + f_p(k.entry))
+                line.set_style(k.lnE, line.style_solid)
+        else
+            if k.trail and hi_ > t1
+                t1 := hi_
+                t2 := t1 + (t1 - e)
+                k.tp1 := L ? t1 : -t1
+                k.tp2 := L ? t2 : -t2
+                f_levels(k)
+            if not k.trail and hi_ >= t1
+                f_cancel(k, 21)
+                ev := "cancel"
+            else if bar_index - k.bar0 >= iExp
+                f_cancel(k, 20)
+                ev := "cancel"
+    if k.status == 1
+        if lo_ <= s
+            f_close(k, 11, k.sl, -1.0)
+            ev := "sl"
+        else if hi_ >= t1 and (not fillNow or cl_ > op_)
+            k.hitT1 := true
+            k.status := 2
+            k.r1 := (t1 - e) / risk
+            label.set_text(k.lbT1, "TP1 ✓ " + f_p(k.tp1))
+            if iBE
+                line.set_y1(k.lnSL, k.entry)
+                line.set_y2(k.lnSL, k.entry)
+                label.set_y(k.lbSL, k.entry)
+                label.set_text(k.lbSL, "SL → entry " + f_p(k.entry))
+            ev := "tp1"
+            if hi_ >= t2
+                f_close(k, 10, k.tp2, 0.5 * k.r1 + 0.5 * (t2 - e) / risk)
+                ev := "tp2"
+        else if not fillNow and bar_index - k.fillBar >= iTimeStop
+            f_close(k, 13, close, (cl_ - e) / risk)
+            ev := "ts"
+    else if k.status == 2 and ev != "tp1"
+        float s2 = iBE ? e : s
+        if lo_ <= s2
+            f_close(k, 12, L ? s2 : -s2, 0.5 * k.r1 + (iBE ? 0.0 : -0.5))
+            ev := "be"
+        else if hi_ >= t2
+            f_close(k, 10, k.tp2, 0.5 * k.r1 + 0.5 * (t2 - e) / risk)
+            ev := "tp2"
+        else if bar_index - k.fillBar >= 2 * iTimeStop
+            f_close(k, 13, close, 0.5 * k.r1 + 0.5 * (cl_ - e) / risk)
+            ev := "ts"
+    ev
+
+f_evMsg(Keo k, string ev) =>
+    string h_ = f_head(k)
+    ev == "fill" ? "✅ " + h_ + " · đã khớp entry " + f_p(k.entry) + " · SL " + f_p(k.sl) + " · TP1 " + f_p(k.tp1) : ev == "tp1" ? "🎯 " + h_ + " · chạm TP1 ✓ (+" + str.tostring(k.r1, "#.#") + "R)" + (iBE ? " · chốt 50%, dời SL về entry" : " · chốt 50%") : ev == "tp2" ? "🏁 " + h_ + " · chạm TP2 ✓ · cả lệnh " + f_r(k.rRes) : ev == "sl" ? "❌ " + h_ + " · dính SL · −1R" : ev == "be" ? "⚖️ " + h_ + " · về entry sau TP1 · cả lệnh " + f_r(k.rRes) : ev == "ts" ? "⏱ " + h_ + " · quá " + str.tostring(iTimeStop) + " nến chưa tới TP1 · đóng " + f_r(k.rRes) : "⌛ " + h_ + " · bỏ kèo chờ — " + f_kq(k)
+
+// (goi 87) alert JSON cho su kien cua keo (khop / TP1 / TP2 / SL / ve entry / time stop / bo keo) -> bot chuyen thang len Telegram
+f_jsonEv(Keo k, string ev) =>
+    string m = str.replace_all(f_evMsg(k, ev), '"', "'")
+    float rv = ev == "tp1" ? k.r1 : k.rRes
+    '{"nguon":"tradingview","ev":"' + ev + '","ticker":"' + syminfo.tickerid + '","side":"' + (k.dir == 1 ? "long" : "short") + '","price":' + str.tostring(close, format.mintick) + ',"entry":' + str.tostring(k.entry, format.mintick) + ',"sl":' + str.tostring(k.sl, format.mintick) + ',"tp":' + str.tostring(k.tp1, format.mintick) + ',"tp2":' + str.tostring(k.tp2, format.mintick) + ',"r":' + str.tostring(rv, "#.##") + ',"kq":"' + f_kq(k) + '","tf":"' + timeframe.period + '","style":"' + styleKey + '","ten":"Kèo Pro · ' + f_setupTxt(k.setup) + ' · ' + k.grade + ' · ' + styleTxt + '","msg":"' + m + '"}'
+
+f_active(int setup, int dir) =>
+    int idx = -1
+    int n = array.size(KEO)
+    if n > 0
+        for i = n - 1 to 0
+            Keo k = array.get(KEO, i)
+            if k.setup == setup and k.dir == dir and k.status < 10
+                idx := i
+                break
+    idx
+
+// ---- 1) theo doi cac keo dang song tren nen vua dong
+if barstate.isconfirmed
+    int n = array.size(KEO)
+    if n > 0
+        for i = 0 to n - 1
+            Keo k = array.get(KEO, i)
+            if k.status < 10 and k.bar0 < bar_index
+                if k.setup == 1 and k.status == 0 and ((k.dir == 1 and brkDn) or (k.dir == -1 and brkUp))
+                    f_cancel(k, 22)
+                    if alExit
+                        f_alert(jsonOn ? f_jsonEv(k, "cancel") : f_evMsg(k, "cancel"))
+                else
+                    string ev = f_step(k)
+                    if ev != ""
+                        if (ev == "fill" and alFill) or (ev != "fill" and alExit)
+                            f_alert(jsonOn ? f_jsonEv(k, ev) : f_evMsg(k, ev))
+    int m = array.size(KEO)
+    if m > 0
+        for i = m - 1 to 0
+            Keo k = array.get(KEO, i)
+            if k.status >= 20
+                f_erase(k)
+                array.remove(KEO, i)
+    int nClosed = 0
+    int m2 = array.size(KEO)
+    if m2 > 0
+        for i = m2 - 1 to 0
+            Keo k = array.get(KEO, i)
+            if k.status >= 10
+                nClosed += 1
+                if nClosed > iShowN
+                    f_erase(k)
+                    array.remove(KEO, i)
+
+// ---- 2) chon kèo moi tot nhat moi phia tren nen vua dong (hang truoc, diem sau), tao + ve + alert
+// (goi 86) loc da khung: nguoc khung xac nhan -> ha 1 hang (A+ -> A, A -> B); thuan ca khung xu huong + khung xac nhan -> +1 diem (toi da 10)
+f_mtfSc(float sc, int d) =>
+    mtfOn and bias == d and trConf == d ? math.min(sc + 1, 10.0) : sc
+
+f_mtfGr(string g, int d) =>
+    string gr = mtfOn and trConf == -d ? (g == "A+" ? "A" : "B") : g
+    regimeOn and adxVal < adxMin ? (gr == "A+" ? "A" : "B") : gr
+
+f_better(bool ok, string g, float sc, int rk, float best) =>
+    ok and f_rank(g) >= minRank and (f_rank(g) > rk or (f_rank(g) == rk and sc > best))
+
+f_open(int setup, int dir, string nm, string g, float sc, bool lim, bool trail, float e, float sl, float t1, float t2) =>
+    int ia = f_active(setup, dir)
+    bool ok = true
+// PRO TRADER: entry quá xa giá hiện tại -> BỎ kèo (lệnh không thực tế, giá khó hồi về)
+    if math.abs(e - close) > iMaxEntry * atr
+        ok := false
+    if ok and ia >= 0
+        Keo old = array.get(KEO, ia)
+        if old.status == 0
+            f_cancel(old, 24)
+            f_erase(old)
+            array.remove(KEO, ia)
+        else
+            ok := false
+    if ok
+        float risk = math.abs(e - sl)
+        Keo k = Keo.new(setup, dir, nm, g, sc, lim, trail, e, sl, t1, t2, risk > 0 ? math.abs(t1 - e) / risk : 0.0, bar_index, lim ? 0 : 1, lim ? na : bar_index, na, na)
+        f_draw(k)
+        if not lim
+            line.set_style(k.lnE, line.style_solid)
+        array.push(KEO, k)
+        if alNew
+            f_alert(jsonOn ? f_json(k) : "🆕 " + syminfo.ticker + " " + f_tfTxt(timeframe.period) + " · " + f_txtNew(k) + " · Entry " + f_p(e) + (lim ? " (chờ giá hồi về · " + f_nowShort(k) + ")" : "") + " · SL " + f_p(sl) + " · TP1 " + f_p(t1) + " · TP2 " + f_p(t2) + " · R:R 1:" + str.tostring(k.rr, "#.#"))
+    ok
+
+if barstate.isconfirmed and atr > 0 and sessionOk
+    for side = 0 to 1
+        int d = side == 0 ? 1 : -1
+        bool L = d == 1
+        int pick = 0
+        int rk = -1
+        float best = -1.0
+        bool s1 = L ? s1L : s1Sm
+        float sc1 = f_mtfSc(L ? sc1L : sc1S, d)
+        float e1_ = L ? e1L : -e1Sm
+        float sl1 = L ? sl1L : -sl1Sm
+        float t11 = L ? t11L : -t11Sm
+        float t21 = L ? t21L : -t21Sm
+        float rr1 = math.abs(e1_ - sl1) > 0 ? math.abs(t11 - e1_) / math.abs(e1_ - sl1) : 0.0
+        string gr1 = f_mtfGr(f_grade((not trendOn or (L ? bias == 1 : bias == -1)) and (L ? btcOkL : btcOkS) and rr1 >= 1.0, sc1), d)
+        if f_better(s1, gr1, sc1, rk, best)
+            pick := 1
+            rk := f_rank(gr1)
+            best := sc1
+        bool s2 = L ? raw2L : raw2S
+        float sc2 = f_mtfSc(L ? score2L : score2S, d)
+        string gr2 = f_mtfGr(f_grade(L ? must2L : must2S, sc2), d)
+        if f_better(s2, gr2, sc2, rk, best)
+            pick := 2
+            rk := f_rank(gr2)
+            best := sc2
+        bool s3 = L ? s3L : s3Sm
+        float e3_ = L ? e3L : -e3Sm
+        float sl3 = L ? sl3L : -sl3Sm
+        float t13 = L ? t13L : -t13Sm
+        float t23 = L ? t23L : -t23Sm
+        int b3 = L ? b3L : b3S
+        float rr3 = math.abs(e3_ - sl3) > 0 ? math.abs(t13 - e3_) / math.abs(e3_ - sl3) : 0.0
+        string gr3 = f_mtfGr(rr3 < iMinRR ? "B" : b3 >= 5 ? "A+" : "A", d)
+        float sc3 = f_mtfSc(gr3 == "A+" ? 9.0 : gr3 == "A" ? 7.0 : 4.0, d)
+        if f_better(s3, gr3, sc3, rk, best)
+            pick := 3
+            rk := f_rank(gr3)
+            best := sc3
+        bool s4 = L ? s4L : s4Sm
+        float sc4 = f_mtfSc(L ? sc4L : sc4S, d)
+        float e4_ = L ? e4L : -e4Sm
+        float sl4 = L ? sl4L : -sl4Sm
+        float t14 = L ? t14L : -t14Sm
+        float t24 = L ? t24L : -t24Sm
+        float rr4 = math.abs(e4_ - sl4) > 0 ? math.abs(t14 - e4_) / math.abs(e4_ - sl4) : 0.0
+        string gr4 = f_mtfGr(f_grade((not trendOn or (L ? bias == 1 : bias == -1)) and (L ? btcOkL : btcOkS) and rr4 >= iMinRR, sc4), d)
+        if f_better(s4, gr4, sc4, rk, best)
+            pick := 4
+            rk := f_rank(gr4)
+            best := sc4
+// PRO TRADER: CHẶN NGƯỢC LỰC — không short khi tăng mạnh / không long khi giảm mạnh (hủy kèo đã chọn)
+        if (not L and momBlockS) or (L and momBlockL)
+            pick := 0
+        if pick == 1
+            f_open(1, d, L ? nm1L : nm1S, gr1, sc1, true, true, e1_, sl1, t11, t21)
+        else if pick == 2
+            bool ok2 = f_open(2, d, (L ? (immL ? "Nhấn chìm tăng" : tNameL) : (immS ? "Nhấn chìm giảm" : tNameS)) + " tại vùng vàng", gr2, sc2, false, false, close, L ? slL2 : slS2, L ? legHi : legLo, L ? tp2L2 : tp2S2)
+            if ok2
+                if L
+                    sigLegL := legHi
+                else
+                    sigLegS := legLo
+        else if pick == 3
+            f_open(3, d, "phá vỡ " + str.tostring(b3) + "/5 → retest giữ mốc", gr3, sc3, false, false, e3_, sl3, t13, t23)
+        else if pick == 4
+            f_open(4, d, L ? nm4L : nm4S, gr4, sc4, false, false, e4_, sl4, t14, t24)
+
+// nen tin hieu vung vang moi (sau khi xet tin hieu cua nen nay) -> cho xac nhan <= 3 nen
+if barstate.isconfirmed and trigL and not immL
+    tBarL := bar_index
+    tHiL := high
+    tLoL := lo5
+    tNameL := nameL
+if barstate.isconfirmed and trigS and not immS
+    tBarS := bar_index
+    tLoS := low
+    tHiS := hi5
+    tNameS := nameS
+if not na(tBarL) and bar_index - tBarL > 3
+    tBarL := na
+if not na(tBarS) and bar_index - tBarS > 3
+    tBarS := na
+
+// ----------------------------------------------------------------------------- (GOI 84) TRENDLINE + OB / FVG: CHI VE THEM, KHONG DOI LUAT RA KEO
+// May chep tu SMC Bot / Setup 4 Cua (da chay that tren TradingView): mang nen, swing 2/2, FVG chua lap, OB chua bi dong xuyen,
+// trendline noi dinh/day (>= 2-3 cham, gay = nen dong qua duong 2 lan sai so). Khung chart: OB/FVG lay dung mang ma setup dang dung.
+NB = 300
+TL_N = 150
+TL_W = 3
+TL_TOL = 0.006
+TL_MAXP = 20
+TL_XA = 0.5
+
+f_push(array<float> a, float x, int n) =>
+    array.push(a, x)
+    if array.size(a) > n
+        array.shift(a)
+    true
+
+f_barsZ(int n) =>
+    var array<float> ao = array.new<float>()
+    var array<float> ah = array.new<float>()
+    var array<float> al = array.new<float>()
+    var array<float> ac = array.new<float>()
+    var array<int> at = array.new<int>()
+    f_push(ao, open, n)
+    f_push(ah, high, n)
+    f_push(al, low, n)
+    f_push(ac, close, n)
+    array.push(at, time)
+    if array.size(at) > n
+        array.shift(at)
+    [ao, ah, al, ac, at]
+
+// chi tinh phan nang o 2 nen cuoi cua khung
+f_gate(int sec) =>
+    barstate.islast or (timenow - time) <= 2 * sec * 1000
+
+// ----------------------------------------------------------------------------- SMC ENGINE (chep SMC Bot: swing 2/2, FVG chua lap, OB)
+f_swings(array<float> h, array<float> l) =>
+    array<int> shI = array.new<int>()
+    array<int> slI = array.new<int>()
+    int n = array.size(h)
+    if n >= 5
+        for i = 2 to n - 3
+            float hi = array.get(h, i)
+            float lo = array.get(l, i)
+            bool isH = true
+            bool isL = true
+            for k = i - 2 to i + 2
+                if k != i
+                    if array.get(h, k) >= hi
+                        isH := false
+                    if array.get(l, k) <= lo
+                        isL := false
+            if isH
+                array.push(shI, i)
+            if isL
+                array.push(slI, i)
+    [shI, slI]
+
+f_fvg(array<float> h, array<float> l, array<int> t, int maxKeep) =>
+    array<int> fk = array.new<int>()
+    array<float> fb = array.new<float>()
+    array<float> ft = array.new<float>()
+    array<int> ftm = array.new<int>()
+    int n = array.size(h)
+    if n >= 3
+        for i = n - 1 to 2
+            if array.size(fk) >= maxKeep
+                break
+            for s = 0 to 1
+                if array.size(fk) < maxKeep
+                    bool isBear = s == 0
+                    float bot = na
+                    float top = na
+                    if isBear and array.get(h, i) < array.get(l, i - 2)
+                        bot := array.get(h, i)
+                        top := array.get(l, i - 2)
+                    else if not isBear and array.get(l, i) > array.get(h, i - 2)
+                        bot := array.get(h, i - 2)
+                        top := array.get(l, i)
+                    if not na(bot)
+                        bool mit = false
+                        if i + 1 <= n - 1
+                            for j = i + 1 to n - 1
+                                if array.get(l, j) <= top and array.get(h, j) >= bot
+                                    mit := true
+                                    break
+                        if not mit
+                            array.unshift(fk, isBear ? -1 : 1)
+                            array.unshift(fb, bot)
+                            array.unshift(ft, top)
+                            array.unshift(ftm, array.get(t, i))
+    [fk, fb, ft, ftm]
+
+f_ob(array<float> o, array<float> h, array<float> l, array<float> c, array<int> t, array<int> shI, array<int> slI, int maxKeep) =>
+    array<int> ck = array.new<int>()
+    array<int> ci = array.new<int>()
+    int n = array.size(c)
+    for side = 0 to 1
+        array<int> sw = side == 0 ? shI : slI
+        int ns = array.size(sw)
+        if ns > 0
+            for q = math.max(0, ns - 3) to ns - 1
+                int idx = array.get(sw, q)
+                float pr = side == 0 ? array.get(h, idx) : array.get(l, idx)
+                int brk = -1
+                if idx + 1 <= n - 1
+                    for j = idx + 1 to n - 1
+                        float cj = array.get(c, j)
+                        if (side == 0 and cj > pr) or (side == 1 and cj < pr)
+                            brk := j
+                            break
+                if brk >= 0
+                    int st = math.max(0, brk - 10)
+                    int kk = -1
+                    if brk - 1 >= st
+                        for k = brk - 1 to st
+                            float ok_ = array.get(o, k)
+                            float ck_ = array.get(c, k)
+                            if (side == 0 and ck_ < ok_) or (side == 1 and ck_ > ok_)
+                                kk := k
+                                break
+                    if kk >= 0
+                        array.push(ck, side == 0 ? 1 : -1)
+                        array.push(ci, kk)
+    array<int> rk = array.new<int>()
+    array<float> rb = array.new<float>()
+    array<float> rt = array.new<float>()
+    array<int> rtm = array.new<int>()
+    array<bool> rf = array.new<bool>()
+    array<int> seen = array.new<int>()
+    int m = array.size(ck)
+    if m > 0
+        for q = 0 to m - 1
+            int kk = array.get(ci, q)
+            int typ = array.get(ck, q)
+            float bot = array.get(l, kk)
+            float top = array.get(h, kk)
+            bool broken = false
+            if kk + 1 <= n - 1
+                for j = kk + 1 to n - 1
+                    float cj = array.get(c, j)
+                    if (typ == 1 and cj < bot) or (typ == -1 and cj > top)
+                        broken := true
+                        break
+            if not broken and not array.includes(seen, kk)
+                int touched = 0
+                if kk + 2 <= n - 1
+                    for j = kk + 2 to n - 1
+                        if bot <= array.get(h, j) and array.get(l, j) <= top
+                            touched += 1
+                array.push(seen, kk)
+                array.push(rk, typ)
+                array.push(rb, bot)
+                array.push(rt, top)
+                array.push(rtm, array.get(t, kk))
+                array.push(rf, touched == 0)
+    while array.size(rk) > maxKeep
+        array.shift(rk)
+        array.shift(rb)
+        array.shift(rt)
+        array.shift(rtm)
+        array.shift(rf)
+    [rk, rb, rt, rtm, rf]
+
+f_pivIdx(array<float> a, int s, int n, bool isHigh) =>
+    array<int> out = array.new<int>()
+    if n > 2 * TL_W
+        for i = TL_W to n - 1 - TL_W
+            float v = array.get(a, s + i)
+            bool ok = true
+            for j = i - TL_W to i + TL_W
+                float u = array.get(a, s + j)
+                if (isHigh and u > v) or (not isHigh and u < v)
+                    ok := false
+                    break
+            if ok
+                array.push(out, i)
+    out
+
+f_tlBest(array<float> a, int s, int n, bool isHigh, float tol, float lastC, float maxXa) =>
+    array<int> pv0 = f_pivIdx(a, s, n, isHigh)
+    int np0 = array.size(pv0)
+    array<int> pv = np0 > TL_MAXP ? array.slice(pv0, np0 - TL_MAXP, np0) : pv0
+    int np = array.size(pv)
+    int bA = -1
+    int bB = -1
+    int bT = 0
+    float bS = 0.5
+    if np >= 2
+        for ai = 0 to np - 2
+            for bi = ai + 1 to np - 1
+                int ia = array.get(pv, ai)
+                int ib = array.get(pv, bi)
+                if ib - ia >= 3
+                    float ya = array.get(a, s + ia)
+                    float slope = (array.get(a, s + ib) - ya) / (ib - ia)
+                    float yl = ya + slope * (n - 1 - ia)
+                    if math.abs(yl - lastC) <= maxXa
+                        int touch = 0
+                        int over = 0
+                        for q = 0 to np - 1
+                            int ip = array.get(pv, q)
+                            float d = array.get(a, s + ip) - (ya + slope * (ip - ia))
+                            if math.abs(d) <= tol
+                                touch += 1
+                            else if (isHigh and d > tol * 2) or (not isHigh and d < -tol * 2)
+                                over += 1
+                        bool gay = isHigh ? lastC > yl + 2 * tol : lastC < yl - 2 * tol
+                        float sc = touch - 0.5 * over + (float(ib) / n) * 0.3 - (gay ? 1.0 : 0.0)
+                        if sc > bS
+                            bS := sc
+                            bA := ia
+                            bB := ib
+                            bT := touch
+        if bA < 0
+            int ia = array.get(pv, np - 2)
+            int ib = array.get(pv, np - 1)
+            if ib - ia >= 3
+                float ya = array.get(a, s + ia)
+                float yl = ya + (array.get(a, s + ib) - ya) / (ib - ia) * (n - 1 - ia)
+                if math.abs(yl - lastC) <= maxXa
+                    bA := ia
+                    bB := ib
+                    bT := 2
+    [bA, bB, bT]
+
+// 16 so: [0..6] trendline HO TRO (ok, t1, p1, t2, p2, cham, gay) · [7..13] KHANG CU · [14] gia duong ho tro luc nay · [15] khang cu
+f_tlz(array<float> h, array<float> l, array<float> c, array<int> t) =>
+    array<float> out = array.new<float>(16, na)
+    int sz = array.size(h)
+    if sz >= 30
+        int n = math.min(TL_N, sz)
+        int s = sz - n
+        float hi = array.get(h, s)
+        float lo = array.get(l, s)
+        for i = s to sz - 1
+            hi := math.max(hi, array.get(h, i))
+            lo := math.min(lo, array.get(l, i))
+        float rng = hi - lo > 0 ? hi - lo : 1.0
+        float tol = rng * TL_TOL
+        float lastC = array.get(c, sz - 1)
+        for side = 0 to 1
+            bool isH = side == 1
+            array<float> a = isH ? h : l
+            [ia, ib, tch] = f_tlBest(a, s, n, isH, tol, lastC, rng * TL_XA)
+            if ia >= 0
+                float ya = array.get(a, s + ia)
+                float yb = array.get(a, s + ib)
+                float yNow = ya + (yb - ya) / (ib - ia) * (n - 1 - ia)
+                bool gay = isH ? lastC > yNow + 2 * tol : lastC < yNow - 2 * tol
+                int o = side * 7
+                array.set(out, o, 1.0)
+                array.set(out, o + 1, array.get(t, s + ia))
+                array.set(out, o + 2, ya)
+                array.set(out, o + 3, array.get(t, s + ib))
+                array.set(out, o + 4, yb)
+                array.set(out, o + 5, math.max(tch, 2))
+                array.set(out, o + 6, gay ? 1.0 : 0.0)
+                array.set(out, 14 + side, yNow)
+    out
+
+// khung lon: trendline + OB / FVG (phan nang chi tinh o 2 nen cuoi cua khung lon)
+f_packHZ(int n, int sec, bool onTL, bool onZ) =>
+    [o, h, l, c, t] = f_barsZ(n)
+    array<float> tl = array.new<float>()
+    array<int> fvK = array.new<int>()
+    array<float> fvB = array.new<float>()
+    array<float> fvT = array.new<float>()
+    array<int> fvTm = array.new<int>()
+    array<int> obK = array.new<int>()
+    array<float> obB = array.new<float>()
+    array<float> obT = array.new<float>()
+    array<int> obTm = array.new<int>()
+    if f_gate(sec)
+        if onTL
+            tl := f_tlz(h, l, c, t)
+        if onZ
+            [shI, slI] = f_swings(h, l)
+            [k1, k2, k3, k4] = f_fvg(h, l, t, 4)
+            fvK := k1
+            fvB := k2
+            fvT := k3
+            fvTm := k4
+            [m1, m2, m3, m4, m5] = f_ob(o, h, l, c, t, shI, slI, 4)
+            obK := m1
+            obB := m2
+            obT := m3
+            obTm := m4
+    [tl, fvK, fvB, fvT, fvTm, obK, obB, obT, obTm]
+
+[zO, zH, zL, zC, zT] = f_barsZ(NB)
+[hTL, hfK, hfB, hfT, hfTm, hoK, hoB, hoT, hoTm] = request.security(syminfo.tickerid, trendTf, f_packHZ(NB, htfSec, showTL and zHTF, (showOB or showFVG) and zHTF), calc_bars_count = NB + 60)
+
+var array<box> ZB = array.new<box>()
+var array<line> ZLN = array.new<line>()
+var array<label> ZLB = array.new<label>()
+
+// ve trendline 1 khung: ho tro xanh ngoc, khang cu do; da gay -> cham cham + chu "DA GAY"
+f_tlDraw(array<float> z, string tfn, int w, bool dash, int kx) =>
+    int nd = 0
+    if not na(z)
+        if array.size(z) >= 16
+            for side = 0 to 1
+                int o = side * 7
+                if array.get(z, o) == 1.0
+                    int t1 = int(array.get(z, o + 1))
+                    float p1 = array.get(z, o + 2)
+                    int t2 = int(array.get(z, o + 3))
+                    float p2 = array.get(z, o + 4)
+                    int ch = int(array.get(z, o + 5))
+                    bool gay = array.get(z, o + 6) == 1.0
+                    color col = side == 0 ? cTlS : cTlR
+                    if t2 > t1
+                        array.push(ZLN, line.new(t1, p1, t2, p2, xloc = xloc.bar_time, extend = extend.right, color = color.new(col, gay ? 35 : 0), style = gay ? line.style_dotted : dash ? line.style_dashed : line.style_solid, width = w))
+                        int xl = time + kx * BAR_MS
+                        float yl = p1 + (p2 - p1) * float(xl - t1) / float(t2 - t1)
+                        array.push(ZLB, label.new(xl, yl, "TL " + tfn + (side == 0 ? " hỗ trợ" : " kháng cự") + " · " + str.tostring(ch) + " chạm" + (gay ? " · ĐÃ GÃY" : ""), xloc = xloc.bar_time, style = side == 0 ? label.style_label_up : label.style_label_down, color = color.new(col, 15), textcolor = color.white, size = szSub))
+                        nd += 1
+    nd
+
+f_tlTxt(array<float> z, string tfn) =>
+    string r = ""
+    if not na(z)
+        if array.size(z) >= 16
+            if array.get(z, 0) == 1.0
+                r := "hỗ trợ " + f_p(array.get(z, 14)) + (array.get(z, 6) == 1.0 ? " (gãy)" : "")
+            if array.get(z, 7) == 1.0
+                r := r + (r != "" ? " · " : "") + "kháng cự " + f_p(array.get(z, 15)) + (array.get(z, 13) == 1.0 ? " (gãy)" : "")
+    r != "" ? "TL " + tfn + " " + r : ""
+
+// hop OB / FVG: tu nen goc toi 2 nen sau nen hien tai, chu nam sat mep phai (gan gia, khong de len nhan Entry/SL)
+f_zBox(int x1, bool isT, float top, float bot, color col, string txt) =>
+    if isT
+        array.push(ZB, box.new(x1, math.max(top, bot), time + 2 * BAR_MS, math.min(top, bot), xloc = xloc.bar_time, border_color = color.new(col, 25), bgcolor = color.new(col, 85), text = txt, text_size = szSub, text_color = color.new(col, 0), text_halign = text.align_right, text_valign = text.align_center))
+    else
+        array.push(ZB, box.new(x1, math.max(top, bot), bar_index + 2, math.min(top, bot), xloc = xloc.bar_index, border_color = color.new(col, 25), bgcolor = color.new(col, 85), text = txt, text_size = szSub, text_color = color.new(col, 0), text_halign = text.align_right, text_valign = text.align_center))
+    true
+
+// nen cuoi: chon vung OB / FVG GAN GIA NHAT moi phia (gop khung chart + khung lon) + trendline -> ve + chu cho bang
+string zBelow = ""
+string zAbove = ""
+string zTlTxt = ""
+float zBeT = na
+float zBeB = na
+string zBeN = ""
+float zAbT = na
+float zAbB = na
+string zAbN = ""
+if barstate.islast
+    while array.size(ZB) > 0
+        box.delete(array.pop(ZB))
+    while array.size(ZLN) > 0
+        line.delete(array.pop(ZLN))
+    while array.size(ZLB) > 0
+        label.delete(array.pop(ZLB))
+    string tfC = f_tfTxt(timeframe.period)
+    string tfH = f_tfTxt(trendTf)
+    if showOB or showFVG
+        array<int> qK = array.new<int>()
+        array<int> qD = array.new<int>()
+        array<float> qT = array.new<float>()
+        array<float> qB = array.new<float>()
+        array<int> qX = array.new<int>()
+        array<bool> qIsT = array.new<bool>()
+        array<string> qN = array.new<string>()
+        int nOb = array.size(oK)
+        if showOB and nOb > 0
+            for i = 0 to nOb - 1
+                array.push(qK, 1)
+                array.push(qD, array.get(oK, i))
+                array.push(qT, array.get(oT, i))
+                array.push(qB, array.get(oB, i))
+                array.push(qX, array.get(oI, i))
+                array.push(qIsT, false)
+                array.push(qN, tfC)
+        int nFv = array.size(fK)
+        if showFVG and nFv > 0
+            for i = 0 to nFv - 1
+                array.push(qK, 2)
+                array.push(qD, array.get(fK, i))
+                array.push(qT, array.get(fT, i))
+                array.push(qB, array.get(fB, i))
+                array.push(qX, array.get(fX, i))
+                array.push(qIsT, false)
+                array.push(qN, tfC)
+        if zHTF
+            if showOB and not na(hoK)
+                int nHo = array.size(hoK)
+                if nHo > 0
+                    for i = 0 to nHo - 1
+                        array.push(qK, 1)
+                        array.push(qD, array.get(hoK, i))
+                        array.push(qT, array.get(hoT, i))
+                        array.push(qB, array.get(hoB, i))
+                        array.push(qX, array.get(hoTm, i))
+                        array.push(qIsT, true)
+                        array.push(qN, tfH)
+            if showFVG and not na(hfK)
+                int nHf = array.size(hfK)
+                if nHf > 0
+                    for i = 0 to nHf - 1
+                        array.push(qK, 2)
+                        array.push(qD, array.get(hfK, i))
+                        array.push(qT, array.get(hfT, i))
+                        array.push(qB, array.get(hfB, i))
+                        array.push(qX, array.get(hfTm, i))
+                        array.push(qIsT, true)
+                        array.push(qN, tfH)
+        int nq = array.size(qK)
+        array<bool> used = array.new<bool>(nq, false)
+        for side = 0 to 1
+            int dW = side == 0 ? 1 : -1
+            for pick = 1 to zMax
+                int best = -1
+                float bd = na
+                if nq > 0
+                    for q = 0 to nq - 1
+                        if not array.get(used, q) and array.get(qD, q) == dW
+                            float tq = math.max(array.get(qT, q), array.get(qB, q))
+                            float bq = math.min(array.get(qT, q), array.get(qB, q))
+                            bool okZ = dW == 1 ? bq <= close : tq >= close
+                            float dz = dW == 1 ? math.max(close - tq, 0.0) : math.max(bq - close, 0.0)
+                            if okZ and (best < 0 or dz < bd)
+                                best := q
+                                bd := dz
+                if best >= 0
+                    array.set(used, best, true)
+                    bool isOb = array.get(qK, best) == 1
+                    string nmZ = (isOb ? (dW == 1 ? "OB mua " : "OB bán ") : (dW == 1 ? "FVG tăng " : "FVG giảm ")) + array.get(qN, best)
+                    color colZ = isOb ? (dW == 1 ? cObL : cObS) : (dW == 1 ? cFvL : cFvS)
+                    float tz = math.max(array.get(qT, best), array.get(qB, best))
+                    float bz = math.min(array.get(qT, best), array.get(qB, best))
+                    f_zBox(array.get(qX, best), array.get(qIsT, best), tz, bz, colZ, nmZ)
+                    if pick == 1
+                        string zs = nmZ + " " + f_p(bz) + "–" + f_p(tz) + (bd > 0 ? " (cách " + f_pct(bd / close * 100) + ")" : " (giá đang trong vùng)")
+                        if dW == 1
+                            zBelow := zs
+                            zBeT := tz
+                            zBeB := bz
+                            zBeN := nmZ
+                        else
+                            zAbove := zs
+                            zAbT := tz
+                            zAbB := bz
+                            zAbN := nmZ
+    if showTL
+        array<float> cTL = f_tlz(zH, zL, zC, zT)
+        f_tlDraw(cTL, tfC, wLine, true, 1)
+        string tC = f_tlTxt(cTL, tfC)
+        string tH = ""
+        if zHTF
+            f_tlDraw(hTL, tfH, wLine + 1, false, 4)
+            tH := f_tlTxt(hTL, tfH)
+        zTlTxt := tH != "" and tC != "" ? tH + "\n" + tC : tH != "" ? tH : tC
+
+// ----------------------------------------------------------------------------- (GOI 86) DINH / DAY NGAY - TUAN - THANG TRUOC (nen cuoi)
+var array<line> LVL = array.new<line>()
+var array<label> LVB = array.new<label>()
+f_lvl(float y, int t0, string txt, color col) =>
+    if not na(y) and not na(t0)
+        array.push(LVL, line.new(t0, y, time + 6 * BAR_MS, y, xloc = xloc.bar_time, color = color.new(col, 10), style = line.style_dotted, width = wLine))
+        array.push(LVB, label.new(time + 6 * BAR_MS, y, txt + " " + f_p(y), xloc = xloc.bar_time, style = label.style_label_left, color = color.new(col, 25), textcolor = color.white, size = szSub))
+    true
+
+f_trTxt(int t) =>
+    t == 1 ? "▲" : t == -1 ? "▼" : "—"
+
+if barstate.islast
+    while array.size(LVL) > 0
+        line.delete(array.pop(LVL))
+    while array.size(LVB) > 0
+        label.delete(array.pop(LVB))
+    if lvlIn != "Tắt"
+        if lvlIn == "Ngày + tuần + tháng" and chSec < 86400
+            f_lvl(pdH, pdT, "Đỉnh ngày trước", cLvD)
+            f_lvl(pdL, pdT, "Đáy ngày trước", cLvD)
+        if chSec < 604800
+            f_lvl(pwH, pwT, "Đỉnh tuần trước", cLvW)
+            f_lvl(pwL, pwT, "Đáy tuần trước", cLvW)
+        if chSec < timeframe.in_seconds("M")
+            f_lvl(pmH, pmT, "Đỉnh tháng trước", cLvM)
+            f_lvl(pmL, pmT, "Đáy tháng trước", cLvM)
+
+// ----------------------------------------------------------------------------- (GOI 88) VUNG THANH KHOAN: CHI VE THEM, KHONG DOI LUAT RA KEO
+// O thanh khoan (nhu bot main._muc_tham_khao): dinh / day +-2 nen KHONG nghiem ngat (= max / min cua 5 nen) trong N nen gan nhat, gom cum
+// lech <= x% so voi phan tu dau cum (khung nho: <= 0.5 ATR), cum >= 2 = noi stop tu. Khac bot: dinh / day da bi nen DONG vuot qua = thanh
+// khoan da bi lay -> bo. Nen dong vuot het cum (qua muc ngoai cung) roi dong nguoc lai = QUET (stop hunt); dong vuot luon = PHA.
+LQ_HIST = 1500
+cLqInk = 0.299 * color.r(liqCol) + 0.587 * color.g(liqCol) + 0.114 * color.b(liqCol) > 140 ? #111827 : color.white
+
+// gom cum: [muc trung binh, muc ngoai cung (dinh cao nhat / day thap nhat), muc trong cung, so dinh / day, thoi diem dau cum]
+f_lqPools(array<float> p, array<int> t, float tolPct, float tolAbs, bool isH) =>
+    array<float> rLv = array.new<float>()
+    array<float> rEx = array.new<float>()
+    array<float> rIn = array.new<float>()
+    array<int> rN = array.new<int>()
+    array<int> rT = array.new<int>()
+    int n = array.size(p)
+    if n >= 2
+        array<bool> used = array.new<bool>(n, false)
+        for a = 0 to n - 2
+            if not array.get(used, a)
+                float pa = array.get(p, a)
+                float tl = math.min(math.abs(pa) * tolPct / 100.0, tolAbs)
+                float s = pa
+                float ex = pa
+                float inn = pa
+                int cnt = 1
+                int t0 = array.get(t, a)
+                for b = a + 1 to n - 1
+                    if not array.get(used, b)
+                        float pb = array.get(p, b)
+                        if math.abs(pb - pa) <= tl
+                            array.set(used, b, true)
+                            s += pb
+                            cnt += 1
+                            ex := isH ? math.max(ex, pb) : math.min(ex, pb)
+                            inn := isH ? math.min(inn, pb) : math.max(inn, pb)
+                            t0 := math.min(t0, array.get(t, b))
+                if cnt >= 2
+                    array.push(rLv, s / cnt)
+                    array.push(rEx, ex)
+                    array.push(rIn, inn)
+                    array.push(rN, cnt)
+                    array.push(rT, t0)
+    [rLv, rEx, rIn, rN, rT]
+
+// 1 nen DA DONG: o bi vuot het -> [1 quet / 2 pha / 0, muc tb, muc ngoai cung, so dinh-day] (o nhieu dinh-day nhat); bo dinh / day da bi vuot
+f_lqEat(array<float> p, array<int> b, array<int> t, float px, float cl, float tolPct, float tolAbs, bool isH) =>
+    int ev = 0
+    float eLv = na
+    float eEx = na
+    int eN = 0
+    int n = array.size(p)
+    if n > 0
+        bool hit = isH ? px > array.min(p) : px < array.max(p)
+        if hit
+            [qLv, qEx, qIn, qN, qT] = f_lqPools(p, t, tolPct, tolAbs, isH)
+            int nq = array.size(qLv)
+            if nq > 0
+                for q = 0 to nq - 1
+                    float ex = array.get(qEx, q)
+                    bool gone = isH ? px > ex : px < ex
+                    if gone and array.get(qN, q) > eN
+                        eN := array.get(qN, q)
+                        eLv := array.get(qLv, q)
+                        eEx := ex
+                        ev := (isH ? cl < ex : cl > ex) ? 1 : 2
+            for i = n - 1 to 0
+                float v = array.get(p, i)
+                if isH ? px > v : px < v
+                    array.remove(p, i)
+                    array.remove(b, i)
+                    array.remove(t, i)
+    [ev, eLv, eEx, eN]
+
+// them dinh / day vua xac nhan (nen giua cua 5 nen) + bo cai cu hon N nen
+f_lqAdd(array<float> p, array<int> b, array<int> t, float v, int bi, int ti, int look, int nowB) =>
+    if not na(v)
+        array.push(p, v)
+        array.push(b, bi)
+        array.push(t, ti)
+    while array.size(b) > 0
+        if nowB - array.get(b, 0) >= look
+            array.shift(p)
+            array.shift(b)
+            array.shift(t)
+        else
+            break
+    true
+
+// 2 o gan gia nhat 1 phia (tren: muc ngoai cung > gia; duoi: < gia) -> [chi so 1, chi so 2] (-1 = khong co)
+f_lqNear2(array<float> ex, float px, bool above) =>
+    int i1 = -1
+    int i2 = -1
+    float d1 = na
+    float d2 = na
+    int n = array.size(ex)
+    if n > 0
+        for q = 0 to n - 1
+            float e = array.get(ex, q)
+            if above ? e > px : e < px
+                float d = math.abs(e - px)
+                if i1 < 0 or d < d1
+                    i2 := i1
+                    d2 := d1
+                    i1 := q
+                    d1 := d
+                else if i2 < 0 or d < d2
+                    i2 := q
+                    d2 := d
+    [i1, i2]
+
+// khung lon: o thanh khoan cua NEN DA DONG ([1] + lookahead_on: khong ve lai) -> 2 o tren + 2 o duoi + thoi diem nen khung lon
+f_lqHtf(int look, float tolPct, bool on, int sec) =>
+    var array<float> lhP = array.new<float>()
+    var array<int> lhB = array.new<int>()
+    var array<int> lhT = array.new<int>()
+    var array<float> llP = array.new<float>()
+    var array<int> llB = array.new<int>()
+    var array<int> llT = array.new<int>()
+    float a14 = ta.atr(14)
+    float lqP2H = high[2] == ta.highest(high, 5) ? high[2] : na
+    float lqP2L = low[2] == ta.lowest(low, 5) ? low[2] : na
+    float aLv1 = na
+    float aEx1 = na
+    float aIn1 = na
+    int aN1 = na
+    int aT1 = na
+    float aLv2 = na
+    float aEx2 = na
+    float aIn2 = na
+    int aN2 = na
+    int aT2 = na
+    float dLv1 = na
+    float dEx1 = na
+    float dIn1 = na
+    int dN1 = na
+    int dT1 = na
+    float dLv2 = na
+    float dEx2 = na
+    float dIn2 = na
+    int dN2 = na
+    int dT2 = na
+    if on
+        [x1, x2, x3, x4] = f_lqEat(lhP, lhB, lhT, high, close, tolPct, 0.5 * a14, true)
+        [y1, y2, y3, y4] = f_lqEat(llP, llB, llT, low, close, tolPct, 0.5 * a14, false)
+        f_lqAdd(lhP, lhB, lhT, lqP2H, bar_index - 2, time[2], look, bar_index)
+        f_lqAdd(llP, llB, llT, lqP2L, bar_index - 2, time[2], look, bar_index)
+        if (timenow - time) <= 400 * sec * 1000
+            [qLv, qEx, qIn, qN, qT] = f_lqPools(lhP, lhT, tolPct, 0.5 * a14, true)
+            [i1, i2] = f_lqNear2(qEx, close, true)
+            if i1 >= 0
+                aLv1 := array.get(qLv, i1)
+                aEx1 := array.get(qEx, i1)
+                aIn1 := array.get(qIn, i1)
+                aN1 := array.get(qN, i1)
+                aT1 := array.get(qT, i1)
+            if i2 >= 0
+                aLv2 := array.get(qLv, i2)
+                aEx2 := array.get(qEx, i2)
+                aIn2 := array.get(qIn, i2)
+                aN2 := array.get(qN, i2)
+                aT2 := array.get(qT, i2)
+            [wLv, wEx, wIn, wN, wT] = f_lqPools(llP, llT, tolPct, 0.5 * a14, false)
+            [j1, j2] = f_lqNear2(wEx, close, false)
+            if j1 >= 0
+                dLv1 := array.get(wLv, j1)
+                dEx1 := array.get(wEx, j1)
+                dIn1 := array.get(wIn, j1)
+                dN1 := array.get(wN, j1)
+                dT1 := array.get(wT, j1)
+            if j2 >= 0
+                dLv2 := array.get(wLv, j2)
+                dEx2 := array.get(wEx, j2)
+                dIn2 := array.get(wIn, j2)
+                dN2 := array.get(wN, j2)
+                dT2 := array.get(wT, j2)
+    [aLv1[1], aEx1[1], aIn1[1], aN1[1], aT1[1], aLv2[1], aEx2[1], aIn2[1], aN2[1], aT2[1], dLv1[1], dEx1[1], dIn1[1], dN1[1], dT1[1], dLv2[1], dEx2[1], dIn2[1], dN2[1], dT2[1], time[1]]
+
+[qa1Lv, qa1Ex, qa1In, qa1N, qa1T, qa2Lv, qa2Ex, qa2In, qa2N, qa2T, qd1Lv, qd1Ex, qd1In, qd1N, qd1T, qd2Lv, qd2Ex, qd2In, qd2N, qd2T, qhTm] = request.security(syminfo.tickerid, trendTf, f_lqHtf(liqLook, liqTol, (liqOn or liqSw) and liqHTF, htfSec), lookahead = barmerge.lookahead_on)
+
+// khung chart: dinh / day chua bi vuot (theo tung nen da dong), muc khung lon da bi vuot tren chart, nhan cu quet, dinh-day ngay / tuan
+var array<float> lqHp = array.new<float>()
+var array<int> lqHb = array.new<int>()
+var array<int> lqHt = array.new<int>()
+var array<float> lqLp = array.new<float>()
+var array<int> lqLb = array.new<int>()
+var array<int> lqLt = array.new<int>()
+var array<float> lqHS = array.new<float>()
+var array<label> LQL = array.new<label>()
+var string lqLast = ""
+var int lqLastB = na
+var float lqDH = na
+var float lqDL = na
+var float lqWH = na
+var float lqWL = na
+var bool lqDHx = false
+var bool lqDLx = false
+var bool lqWHx = false
+var bool lqWLx = false
+lqPH = high[2] == ta.highest(high, 5) ? high[2] : na
+lqPL = low[2] == ta.lowest(low, 5) ? low[2] : na
+lqUse = (liqOn or liqSw) and bar_index >= last_bar_index - LQ_HIST
+lqTolA = 0.5 * atr
+lqTfC = f_tfTxt(timeframe.period)
+lqTfH = f_tfTxt(trendTf)
+
+// o khung lon bi vuot tren chart (tu lan nen khung lon dong gan nhat) -> [1 quet / 2 pha / 0, ten ngan, muc]
+f_lqHit(float ex, float lv, int n, bool isH) =>
+    int k = 0
+    string tx = ""
+    if not na(ex) and not array.includes(lqHS, ex)
+        if isH ? high > ex : low < ex
+            array.push(lqHS, ex)
+            k := (isH ? close < ex : close > ex) ? 1 : 2
+            tx := "ổ " + lqTfH + " " + str.tostring(n) + (isH ? " đỉnh" : " đáy")
+    [k, tx, lv]
+
+f_lqMsg(int side, float lv, string m) =>
+    "⚡ " + syminfo.ticker + " " + lqTfC + " · " + (side == 1 ? "QUÉT ĐỈNH " : "QUÉT ĐÁY ") + f_p(lv) + " — râu xuyên " + m + (side == 1 ? " rồi đóng lại dưới: stop phe bán khống bị quét, hay đảo chiều xuống nếu có CHoCH" : " rồi đóng lại trên: stop phe mua bị quét, hay đảo chiều lên nếu có CHoCH")
+
+f_jsonLq(int side, float lv, string m) =>
+    string tx = str.replace_all(f_lqMsg(side, lv, m), '"', "'")
+    '{"nguon":"tradingview","ev":"quet","ticker":"' + syminfo.tickerid + '","side":"' + (side == 1 ? "short" : "long") + '","price":' + str.tostring(close, format.mintick) + ',"muc":' + str.tostring(lv, format.mintick) + ',"tf":"' + timeframe.period + '","style":"' + styleKey + '","ten":"Kèo Pro · quét thanh khoản","msg":"' + tx + '"}'
+
+if not na(qhTm) and (na(qhTm[1]) or qhTm != qhTm[1])
+    array.clear(lqHS)
+string lqTipH = ""
+string lqTipL = ""
+string lqShH = ""
+string lqShL = ""
+float lqLvH = na
+float lqLvL = na
+if lqUse and barstate.isconfirmed
+    if liqHTF
+        [lqK1, lqS1, lqV1] = f_lqHit(qa1Ex, qa1Lv, qa1N, true)
+        [lqK2, lqS2, lqV2] = f_lqHit(qa2Ex, qa2Lv, qa2N, true)
+        [lqK3, lqS3, lqV3] = f_lqHit(qd1Ex, qd1Lv, qd1N, false)
+        [lqK4, lqS4, lqV4] = f_lqHit(qd2Ex, qd2Lv, qd2N, false)
+        if lqK1 == 1
+            lqTipH := lqS1 + " " + f_p(lqV1)
+            lqShH := lqS1
+            lqLvH := lqV1
+        if lqK2 == 1
+            lqShH := lqTipH == "" ? lqS2 : lqShH
+            lqLvH := lqTipH == "" ? lqV2 : lqLvH
+            lqTipH := lqTipH + (lqTipH != "" ? " + " : "") + lqS2 + " " + f_p(lqV2)
+        if lqK3 == 1
+            lqTipL := lqS3 + " " + f_p(lqV3)
+            lqShL := lqS3
+            lqLvL := lqV3
+        if lqK4 == 1
+            lqShL := lqTipL == "" ? lqS4 : lqShL
+            lqLvL := lqTipL == "" ? lqV4 : lqLvL
+            lqTipL := lqTipL + (lqTipL != "" ? " + " : "") + lqS4 + " " + f_p(lqV4)
+    [eH, eHlv, eHex, eHn] = f_lqEat(lqHp, lqHb, lqHt, high, close, liqTol, lqTolA, true)
+    [eL, eLlv, eLex, eLn] = f_lqEat(lqLp, lqLb, lqLt, low, close, liqTol, lqTolA, false)
+    if eH == 1
+        string lqNmH = "ổ " + lqTfC + " " + str.tostring(eHn) + " đỉnh"
+        lqShH := lqTipH == "" ? lqNmH : lqShH
+        lqLvH := lqTipH == "" ? eHlv : lqLvH
+        lqTipH := lqTipH + (lqTipH != "" ? " + " : "") + lqNmH + " " + f_p(eHlv)
+    if eL == 1
+        string lqNmL = "ổ " + lqTfC + " " + str.tostring(eLn) + " đáy"
+        lqShL := lqTipL == "" ? lqNmL : lqShL
+        lqLvL := lqTipL == "" ? eLlv : lqLvL
+        lqTipL := lqTipL + (lqTipL != "" ? " + " : "") + lqNmL + " " + f_p(eLlv)
+    f_lqAdd(lqHp, lqHb, lqHt, lqPH, bar_index - 2, time[2], liqLook, bar_index)
+    f_lqAdd(lqLp, lqLb, lqLt, lqPL, bar_index - 2, time[2], liqLook, bar_index)
+    if liqSw
+        if chSec < 86400 and not na(pdH) and not na(pdL)
+            if na(lqDH) or pdH != lqDH
+                lqDH := pdH
+                lqDHx := false
+            if na(lqDL) or pdL != lqDL
+                lqDL := pdL
+                lqDLx := false
+            if not lqDHx and high > pdH
+                lqDHx := true
+                if close < pdH
+                    lqShH := lqTipH == "" ? "đỉnh ngày trước" : lqShH
+                    lqLvH := lqTipH == "" ? pdH : lqLvH
+                    lqTipH := lqTipH + (lqTipH != "" ? " + " : "") + "đỉnh ngày trước " + f_p(pdH)
+            if not lqDLx and low < pdL
+                lqDLx := true
+                if close > pdL
+                    lqShL := lqTipL == "" ? "đáy ngày trước" : lqShL
+                    lqLvL := lqTipL == "" ? pdL : lqLvL
+                    lqTipL := lqTipL + (lqTipL != "" ? " + " : "") + "đáy ngày trước " + f_p(pdL)
+        if chSec < 604800 and not na(pwH) and not na(pwL)
+            if na(lqWH) or pwH != lqWH
+                lqWH := pwH
+                lqWHx := false
+            if na(lqWL) or pwL != lqWL
+                lqWL := pwL
+                lqWLx := false
+            if not lqWHx and high > pwH
+                lqWHx := true
+                if close < pwH
+                    lqShH := lqTipH == "" ? "đỉnh tuần trước" : lqShH
+                    lqLvH := lqTipH == "" ? pwH : lqLvH
+                    lqTipH := lqTipH + (lqTipH != "" ? " + " : "") + "đỉnh tuần trước " + f_p(pwH)
+            if not lqWLx and low < pwL
+                lqWLx := true
+                if close > pwL
+                    lqShL := lqTipL == "" ? "đáy tuần trước" : lqShL
+                    lqLvL := lqTipL == "" ? pwL : lqLvL
+                    lqTipL := lqTipL + (lqTipL != "" ? " + " : "") + "đáy tuần trước " + f_p(pwL)
+if liqSw and lqTipH != ""
+    array.push(LQL, label.new(bar_index, high, "⚡ Quét đỉnh " + f_p(lqLvH), style = label.style_label_down, color = color.new(liqCol, 5), textcolor = cLqInk, size = szSub, tooltip = "Râu xuyên " + lqTipH + " rồi đóng lại dưới — stop phe bán khống bị quét; hay đảo chiều xuống nếu có CHoCH."))
+    lqLast := "Quét đỉnh " + f_p(lqLvH) + " (" + lqShH + ")"
+    lqLastB := bar_index
+    if alSweep
+        f_alert(jsonOn ? f_jsonLq(1, lqLvH, lqTipH) : f_lqMsg(1, lqLvH, lqTipH))
+if liqSw and lqTipL != ""
+    array.push(LQL, label.new(bar_index, low, "⚡ Quét đáy " + f_p(lqLvL), style = label.style_label_up, color = color.new(liqCol, 5), textcolor = cLqInk, size = szSub, tooltip = "Râu xuyên " + lqTipL + " rồi đóng lại trên — stop phe mua bị quét; hay đảo chiều lên nếu có CHoCH."))
+    lqLast := "Quét đáy " + f_p(lqLvL) + " (" + lqShL + ")"
+    lqLastB := bar_index
+    if alSweep
+        f_alert(jsonOn ? f_jsonLq(-1, lqLvL, lqTipL) : f_lqMsg(-1, lqLvL, lqTipL))
+while array.size(LQL) > liqKeep
+    label.delete(array.shift(LQL))
+
+// nen cuoi: ve o thanh khoan con hieu luc gan gia nhat moi phia (gop khung chart + khung lon) + chu cho bang
+var array<box> LQB = array.new<box>()
+f_lqBox(int t0, float ex, float inn, color col, string txt, bool big) =>
+    float pad = math.max(0.06 * atr - math.abs(ex - inn) / 2, 0.0)
+    array.push(LQB, box.new(t0, math.max(ex, inn) + pad, time + 3 * BAR_MS, math.min(ex, inn) - pad, xloc = xloc.bar_time, border_color = color.new(col, big ? 0 : 20), border_width = big ? 2 : 1, border_style = line.style_dotted, bgcolor = color.new(col, big ? 74 : 80), text = txt, text_size = szSub, text_color = color.new(col, 0), text_halign = text.align_right, text_valign = text.align_center))
+    true
+
+string lqAbove = ""
+string lqBelow = ""
+float lqAbLv = na
+float lqBeLv = na
+if barstate.islast
+    while array.size(LQB) > 0
+        box.delete(array.pop(LQB))
+    if liqOn
+        [cHLv, cHEx, cHIn, cHN, cHT] = f_lqPools(lqHp, lqHt, liqTol, lqTolA, true)
+        [cLLv, cLEx, cLIn, cLN, cLT] = f_lqPools(lqLp, lqLt, liqTol, lqTolA, false)
+        array<float> lqGLv = array.new<float>()
+        array<float> lqGEx = array.new<float>()
+        array<float> lqGIn = array.new<float>()
+        array<int> lqGN = array.new<int>()
+        array<int> lqGT = array.new<int>()
+        array<int> lqGS = array.new<int>()
+        array<bool> lqGH = array.new<bool>()
+        int nCH = array.size(cHLv)
+        if nCH > 0
+            for q = 0 to nCH - 1
+                array.push(lqGLv, array.get(cHLv, q))
+                array.push(lqGEx, array.get(cHEx, q))
+                array.push(lqGIn, array.get(cHIn, q))
+                array.push(lqGN, array.get(cHN, q))
+                array.push(lqGT, array.get(cHT, q))
+                array.push(lqGS, 1)
+                array.push(lqGH, false)
+        int nCL = array.size(cLLv)
+        if nCL > 0
+            for q = 0 to nCL - 1
+                array.push(lqGLv, array.get(cLLv, q))
+                array.push(lqGEx, array.get(cLEx, q))
+                array.push(lqGIn, array.get(cLIn, q))
+                array.push(lqGN, array.get(cLN, q))
+                array.push(lqGT, array.get(cLT, q))
+                array.push(lqGS, -1)
+                array.push(lqGH, false)
+        if liqHTF
+            array<float> hLv = array.from(qa1Lv, qa2Lv, qd1Lv, qd2Lv)
+            array<float> hEx = array.from(qa1Ex, qa2Ex, qd1Ex, qd2Ex)
+            array<float> hIn = array.from(qa1In, qa2In, qd1In, qd2In)
+            array<int> hN = array.from(qa1N, qa2N, qd1N, qd2N)
+            array<int> hT = array.from(qa1T, qa2T, qd1T, qd2T)
+            for q = 0 to 3
+                float hx = array.get(hEx, q)
+                if not na(hx) and not array.includes(lqHS, hx)
+                    array.push(lqGLv, array.get(hLv, q))
+                    array.push(lqGEx, hx)
+                    array.push(lqGIn, array.get(hIn, q))
+                    array.push(lqGN, array.get(hN, q))
+                    array.push(lqGT, array.get(hT, q))
+                    array.push(lqGS, q < 2 ? 1 : -1)
+                    array.push(lqGH, true)
+        int ng = array.size(lqGLv)
+        array<bool> lqGU = array.new<bool>(ng, false)
+        for side = 0 to 1
+            int sd = side == 0 ? 1 : -1
+            for pick = 1 to liqMax
+                int best = -1
+                float bd = na
+                if ng > 0
+                    for q = 0 to ng - 1
+                        if not array.get(lqGU, q) and array.get(lqGS, q) == sd
+                            float e = array.get(lqGEx, q)
+                            float d = math.abs(e - close)
+                            if (sd == 1 ? e > close : e < close) and (best < 0 or d < bd)
+                                best := q
+                                bd := d
+                if best >= 0
+                    array.set(lqGU, best, true)
+                    bool isHt = array.get(lqGH, best)
+                    float lv = array.get(lqGLv, best)
+                    string nm = (isHt ? lqTfH : lqTfC) + " · " + str.tostring(array.get(lqGN, best)) + (sd == 1 ? " đỉnh " : " đáy ")
+                    f_lqBox(array.get(lqGT, best), array.get(lqGEx, best), array.get(lqGIn, best), liqCol, "💧 " + nm + f_p(lv), isHt)
+                    if pick == 1
+                        string lqTx = "💧 " + f_p(lv) + " · " + str.tostring(array.get(lqGN, best)) + (sd == 1 ? " đỉnh " : " đáy ") + (isHt ? lqTfH : lqTfC) + " (cách " + f_pct(math.abs(lv - close) / close * 100) + ")"
+                        if sd == 1
+                            lqAbove := lqTx
+                            lqAbLv := lv
+                        else
+                            lqBelow := lqTx
+                            lqBeLv := lv
+
+// ----------------------------------------------------------------------------- NEN CUOI: keo dang song keo dai toi hien tai, dinh / day yeu - manh (KHONG CO BANG)
+var line wLn = na
+var label wLb = na
+var line gLn = na
+var label gLb = na
+
+f_stat(int s) =>
+    int n = array.get(stN, s)
+    float r = array.get(stR, s)
+    n == 0 ? "chưa có kèo" : str.tostring(n) + " kèo · thắng " + str.tostring(100.0 * array.get(stW, s) / n, "#") + "% · " + f_r(r) + (n < 10 ? " (ít mẫu)" : "")
+
+if barstate.islast
+    int n = array.size(KEO)
+    if n > 0
+        for i = 0 to n - 1
+            Keo k = array.get(KEO, i)
+            if k.status < 10
+                f_place(k)
+    line.delete(wLn)
+    label.delete(wLb)
+    line.delete(gLn)
+    label.delete(gLb)
+    if showStruct
+        if trd == 1 and not na(wkHi)
+            wLn := line.new(wkHiB, wkHi, bar_index + 10, wkHi, color = color.new(cDnS, 10), width = wLine)
+            wLb := label.new(bar_index + 10, wkHi, "Weak High", style = label.style_label_left, color = color.new(color.black, 100), textcolor = cDnS, size = szSub)
+            if not na(stLo)
+                gLn := line.new(stLoB, stLo, bar_index + 10, stLo, color = color.new(cUpS, 10), width = wLine)
+                gLb := label.new(bar_index + 10, stLo, "Strong Low", style = label.style_label_left, color = color.new(color.black, 100), textcolor = cUpS, size = szSub)
+        else if trd == -1 and not na(wkLo)
+            wLn := line.new(wkLoB, wkLo, bar_index + 10, wkLo, color = color.new(cUpS, 10), width = wLine)
+            wLb := label.new(bar_index + 10, wkLo, "Weak Low", style = label.style_label_left, color = color.new(color.black, 100), textcolor = cUpS, size = szSub)
+            if not na(stHi)
+                gLn := line.new(stHiB, stHi, bar_index + 10, stHi, color = color.new(cDnS, 10), width = wLine)
+                gLb := label.new(bar_index + 10, stHi, "Strong High", style = label.style_label_left, color = color.new(color.black, 100), textcolor = cDnS, size = szSub)
+
+// ----------------------------------------------------------------------------- (GOI 94) KET LUAN + MUI TEN DU PHONG DUONG DI (nen cuoi) - KHONG CO BANG
+// Diem nghieng: xu huong khung lon x2 · khung xac nhan · cau truc (lan pha gan nhat) · da khung nhip ngan (M/W/D/4H/1H)
+//   · luc (chan nguoc luc) · phan ky RSI <= 30 nen · BTC 1D (chi altcoin). Viec can lam: keo dang chay (uu tien cung huong nghieng)
+//   -> LIMIT / dang trong lenh / da TP1; chua co keo -> kich ban cho (vung OB / FVG phia hoi + muc tieu thanh khoan + muc hong).
+var label CONC = na
+var array<line> PTH = array.new<line>()
+hi30 = ta.highest(high, 30)
+lo30 = ta.lowest(low, 30)
+cSz = concSize == "Lớn" ? size.large : concSize == "Vừa" ? size.normal : size.small
+
+f_vn(int t) =>
+    t == 1 ? "TĂNG" : t == -1 ? "GIẢM" : "ngang"
+
+f_dist(float y) =>
+    na(y) or close == 0 ? "" : " (" + (y >= close ? "+" : "−") + str.tostring(math.abs(y - close) / close * 100, "#.##") + "%)"
+
+f_sgn(int v) =>
+    (v > 0 ? "+" : v < 0 ? "−" : "") + str.tostring(math.abs(v))
+
+f_seg(int x1, float y1, int x2, float y2, color col, bool last) =>
+    if not na(y1) and not na(y2)
+        array.push(PTH, line.new(x1, y1, x2, y2, color = col, width = 2, style = last ? line.style_arrow_right : line.style_dashed))
+    true
+
+if barstate.islast
+    label.delete(CONC)
+    while array.size(PTH) > 0
+        line.delete(array.pop(PTH))
+// (a) da khung nhip ngan (nen da dong): gia / EMA21 / EMA55 tung khung
+    array<int> kTr = array.from(trM, trW, trD, tr4H, tr1H)
+    array<string> kNm = array.from("M", "W", "D", "4H", "1H")
+    array<string> kTf = array.from("M", "W", "D", "240", "60")
+    string kMtf = ""
+    int kUp = 0
+    int kDn = 0
+    for i = 0 to 4
+        if f_tfOk(array.get(kTf, i))
+            int tq = nz(array.get(kTr, i))
+            kMtf := kMtf + (kMtf != "" ? " " : "") + array.get(kNm, i) + f_trTxt(tq)
+            kUp += tq == 1 ? 1 : 0
+            kDn += tq == -1 ? 1 : 0
+// (b) cham diem nghieng
+    int pTr = 2 * bias
+    int pCf = nz(trConf)
+    int pSt = trd
+    int pMt = kUp > kDn ? 1 : kDn > kUp ? -1 : 0
+    int pMo = momUpStrong and not momDnStrong ? 1 : momDnStrong and not momUpStrong ? -1 : 0
+    bool dvRecent = not na(dvBar) and bar_index - dvBar <= 30
+    int pDv = dvRecent ? dvDir : 0
+    int pBt = isAlt ? (btcUp ? 1 : btcDn ? -1 : 0) : 0
+    int kSc = pTr + pCf + pSt + pMt + pMo + pDv + pBt
+    int scMax = isAlt ? 8 : 7
+    string vd = kSc >= 4 ? "🟢 LONG MẠNH" : kSc >= 2 ? "🟢 NGHIÊNG LONG" : kSc <= -4 ? "🔴 SHORT MẠNH" : kSc <= -2 ? "🔴 NGHIÊNG SHORT" : "⚪ TRUNG LẬP"
+    int vDir = kSc >= 2 ? 1 : kSc <= -2 ? -1 : 0
+    bool kRange = adxVal < adxMin
+// (c) Premium / Discount trong dai gia cau truc hien tai (Strong Low -> Weak High, hoac Strong High -> Weak Low)
+    float rgHi = trd == 1 ? wkHi : trd == -1 ? stHi : na
+    float rgLo = trd == 1 ? stLo : trd == -1 ? wkLo : na
+    float pdPos = not na(rgHi) and not na(rgLo) and rgHi > rgLo ? (close - rgLo) / (rgHi - rgLo) * 100 : na
+    string pdTxt = na(pdPos) ? "" : (pdPos >= 50 ? "Premium " : "Discount ") + str.tostring(math.max(0.0, math.min(100.0, pdPos)), "#") + "%"
+// (d) keo dang chay de neu: uu tien cung huong nghieng, khong co thi keo dang song moi nhat
+    int kN = array.size(KEO)
+    int fi = -1
+    if kN > 0
+        for i = kN - 1 to 0
+            Keo kk = array.get(KEO, i)
+            if kk.status < 10 and kk.dir == vDir
+                fi := i
+                break
+        if fi < 0
+            for i = kN - 1 to 0
+                Keo kk = array.get(KEO, i)
+                if kk.status < 10
+                    fi := i
+                    break
+// (e) kich ban cho khi chua co keo: vung phia hoi + muc tieu + muc hong
+    bool isLg = vDir == 1
+    float poiT = isLg ? zBeT : zAbT
+    float poiB = isLg ? zBeB : zAbB
+    string poiN = isLg ? zBeN : zAbN
+    float tgt = na
+    if vDir == 1
+        tgt := not na(lqAbLv) ? lqAbLv : not na(wkHi) and wkHi > close ? wkHi : not na(stHi) and stHi > close ? stHi : na
+    else if vDir == -1
+        tgt := not na(lqBeLv) ? lqBeLv : not na(wkLo) and wkLo < close ? wkLo : not na(stLo) and stLo < close ? stLo : na
+    float upRef = trd == 1 ? wkHi : stHi
+    float dnRef = trd == 1 ? stLo : wkLo
+    string act = ""
+    int fDir = 0
+    if fi >= 0
+        Keo k = array.get(KEO, fi)
+        fDir := k.dir
+        float rk = math.max(math.abs(k.entry - k.sl), 1e-10)
+        float qty = accSize * riskPct / 100.0 / rk
+        string hd = (k.dir == 1 ? "LONG " : "SHORT ") + f_setupTxt(k.setup) + " hạng " + k.grade
+        string szT = " · size " + str.tostring(qty, "#.####") + " " + syminfo.basecurrency + " (rủi ro " + str.tostring(riskPct, "#.#") + "% = $" + str.tostring(accSize * riskPct / 100.0, "#.##") + ")"
+        if k.status == 0
+            act := "👉 " + hd + ": đặt LIMIT " + f_p(k.entry) + f_dist(k.entry) + " · SL " + f_p(k.sl) + " · TP1 " + f_p(k.tp1) + " · TP2 " + f_p(k.tp2) + " · R:R 1:" + str.tostring(math.abs(k.tp1 - k.entry) / rk, "#.#") + szT + "\n   " + f_nowShort(k)
+        else if k.status == 1
+            float pr = (k.dir == 1 ? close - k.entry : k.entry - close) / rk
+            act := "👉 Đang " + hd + " từ " + f_p(k.entry) + " (" + f_r(pr) + ") · SL " + f_p(k.sl) + " · TP1 " + f_p(k.tp1) + f_dist(k.tp1) + " · TP2 " + f_p(k.tp2) + szT
+        else
+            act := "👉 " + hd + " đã chạm TP1 ✓ — giữ phần còn lại tới TP2 " + f_p(k.tp2) + f_dist(k.tp2) + (iBE ? " · SL đã dời về entry " + f_p(k.entry) : "")
+        if vDir != 0 and k.dir != vDir
+            act := act + "\n⚠️ Kèo NGƯỢC hướng nghiêng chung — size nhỏ hoặc bỏ qua"
+    else if vDir != 0
+        if not na(poiT) and not na(poiB)
+            float inv = isLg ? poiB - iBuf * atr : poiT + iBuf * atr
+            act := "👉 Chưa có kèo đạt chuẩn — chờ " + (isLg ? "LONG" : "SHORT") + " khi giá về " + poiN + " " + f_p(poiB) + "–" + f_p(poiT) + f_dist(isLg ? poiT : poiB) + " + nến xác nhận · hỏng nếu đóng " + (isLg ? "dưới " : "trên ") + f_p(inv) + (not na(tgt) ? " · mục tiêu " + f_p(tgt) + f_dist(tgt) : "")
+        else
+            act := "👉 Chưa có kèo đạt chuẩn — nghiêng " + (isLg ? "LONG" : "SHORT") + " nhưng chưa có vùng hồi đẹp: đừng đuổi giá, chờ kèo mới" + (not na(tgt) ? " · mục tiêu gần " + f_p(tgt) + f_dist(tgt) : "")
+    else
+        act := "👉 ĐỨNG NGOÀI — tín hiệu trái chiều" + (not na(upRef) and upRef > close ? " · chờ nến đóng trên " + f_p(upRef) + f_dist(upRef) : "") + (not na(dnRef) and dnRef < close ? " hoặc dưới " + f_p(dnRef) + f_dist(dnRef) : "") + " rồi mới tính"
+    if kRange
+        act := act + "\n⚠️ ADX " + str.tostring(adxVal, "#") + ": thị trường đi ngang — giảm size, ưu tiên đánh 2 biên"
+    if sessOn and not sessionOk
+        act := act + "\n⏰ Ngoài phiên Killzone — không ra kèo mới"
+// (f) nhan ket luan 6 dong + chi tiet khi re chuot
+    string l1 = "📊 KẾT LUẬN " + syminfo.ticker + " " + f_tfTxt(timeframe.period) + " · " + styleTxt + ": " + vd + " (" + f_sgn(kSc) + "/" + str.tostring(scMax) + ")"
+    string l2 = "Xu hướng " + f_tfTxt(trendTf) + " " + (bias == 1 ? "TĂNG ✓" : bias == -1 ? "GIẢM ✓" : "ngang") + " · xác nhận " + f_tfTxt(confTf) + " " + f_vn(nz(trConf)) + " · nhịp " + kMtf
+    string l3 = "Cấu trúc: " + (lbTxt != "" ? lbTxt + (lbDir == 1 ? " tăng " : " giảm ") + f_p(lbLv) : "chưa phá đỉnh / đáy") + (pdTxt != "" ? " · " + pdTxt : "") + " · ADX " + str.tostring(adxVal, "#") + " " + regimeTxt + (momUpStrong ? " · 🔥 lực tăng" : momDnStrong ? " · 🔥 lực giảm" : "") + (dvRecent ? (dvDir == 1 ? " · PK tăng RSI" : " · PK giảm RSI") : "") + (isAlt ? " · BTC 1D " + (btcUp ? "▲" : btcDn ? "▼" : "—") : "")
+    string l4 = "Vùng: ▼ " + (zBeN != "" ? zBeN + " " + f_p(zBeB) + "–" + f_p(zBeT) + f_dist(zBeT) : "—") + " · ▲ " + (zAbN != "" ? zAbN + " " + f_p(zAbB) + "–" + f_p(zAbT) + f_dist(zAbB) : "—") + (not na(lqAbLv) or not na(lqBeLv) ? " · 💧" + (not na(lqAbLv) ? " trên " + f_p(lqAbLv) : "") + (not na(lqBeLv) ? " dưới " + f_p(lqBeLv) : "") : "")
+    string txt = l1 + "\n" + l2 + "\n" + l3 + "\n" + l4 + "\n" + act + "\nTham khảo — không phải lời khuyên đầu tư"
+    string tip = "Chấm điểm: xu hướng " + f_tfTxt(trendTf) + " ×2 " + f_sgn(pTr) + " · xác nhận " + f_tfTxt(confTf) + " " + f_sgn(pCf) + " · cấu trúc " + f_sgn(pSt) + " · đa khung " + f_sgn(pMt) + " (" + str.tostring(kUp) + "↑ / " + str.tostring(kDn) + "↓) · lực " + f_sgn(pMo) + " · phân kỳ RSI " + f_sgn(pDv) + (isAlt ? " · BTC 1D " + f_sgn(pBt) : "") + " = " + f_sgn(kSc) + "/" + str.tostring(scMax)
+    tip := tip + "\n≥ +4 LONG mạnh · +2..+3 nghiêng LONG · −1..+1 trung lập · −2..−3 nghiêng SHORT · ≤ −4 SHORT mạnh"
+    if zTlTxt != ""
+        tip := tip + "\nTrendline: " + str.replace_all(zTlTxt, "\n", " · ")
+    if lqAbove != "" or lqBelow != ""
+        tip := tip + "\nThanh khoản: ▲ " + (lqAbove != "" ? lqAbove : "—") + " · ▼ " + (lqBelow != "" ? lqBelow : "—")
+    if liqSw and lqLast != "" and not na(lqLastB) and bar_index - lqLastB <= 100
+        tip := tip + "\n⚡ " + lqLast + " · " + str.tostring(bar_index - lqLastB) + " nến trước"
+    if lvlIn != "Tắt"
+        string lvT = ""
+        if lvlIn == "Ngày + tuần + tháng" and chSec < 86400 and not na(pdH)
+            lvT := "ngày " + f_p(pdH) + " / " + f_p(pdL)
+        if chSec < 604800 and not na(pwH)
+            lvT := lvT + (lvT != "" ? " · " : "") + "tuần " + f_p(pwH) + " / " + f_p(pwL)
+        if chSec < timeframe.in_seconds("M") and not na(pmH)
+            lvT := lvT + (lvT != "" ? " · " : "") + "tháng " + f_p(pmH) + " / " + f_p(pmL)
+        if lvT != ""
+            tip := tip + "\nĐỉnh / đáy kỳ trước: " + lvT
+    if array.get(NOTE, 0) != "" and bar_index - array.get(NOTEB, 0) <= 100
+        tip := tip + "\nKèo bỏ gần nhất: " + array.get(NOTE, 0)
+    tip := tip + "\nThống kê trên chart (" + str.tostring(bar_index + 1) + " nến): ① SMC " + f_stat(1) + " · ② Vùng vàng " + f_stat(2) + " · ③ Phá vỡ " + f_stat(3) + " · ④ Nêm/H2 " + f_stat(4)
+    tip := tip + "\nLuật máy của bot (thắng = chạm TP1 trước SL) — AI duyệt trên Telegram nếu bật alert JSON gửi bot."
+    bool below = concPos == "Dưới giá" ? true : concPos == "Trên giá" ? false : fi >= 0 ? fDir == 1 : vDir == 1
+    float yC = below ? lo30 - 0.8 * atr : hi30 + 0.8 * atr
+    if concOn
+        color bgC = vDir == 1 ? #0b2e1c : vDir == -1 ? #3a0d12 : #0b1220
+        CONC := label.new(bar_index, yC, txt, style = below ? label.style_label_upper_right : label.style_label_lower_right, color = color.new(bgC, 6), textcolor = cInk, size = cSz, textalign = text.align_left, tooltip = tip)
+// (g) mui ten du phong duong di
+    if pathOn
+        int x0 = bar_index
+        if fi >= 0
+            Keo k = array.get(KEO, fi)
+            color pc = k.dir == 1 ? cLong : cShort
+            if k.status == 0
+                f_seg(x0, close, x0 + 6, k.entry, color.new(cEntry, 10), false)
+                f_seg(x0 + 6, k.entry, x0 + 16, k.tp1, color.new(pc, 10), false)
+                f_seg(x0 + 16, k.tp1, x0 + 26, k.tp2, color.new(pc, 10), true)
+                f_seg(x0 + 6, k.entry, x0 + 11, k.sl, color.new(cShort, 45), true)
+            else if k.status == 1
+                f_seg(x0, close, x0 + 10, k.tp1, color.new(pc, 10), false)
+                f_seg(x0 + 10, k.tp1, x0 + 20, k.tp2, color.new(pc, 10), true)
+                f_seg(x0, close, x0 + 5, k.sl, color.new(cShort, 45), true)
+            else
+                f_seg(x0, close, x0 + 12, k.tp2, color.new(pc, 10), true)
+        else if vDir != 0 and not na(poiT) and not na(poiB)
+            float yPoi = isLg ? poiT : poiB
+            f_seg(x0, close, x0 + 8, yPoi, color.new(cMuted, 20), na(tgt))
+            if not na(tgt)
+                f_seg(x0 + 8, yPoi, x0 + 22, tgt, color.new(isLg ? cLong : cShort, 35), true)
+
+plot(showEma ? ce1 : na, "EMA 21", color = color.new(#38bdf8, 20), linewidth = 1)
+plot(showEma ? ce2 : na, "EMA 55", color = color.new(#f59e0b, 20), linewidth = 1)
+plot(showEma ? ce3 : na, "EMA 144", color = color.new(#a855f7, 20), linewidth = 1)
