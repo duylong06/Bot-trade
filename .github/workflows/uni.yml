@@ -1,0 +1,26 @@
+# Nhánh tạm để lấy dữ liệu UNI phục vụ phân tích. Không ảnh hưởng bot (đã gỡ) hay trang chính.
+name: Lấy dữ liệu UNI (tạm)
+on:
+  push:
+    branches: [uni-1111]
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node research/uni.mjs
+      - name: Lưu vào nhánh uni-data
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd out
+          git init -q -b uni-data
+          git add -A
+          git -c user.name="bot-trade" -c user.email="bot-trade@users.noreply.github.com" commit -qm "dữ liệu UNI $(date -u +%F-%H%M)"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" uni-data
