@@ -122,6 +122,19 @@ li.w{color:#E8C9A4}
 .fld{margin-bottom:13px}
 .fld label{display:block;font-size:13px;color:var(--dim);margin-bottom:5px}
 .fld small{display:block;font-size:12px;color:var(--faint);margin-top:5px;line-height:1.5}
+
+/* bảng kết luận độ rộng thị trường */
+#breadth{border-radius:14px;padding:14px 16px;margin:0 0 14px;border:1px solid var(--line);
+  background:#121922}
+#breadth.bn-dn{border-color:#8a3a35;background:linear-gradient(180deg,#2a1513,#161a1f)}
+#breadth.bn-up{border-color:#2f6b52;background:linear-gradient(180deg,#112420,#161a1f)}
+#breadth.bn-wait{border-color:var(--line)}
+#breadth .bn-h{font-size:17px;font-weight:650;letter-spacing:.2px}
+#breadth.bn-dn .bn-h{color:#ff8a7e}
+#breadth.bn-up .bn-h{color:#5fd6a4}
+#breadth.bn-wait .bn-h{color:var(--dim)}
+#breadth .bn-b{margin-top:6px;font-size:13.5px;line-height:1.55;color:var(--text)}
+#breadth .bn-f{margin-top:8px;font-size:11.5px;color:var(--dim)}
 </style>
 </head>
 <body>
@@ -129,54 +142,15 @@ li.w{color:#E8C9A4}
   <h1>Quét tín hiệu OKX</h1>
   <p class="sub">Phân tích futures ngay trên máy bạn — không cần server</p>
   <nav role="tablist">
-    <button role="tab" aria-selected="true" data-t="scan">Quét</button>
-    <button role="tab" aria-selected="false" data-t="one">Một cặp</button>
-    <button role="tab" aria-selected="false" data-t="brk">Phá vỡ</button>
+    <button role="tab" aria-selected="true" data-t="brk">Phá vỡ</button>
     <button role="tab" aria-selected="false" data-t="nbk">Sắp phá</button>
-    <button role="tab" aria-selected="false" data-t="chat">Hỏi</button>
     <button role="tab" aria-selected="false" data-t="cfg">Cài đặt</button>
   </nav>
 </header>
 <main>
-  <section id="scan">
-    <div class="row">
-      <select id="hz">
-        <option value="H1">Rất ngắn hạn · 1H/4H</option>
-        <option value="INTRADAY">Ngắn hạn · 15m/4H</option>
-        <option value="SWING" selected>Trung hạn · 4H/1D</option>
-        <option value="POSITION">Dài hạn · 1D/1W</option>
-      </select>
-      <select id="side" style="max-width:118px">
-        <option value="both">Cả hai chiều</option>
-        <option value="long">Chỉ Long</option>
-        <option value="short">Chỉ Short</option>
-      </select>
-      <button class="act" id="go">Quét</button>
-    </div>
-    <div class="row">
-      <select id="scope">
-        <option value="top" selected>Top thanh khoản (theo cài đặt)</option>
-        <option value="liquid">Mọi cặp trên 5 triệu USD/24h</option>
-        <option value="all">Toàn bộ cặp USDT-SWAP</option>
-        <option value="new">Coin mới niêm yết (≤ 45 ngày)</option>
-      </select>
-      <button class="ghost" id="stop" hidden>Dừng</button>
-    </div>
-    <div id="prog"><div id="bar"></div></div>
-    <div id="stat"></div>
-    <div id="out"></div>
-  </section>
-  <section id="one" hidden>
-    <div class="row">
-      <input id="sym" placeholder="BTC, ETH, SOL..." autocapitalize="characters" autocomplete="off">
-      <button class="act" id="go1">Xem</button>
-    </div>
-    <p class="note">Tab này bỏ qua ngưỡng lọc và luôn hiện điểm của <b>cả hai chiều</b>, để bạn thấy vì sao bot chọn hướng đó.</p>
-    <div id="stat1" style="margin-top:12px"></div>
-    <div id="out1"></div>
-  </section>
-  <section id="brk" hidden>
-    <p class="note" style="margin-top:0">Tìm coin đang <b>phá đường xu hướng chéo</b>, <b>breakout khỏi vùng tích lũy</b>, hoặc vừa hoàn tất <b>mô hình giá đảo chiều/tiếp diễn</b> (vai đầu vai, hai đỉnh/hai đáy, tam giác, nêm, cờ). Đây là bộ lọc sự kiện cấu trúc — không chấm điểm setup như tab Quét.</p>
+  <section id="brk">
+    <div id="breadth" hidden></div>
+    <p class="note" style="margin-top:0">Tìm coin đang <b>phá đường xu hướng chéo</b>, <b>breakout khỏi vùng tích lũy</b>, hoặc vừa hoàn tất <b>mô hình giá đảo chiều/tiếp diễn</b> (vai đầu vai, hai đỉnh/hai đáy, tam giác, nêm, cờ). Chỉ coin, tính cả nến đang chạy.</p>
     <div class="row">
       <select id="bkTf">
         <option value="15m">15 phút</option>
@@ -255,14 +229,6 @@ li.w{color:#E8C9A4}
     <div id="outN"></div>
   </section>
 
-  <section id="chat" hidden>
-    <div id="clog"></div>
-    <div class="row" style="margin-top:12px">
-      <input id="cin" placeholder="Hỏi về coin bạn vừa xem..." autocomplete="off">
-      <button class="act" id="csend">Gửi</button>
-    </div>
-    <div id="chips"></div>
-  </section>
   <section id="cfg" hidden>
     <div class="fld"><label for="cap">Vốn tham chiếu (USD)</label>
       <input id="cap" type="number" inputmode="decimal" value="1000"></div>
@@ -276,6 +242,9 @@ li.w{color:#E8C9A4}
     <div class="fld"><label for="tn">Số cặp quét mỗi lần</label>
       <input id="tn" type="number" inputmode="numeric" value="40">
       <small>Các cặp xếp sau top 40 thường thanh khoản mỏng, dễ trượt giá và bị quét râu bất thường.</small></div>
+    <div class="fld"><label for="bw">Số coin cùng phá để kết luận xu hướng</label>
+      <input id="bw" type="number" inputmode="numeric" value="5">
+      <small>Đếm trên khung H1, mỗi coin phải phá cả đường ngắn hạn lẫn trung hạn. Đo trên 3 năm dữ liệu: ngưỡng 5 chưa có lợi thế rõ, từ 8 trở lên mới thấy lợi thế nhưng chỉ khoảng 3 lần mỗi tháng.</small></div>
     <button class="ghost" id="save">Lưu cài đặt</button>
     <p class="note" id="saved"></p>
     <p class="note" style="margin-top:22px;border-top:1px solid var(--line);padding-top:16px">
@@ -285,7 +254,7 @@ li.w{color:#E8C9A4}
 </main>
 <script>
 const API='https://www.okx.com';
-const C={cap:1000,risk:1,minScore:70,minRR:2,topN:40};
+const C={cap:1000,risk:1,minScore:70,minRR:2,topN:40,breadth:5};
 try{Object.assign(C,JSON.parse(localStorage.getItem('okxcfg')||'{}'));}catch(e){}
 
 const HZ={
@@ -349,15 +318,20 @@ async function api(path,params={}){
 
 /* Bộ nhớ đệm nến. Vòng hai cần lại đúng khung vào lệnh mà vòng một đã tải —
    không cache thì mỗi cặp sống sót tốn thêm một request thừa. */
+/* Mỗi lần bấm Quét là một lượt mới: xoá đệm để lấy giá ngay lúc này.
+   Nến cuối là nến ĐANG CHẠY (OKX đánh dấu cột thứ 9 bằng '0'), vẫn lấy để
+   thấy cú phá ngay khi nó xảy ra chứ không phải đợi hết giờ. */
 const KC=new Map();
+function freshScan(){KC.clear();}
 async function candles(sym,bar,limit=300){
   const key=sym+'|'+bar+'|'+limit,now=Date.now(),hit=KC.get(key);
-  if(hit&&now-hit.t<75000)return hit.d;
+  if(hit&&now-hit.t<20000)return hit.d;
   const d=await api('/api/v5/market/candles',{instId:sym,bar,limit:String(limit)});
-  const rows=d.filter(r=>r[8]==='1').reverse();
+  const rows=d.slice().reverse();
   if(!rows.length)throw new Error('Không có dữ liệu nến');
   const res={t:rows.map(r=>+r[0]),o:rows.map(r=>+r[1]),h:rows.map(r=>+r[2]),
-    l:rows.map(r=>+r[3]),c:rows.map(r=>+r[4]),v:rows.map(r=>+r[5])};
+    l:rows.map(r=>+r[3]),c:rows.map(r=>+r[4]),v:rows.map(r=>+r[5]),
+    live:rows.at(-1)[8]==='0'};
   if(KC.size>700)KC.clear();
   KC.set(key,{t:now,d:res});
   return res;
@@ -390,10 +364,22 @@ async function instrumentMeta(){
   try{
     const d=await api('/api/v5/public/instruments',{instType:'SWAP'});
     INSTR=new Map(d.filter(x=>x.instId.endsWith('-USDT-SWAP'))
-      .map(x=>[x.instId,{listTime:+x.listTime||0,state:x.state}]));
+      .map(x=>[x.instId,{listTime:+x.listTime||0,state:x.state,cat:String(x.instCategory||'')}]));
   }catch(e){INSTR=new Map();}
   return INSTR;
 }
+/* Chỉ tiền mã hoá. OKX xếp loại hợp đồng bằng instCategory: '1' là crypto,
+   '3' cổ phiếu, '4' hàng hoá. Vàng, bạc, dầu, chỉ số chứng khoán bị loại hết.
+   Có cặp OKX không trả instCategory, nên chặn thêm bằng danh sách tên. */
+const NOTCOIN=new Set(['XAU','XAG','XPT','XPD','CL','BZ','NG','HG','ZC','ZS','ZW',
+  'SPX','NDX','DJI','VIX','US30','US500','NAS100','EURUSD','GBPUSD','USDJPY']);
+const isCoin=(id,meta)=>{
+  const base=id.split('-')[0];
+  if(NOTCOIN.has(base))return false;
+  const m=meta&&meta.get(id);
+  if(m&&m.cat&&m.cat!=='1')return false;
+  return true;
+};
 async function listSymbols(scope,limit){
   const [t,meta]=await Promise.all([
     api('/api/v5/market/tickers',{instType:'SWAP'}),
@@ -402,6 +388,7 @@ async function listSymbols(scope,limit){
   const now=Date.now();
   const arr=t.filter(x=>x.instId.endsWith('-USDT-SWAP'))
     .filter(x=>{const m=meta.get(x.instId);return !m||!m.state||m.state==='live';})
+    .filter(x=>isCoin(x.instId,meta))
     .map(x=>{
       const m=meta.get(x.instId),lt=m&&m.listTime?m.listTime:0;
       return{id:x.instId,vol:(+x.volCcy24h||0)*(+x.last||0),
@@ -673,6 +660,72 @@ function trendline(k,type){
   const broke=type==='res'?k.c[n]>now+a*.15:k.c[n]<now-a*.15;
   return{type,slope,now,touch,dist,broke,
     dir:slope>a*.02?'up':slope<-a*.02?'down':'flat'};
+}
+
+/* ------------------------------------------------------------------
+   ĐƯỜNG XU HƯỚNG HAI ĐỘ DÀI — dùng cho tín hiệu độ rộng thị trường.
+   Đường nối hai đỉnh (kháng cự) hoặc hai đáy (hỗ trợ) dao động, độ dốc nào
+   cũng được — đường tăng hay đường giảm đều tính.
+   Luật: PHÁ = nến ĐÓNG CỬA vượt qua đường. Râu đâm qua không tính.
+   Đường phải còn nguyên vẹn: chưa từng bị một nến nào đóng cửa xuyên qua.
+   Hai độ dài: NGẮN HẠN 8-35 nến, TRUNG HẠN 36-120 nến (tính từ điểm neo đầu
+   tới nến hiện tại). Đường ngắn chỉ 8-10 nến vẫn là trendline hợp lệ.       */
+const TL_SHORT=[8,35], TL_MED=[36,120];
+function tlFind(k,side,lo,hi,back){
+  /* side 'sup' = đường dưới giá nối các đáy; 'res' = đường trên giá nối các đỉnh.
+     Trả về đường bị phá ở một trong `back` nến cuối, hoặc null. */
+  const n=k.c.length-1,a=k.atr[n]||1e-9;
+  const sw=swings(k,2,2),piv=(side==='res'?sw.hi:sw.lo).filter(i=>n-i<=hi);
+  if(piv.length<2)return null;
+  const val=i=>side==='res'?k.h[i]:k.l[i];
+  let best=null;
+  for(let bi=piv.length-1;bi>=1;bi--){
+    const j=piv[bi];
+    for(let ai=bi-1;ai>=0;ai--){
+      const i1=piv[ai];
+      const span=n-i1;
+      if(span>hi)break;
+      if(span<lo||j-i1<4)continue;
+      const m=(val(j)-val(i1))/(j-i1);
+      const at=x=>val(i1)+m*(x-i1);
+      /* đường còn nguyên vẹn tới trước đoạn kiểm tra phá */
+      let ok=true,touch=0;
+      for(let x=i1;x<=n;x++){
+        const y=at(x),aa=k.atr[x]||a;
+        const through=side==='res'?k.c[x]>y+aa*.10:k.c[x]<y-aa*.10;
+        if(through&&x<n-back+1){ok=false;break;}
+        if(Math.abs(val(x)-y)<=aa*.35)touch++;
+      }
+      if(!ok||touch<2)continue;
+      /* phá ở nến nào trong `back` nến cuối */
+      let bar=-1;
+      for(let x=n-back+1;x<=n;x++){
+        if(x<1)continue;
+        const y=at(x),yp=at(x-1),aa=k.atr[x]||a;
+        const now=side==='res'?k.c[x]>y+aa*.05:k.c[x]<y-aa*.05;
+        const before=side==='res'?k.c[x-1]<=yp:k.c[x-1]>=yp;
+        if(now&&before){bar=x;break;}
+      }
+      if(bar<0)continue;
+      const cand={side,span,touch,bar,ago:n-bar,now:at(n),slope:m,
+        up:m>0,live:!!k.live&&bar===n};
+      if(!best||cand.touch>best.touch||(cand.touch===best.touch&&cand.span>best.span))best=cand;
+    }
+  }
+  return best;
+}
+/* Một coin "đã gãy" khi phá CẢ đường ngắn hạn LẪN đường trung hạn cùng chiều.
+   back=2: cú phá xảy ra ở nến đang chạy hoặc nến vừa đóng. */
+function tlBreadth(k,back=2){
+  const dnS=tlFind(k,'sup',TL_SHORT[0],TL_SHORT[1],back);
+  const dnM=tlFind(k,'sup',TL_MED[0],TL_MED[1],back);
+  const upS=tlFind(k,'res',TL_SHORT[0],TL_SHORT[1],back);
+  const upM=tlFind(k,'res',TL_MED[0],TL_MED[1],back);
+  const dn=dnS&&dnM?{short:dnS,med:dnM}:null;
+  const up=upS&&upM?{short:upS,med:upM}:null;
+  /* cùng lúc gãy cả hai chiều thì không tính bên nào */
+  if(dn&&up)return{dn:null,up:null};
+  return{dn,up};
 }
 
 /* Mô hình giá dựng từ hai đường xu hướng */
@@ -2570,123 +2623,6 @@ async function topSymbols(n){
   return (await listSymbols('top',n)).map(x=>x.id);
 }
 const SCAN={stop:false,running:false};
-$('#stop').onclick=()=>{SCAN.stop=true;$('#stat').textContent='Đang dừng, chờ các luồng đang chạy kết thúc...';};
-
-$('#go').onclick=async()=>{
-  if(SCAN.running)return;
-  const btn=$('#go'),out=$('#out'),st=$('#stat'),sb=$('#stop');
-  SCAN.stop=false;SCAN.running=true;
-  btn.disabled=true;sb.hidden=false;out.innerHTML='';storeScan.length=0;
-  $('#prog').classList.add('on');$('#bar').style.width='0';
-  const hz=$('#hz').value, side=$('#side').value, scope=$('#scope').value;
-  const t0=Date.now();
-  try{
-    st.textContent='Đang lấy danh sách cặp...';
-    const list=await listSymbols(scope);
-    if(!list.length)throw new Error('Không có cặp nào khớp bộ lọc đã chọn');
-    const volMap=new Map(list.map(x=>[x.id,x.vol]));
-    const syms=list.map(x=>x.id);
-
-    /* VÒNG 1 — mỗi cặp đúng một request. Loại phần lớn ngay tại đây. */
-    const pre=await pool(syms,s=>prescreen(s,hz),6,(d,t)=>{
-      $('#bar').style.width=(d/t*55)+'%';
-      if(d%4===0||d===t)st.textContent=`Vòng 1 · lọc nhanh ${d}/${t} cặp`;
-    },SCAN);
-    if(SCAN.stop)throw new Error('__ABORT__');
-
-    const floor=Math.max(16,C.minScore*0.36);
-    let cand=pre.filter(x=>x.pre>=floor).sort((a,b)=>b.pre-a.pre).slice(0,90);
-    if(!cand.length)cand=pre.sort((a,b)=>b.pre-a.pre).slice(0,20);
-
-    /* VÒNG 2 — chỉ những cặp sống sót mới tốn thêm 4 request mỗi cặp. */
-    const found=await pool(cand,async c=>{
-      const s=await analyze(c.sym,hz,{side});
-      if(s)s.vol24=volMap.get(c.sym)||null;
-      return s;
-    },4,(d,t)=>{
-      $('#bar').style.width=(55+d/t*45)+'%';
-      st.textContent=`Vòng 2 · phân tích sâu ${d}/${t} cặp đã lọt vòng 1`;
-    },SCAN);
-
-    found.sort((a,b)=>b.score-a.score);
-    let nL=0,nS=0;found.forEach(s=>s.dir==='long'?nL++:nS++);
-
-    /* Tương quan với BTC. Sáu tín hiệu Long tương quan 0.85 không phải sáu lệnh
-       phân tán — đó là một lệnh với sáu lần rủi ro. */
-    let corrNote='';
-    if(found.length>1){
-      try{
-        const btc=await candles('BTC-USDT-SWAP',HZ[hz].entry);
-        const cs=[];
-        found.forEach(s=>{const r=corrWithBtc(s.k,btc);s.corr=r;if(r!=null)cs.push(Math.abs(r));});
-        if(cs.length>1){
-          const avg=cs.reduce((a,b)=>a+b,0)/cs.length;
-          const eff=Math.max(1,found.length*(1-avg*0.9));
-          const totalRisk=C.risk*found.length;
-          corrNote=`<div class="warn">Tương quan tuyệt đối trung bình với BTC: <b>${avg.toFixed(2)}</b>.
-            ${found.length} setup này chỉ tương đương khoảng <b>${eff.toFixed(1)} lệnh độc lập</b>.
-            Vào cả ${found.length} lệnh với ${C.risk}% mỗi lệnh không phải là rủi ro ${totalRisk.toFixed(1)}% đã phân tán —
-            đó là ${totalRisk.toFixed(1)}% đặt vào cùng một canh bạc. Khi BTC quay đầu, phần lớn số này chạm cắt lỗ trong cùng một giờ.</div>`;
-        }
-      }catch(e){}
-    }
-
-    $('#prog').classList.remove('on');
-    const secs=((Date.now()-t0)/1000).toFixed(0);
-    if(!found.length){
-      st.textContent='';
-      out.innerHTML=`<div class="empty"><div class="lg">Không có setup nào đạt ${C.minScore} điểm</div>
-        Đã quét ${syms.length} cặp trong ${secs} giây, ${cand.length} cặp lọt vào vòng phân tích sâu.<br>
-        Không tìm được gì là chuyện bình thường. Bộ lọc im lặng nghĩa là nó đang làm đúng việc.</div>`;
-    }else{
-      st.textContent=`${found.length} setup · ${nL} Long, ${nS} Short · quét ${syms.length} cặp trong ${secs}s`
-        +(SCAN.stop?' · đã dừng giữa chừng':'');
-      found.forEach(s=>storeScan.push(s));CTX=found.slice();
-      out.innerHTML=corrNote+found.map((s,i)=>{
-        try{return render(s,i);}
-        catch(err){return `<div class="err">Không dựng được thẻ ${esc(s.sym)}: ${esc(err.message)}</div>`;}
-      }).join('');
-      attach(out,storeScan);
-    }
-  }catch(e){
-    $('#prog').classList.remove('on');st.textContent='';
-    if(e.message==='__ABORT__'){
-      out.innerHTML=`<div class="warn">Đã dừng quét theo yêu cầu.</div>`;
-    }else{
-      out.innerHTML=`<div class="err">Không lấy được dữ liệu từ OKX: ${esc(e.message)}<br><br>
-        Nếu mạng của bạn chặn OKX, thử bật VPN.</div>`;
-    }
-  }
-  SCAN.running=false;btn.disabled=false;sb.hidden=true;
-};
-$('#go1').onclick=async()=>{
-  const raw=$('#sym').value.trim().toUpperCase();
-  if(!raw)return;
-  const sym=raw.endsWith('-SWAP')?raw:raw.endsWith('-USDT')?raw+'-SWAP':`${raw}-USDT-SWAP`;
-  const btn=$('#go1'),out=$('#out1'),st=$('#stat1');
-  btn.disabled=true;out.innerHTML='';storeOne.length=0;
-  try{
-    const res=[];
-    for(const hz of Object.keys(HZ)){
-      st.textContent=`Đang phân tích ${HZ[hz].label}...`;
-      try{const s=await analyze(sym,hz,{force:true,full:true});if(s)res.push(s);}catch(e){}
-    }
-    if(!res.length){st.textContent='';
-      out.innerHTML=`<div class="err">Không phân tích được ${esc(sym)}. Kiểm tra lại tên cặp — thử BTC, ETH, SOL.</div>`;
-    }else{
-      st.textContent='';
-      res.forEach(s=>storeOne.push(s));CTX=res.slice();
-      out.innerHTML=res.map((s,i)=>{
-        try{return render(s,i);}
-        catch(err){return `<div class="err">Không dựng được thẻ ${esc(s.hzLabel)}: ${esc(err.message)}</div>`;}
-      }).join('');
-      attach(out,storeOne);
-      out.querySelector('.chead')?.click();
-    }
-  }catch(e){st.textContent='';out.innerHTML=`<div class="err">Lỗi: ${esc(e.message)}</div>`;}
-  btn.disabled=false;
-};
-$('#sym').addEventListener('keydown',e=>{if(e.key==='Enter')$('#go1').click();});
 /* ============================================================ TAB PHÁ VỠ / TRENDLINE */
 const storeBk=[];
 function drawBk(cv,item){
@@ -2754,13 +2690,47 @@ function attachBk(box){
     };
   });
 }
+/* ------------------------------------------------------------------
+   TÍN HIỆU ĐỘ RỘNG THỊ TRƯỜNG
+   Đếm xem trong lượt quét này có bao nhiêu coin vừa phá CẢ đường ngắn hạn
+   lẫn đường trung hạn trên khung H1. Từ NGƯỠNG coin trở lên thì kết luận
+   xu hướng chung. Không liệt kê tên coin — bạn tự xem danh sách bên dưới.  */
+function renderBreadth(all,tf,total){
+  const box=$('#breadth');
+  if(tf!=='1H'){box.hidden=true;return;}
+  const ok=all.filter(x=>x.br);
+  const dn=ok.filter(x=>x.br.dn).length, up=ok.filter(x=>x.br.up).length;
+  const live=all.filter(x=>x.live).length;
+  const TH=C.breadth;
+  let cls='bn-wait',head='Chưa có xu hướng chung',body='';
+  if(dn>=TH&&dn>up){
+    cls='bn-dn';head=`Nghiêng GIẢM · ${dn} coin vừa gãy`;
+    body=`${dn} trên ${ok.length} coin vừa phá xuống cả đường ngắn hạn lẫn trung hạn trong 2 nến H1 gần nhất. `+
+      `Cả thị trường gãy cùng lúc thường do một lực chung kéo, không phải ${dn} chuyện riêng lẻ. `+
+      `Ưu tiên tìm kèo Giảm, tránh vào Tăng.`;
+  }else if(up>=TH&&up>dn){
+    cls='bn-up';head=`Nghiêng TĂNG · ${up} coin vừa phá lên`;
+    body=`${up} trên ${ok.length} coin vừa phá lên cả đường ngắn hạn lẫn trung hạn trong 2 nến H1 gần nhất. `+
+      `Lưu ý: trong 3 năm dữ liệu, khi RẤT nhiều coin cùng phá lên (từ 9 trở lên) thì mua đuổi lại hay thua — `+
+      `đó thường là lúc đứng ngoài chứ không phải lúc vào.`;
+  }else{
+    body=`Phá xuống ${dn} coin · phá lên ${up} coin · ngưỡng đang đặt là ${TH}. `+
+      `Chưa đủ để nói cả thị trường đang đi về một phía. Vài coin phá lẻ tẻ phần lớn là nhiễu.`;
+  }
+  box.className=cls;
+  box.innerHTML=`<div class="bn-h">${esc(head)}</div><div class="bn-b">${body}</div>`+
+    `<div class="bn-f">Quét ${ok.length}/${total} coin lúc ${new Date().toLocaleTimeString('vi-VN')}`+
+    (live?` · ${live} coin tính cả nến H1 đang chạy`:'')+`</div>`;
+  box.hidden=false;
+}
 const SCANB={stop:false,running:false};
 async function scanBreak(){
   if(SCANB.running)return;
   const tf=$('#bkTf').value,type=$('#bkType').value,dirF=$('#bkDir').value,scope=$('#bkScope').value;
   const btn=$('#goBk'),out=$('#outB'),st=$('#statB'),sb=$('#stopB');
-  SCANB.stop=false;SCANB.running=true;
+  SCANB.stop=false;SCANB.running=true;freshScan();
   btn.disabled=true;sb.hidden=false;out.innerHTML='';storeBk.length=0;
+  $('#breadth').hidden=true;
   $('#progB').classList.add('on');$('#barB').style.width='0';
   const t0=Date.now();
   try{
@@ -2772,11 +2742,12 @@ async function scanBreak(){
 
     /* Chạy song song như tab Quét. Mỗi cặp chỉ tốn đúng một request nên quét
        toàn sàn ở đây rẻ hơn nhiều so với tab Quét. */
-    const found=await pool(syms,async sym=>{
+    const all=await pool(syms,async sym=>{
       const kr=await candles(sym,tf,220);
       if(kr.c.length<80)return null;
       const k=enrich(kr),n=k.c.length-1;
       const bo=breakout(k),Rl=trendline(k,'res'),Sl=trendline(k,'sup'),pats=patternScan(k);
+      let br=null; try{br=tlBreadth(k,2);}catch(e){}
       const events=[];
       if(bo){
         if((bo.state==='fresh'||bo.state==='running'||bo.state==='retest')&&bo.dir){
@@ -2791,12 +2762,30 @@ async function scanBreak(){
             title:'Đang nén chặt, chờ bung',note:bo.note});
         }
       }
-      if(Rl&&Rl.broke)events.push({cat:'tl',dir:'long',lvl:Rl.now,
-        title:`Phá đường kháng cự chéo (đã chạm ${Rl.touch} lần)`,
-        note:`Giá vừa vượt lên trên đường kháng cự chéo tại ${fmt(Rl.now)} — đường này đã bị test ${Rl.touch} lần trước khi bị phá. Kháng cự cũ nếu giữ được có thể đổi vai thành hỗ trợ.`});
-      if(Sl&&Sl.broke)events.push({cat:'tl',dir:'short',lvl:Sl.now,
-        title:`Phá đường hỗ trợ chéo (đã chạm ${Sl.touch} lần)`,
-        note:`Giá vừa thủng xuống dưới đường hỗ trợ chéo tại ${fmt(Sl.now)} — đường này đã bị test ${Sl.touch} lần trước khi bị phá. Hỗ trợ cũ nếu mất có thể đổi vai thành kháng cự.`});
+      /* Phá trendline: báo cả đường ngắn hạn (8-35 nến) lẫn trung hạn (36-120 nến).
+         Đường chỉ 8-10 nến vẫn tính là trendline. */
+      for(const [L,lab] of [[br&&br.dn&&br.dn.short,'ngắn hạn'],[br&&br.dn&&br.dn.med,'trung hạn']]){
+        if(!L)continue;
+        events.push({cat:'tl',dir:'short',lvl:L.now,
+          title:`Phá đường hỗ trợ ${lab} · ${L.span} nến · ${L.touch} chạm`+(L.live?' · nến đang chạy':L.ago?` · ${L.ago} nến trước`:''),
+          note:`Nến H1 đóng cửa thủng xuống dưới đường hỗ trợ ${lab} tại ${fmt(L.now)}. Đường ${L.up?'dốc lên':'dốc xuống'}, dài ${L.span} nến, đã chạm ${L.touch} lần mà chưa từng bị đóng cửa xuyên qua.`+
+            (L.live?' Cú phá đang xảy ra trên nến H1 CHƯA ĐÓNG — giá có thể rút về trước khi hết giờ.':'')});
+      }
+      for(const [L,lab] of [[br&&br.up&&br.up.short,'ngắn hạn'],[br&&br.up&&br.up.med,'trung hạn']]){
+        if(!L)continue;
+        events.push({cat:'tl',dir:'long',lvl:L.now,
+          title:`Phá đường kháng cự ${lab} · ${L.span} nến · ${L.touch} chạm`+(L.live?' · nến đang chạy':L.ago?` · ${L.ago} nến trước`:''),
+          note:`Nến H1 đóng cửa vượt lên trên đường kháng cự ${lab} tại ${fmt(L.now)}. Đường ${L.up?'dốc lên':'dốc xuống'}, dài ${L.span} nến, đã chạm ${L.touch} lần mà chưa từng bị đóng cửa xuyên qua.`+
+            (L.live?' Cú phá đang xảy ra trên nến H1 CHƯA ĐÓNG — giá có thể rút về trước khi hết giờ.':'')});
+      }
+      if(!br||(!br.dn&&!br.up)){
+        if(Rl&&Rl.broke)events.push({cat:'tl',dir:'long',lvl:Rl.now,
+          title:`Phá đường kháng cự chéo (đã chạm ${Rl.touch} lần)`,
+          note:`Giá vừa vượt lên trên đường kháng cự chéo tại ${fmt(Rl.now)} — đường này đã bị test ${Rl.touch} lần trước khi bị phá.`});
+        if(Sl&&Sl.broke)events.push({cat:'tl',dir:'short',lvl:Sl.now,
+          title:`Phá đường hỗ trợ chéo (đã chạm ${Sl.touch} lần)`,
+          note:`Giá vừa thủng xuống dưới đường hỗ trợ chéo tại ${fmt(Sl.now)} — đường này đã bị test ${Sl.touch} lần trước khi bị phá.`});
+      }
       /* Bẫy giá cũng là sự kiện cấu trúc — đưa luôn vào tab này */
       try{
         traps(k,keyLevels(k),bo).slice(0,3).forEach(p=>events.push({cat:'trap',dir:p.d,lvl:p.lvl,
@@ -2808,8 +2797,8 @@ async function scanBreak(){
       let use=events;
       if(type!=='all')use=use.filter(e=>e.cat===type);
       if(dirF!=='both')use=use.filter(e=>e.dir===dirF);
-      if(!use.length)return null;
-      return{sym,price:k.c[n],tf,k,events:use,vol24:volMap.get(sym)||null};
+      return{sym,price:k.c[n],tf,k,events:use,br,live:!!k.live,
+        hide:!use.length,vol24:volMap.get(sym)||null};
     },6,(d,t)=>{
       $('#barB').style.width=(d/t*100)+'%';
       if(d%4===0||d===t)st.textContent=`Đang quét ${d}/${t} cặp`;
@@ -2817,6 +2806,8 @@ async function scanBreak(){
 
     $('#progB').classList.remove('on');
     const secs=((Date.now()-t0)/1000).toFixed(0);
+    renderBreadth(all,tf,syms.length);
+    const found=all.filter(x=>!x.hide);
     if(!found.length){
       st.textContent='';
       out.innerHTML=`<div class="empty"><div class="lg">Không tìm thấy tín hiệu nào</div>
@@ -2954,11 +2945,10 @@ $('#stopNb').onclick=()=>{SCANN.stop=true;$('#statN').textContent='Đang dừng,
 document.querySelectorAll('nav button').forEach(b=>{
   b.onclick=()=>{
     document.querySelectorAll('nav button').forEach(x=>x.setAttribute('aria-selected',x===b));
-    ['scan','one','brk','nbk','chat','cfg'].forEach(id=>$('#'+id).hidden=(id!==b.dataset.t));
+    ['brk','nbk','cfg'].forEach(id=>$('#'+id).hidden=(id!==b.dataset.t));
   };
 });
-initChat();
-const CF=['cap','rk','ms','mr','tn'],CK=['cap','risk','minScore','minRR','topN'];
+const CF=['cap','rk','ms','mr','tn','bw'],CK=['cap','risk','minScore','minRR','topN','breadth'];
 CF.forEach((id,i)=>{$('#'+id).value=C[CK[i]];});
 $('#save').onclick=()=>{
   C.cap=Math.max(50,+$('#cap').value||1000);
@@ -2966,6 +2956,7 @@ $('#save').onclick=()=>{
   C.minScore=Math.min(95,Math.max(40,+$('#ms').value||70));
   C.minRR=Math.min(6,Math.max(.5,+$('#mr').value||2));
   C.topN=Math.min(80,Math.max(5,+$('#tn').value||40));
+  C.breadth=Math.min(20,Math.max(2,+$('#bw').value||5));
   CF.forEach((id,i)=>{$('#'+id).value=C[CK[i]];});
   try{localStorage.setItem('okxcfg',JSON.stringify(C));}catch(e){}
   const s=$('#saved');

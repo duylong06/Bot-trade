@@ -4,18 +4,31 @@ Trang web một file, phân tích futures OKX **ngay trong trình duyệt** — 
 
 Mở: <https://duylong06.github.io/Bot-trade/>
 
-## Sáu tab
+## Ba tab
 
 | Tab | Làm gì |
 |---|---|
-| **Quét** | Chấm điểm setup hàng loạt coin theo khung thời gian (1H/4H, 15m/4H, 4H/1D, 1D/1W), lọc Long / Short / cả hai |
-| **Một cặp** | Soi riêng một đồng, bỏ qua ngưỡng lọc, hiện điểm **cả hai chiều** để thấy vì sao chọn hướng đó |
-| **Phá vỡ** | Coin đang phá đường xu hướng chéo, phá vùng tích luỹ, hoặc vừa hoàn tất mô hình giá (vai đầu vai, hai đỉnh/hai đáy, tam giác, nêm, cờ) |
-| **Sắp phá** | Coin nén sát một mức chưa bị phá, kèm một cây volume mạnh ép vào mức đó. Tách **Đã phá** và **Sắp phá** |
-| **Hỏi** | Hỏi đáp về đồng vừa xem, trả lời ngay trên máy |
-| **Cài đặt** | Số coin quét, ngưỡng lọc, tốc độ gọi API |
+| **Phá vỡ** | Coin đang phá đường xu hướng, phá vùng tích luỹ, hoặc vừa hoàn tất mô hình giá (vai đầu vai, hai đỉnh/hai đáy, tam giác, nêm, cờ). Trên cùng là **bảng xu hướng chung** |
+| **Sắp phá** | Coin nén sát một mức chưa bị phá, kèm một cây volume mạnh ép vào mức đó |
+| **Cài đặt** | Số coin quét, ngưỡng lọc, ngưỡng kết luận xu hướng |
 
-Mỗi kết quả có: điểm từng mặt (khung lớn, cấu trúc, động lượng, khối lượng, dòng tiền, thanh khoản), biểu đồ nến, kế hoạch lệnh nhiều tầng (Entry 1-2-3, SL, TP1-2-3, R:R, đòn bẩy), luận điểm và rủi ro viết bằng tiếng Việt.
+Mỗi thẻ có biểu đồ nến, các mức quan trọng, và giải thích bằng tiếng Việt.
+
+## Bảng xu hướng chung (độ rộng thị trường)
+
+Mỗi lần quét khung **H1**, app đếm xem bao nhiêu coin vừa phá **cả đường ngắn hạn (8–35 nến) lẫn đường trung hạn (36–120 nến)** cùng một chiều, trong 2 nến gần nhất. Đường chỉ 8–10 nến vẫn tính là trendline. Phá = nến **đóng cửa** vượt qua đường; râu đâm qua không tính; đường chưa từng bị nến nào đóng cửa xuyên qua.
+
+Từ **5 coin** trở lên (đổi được trong Cài đặt) thì app kết luận thị trường đang nghiêng về một phía. App **không liệt kê coin nào phá** — bạn tự xem danh sách bên dưới và chọn.
+
+Đo trên 3 năm, 23 coin top: ngưỡng 5 chưa có lợi thế rõ, từ 8 trở lên mới thấy lợi thế nhưng chỉ khoảng 3 lần mỗi tháng. Khi rất nhiều coin cùng phá **lên** thì mua đuổi lại hay thua — đó thường là lúc đứng ngoài.
+
+## Chỉ coin
+
+App bỏ vàng, bạc, dầu, chỉ số chứng khoán và mọi hợp đồng không phải tiền mã hoá, lọc theo phân loại của OKX.
+
+## Thời gian thực
+
+Bấm Quét là lấy giá ngay lúc đó, **tính cả nến H1 đang chạy**. Cú phá trên nến chưa đóng được ghi rõ "nến đang chạy" — giá vẫn có thể rút về trước khi hết giờ.
 
 ## Chạy
 
