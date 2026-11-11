@@ -1,6 +1,9 @@
 // Nhánh tạm: lấy dữ liệu UNI từ OKX để phân tích một cú phá trendline H1. Không ảnh hưởng nhánh chính.
 import fs from 'node:fs';
-const API = 'https://www.okx.com', INST = 'UNI-USDT-SWAP', CCY = 'UNI';
+const API = 'https://www.okx.com';
+const INST = (fs.readFileSync('research/coin.txt','utf8').trim().split(/\s+/)[0]) || 'BTC-USDT-SWAP';
+const CCY = INST.split('-')[0];
+console.log('đồng:', INST);
 fs.mkdirSync('out', { recursive: true });
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function get(path, q) {
@@ -27,6 +30,7 @@ async function candles(bar, pages) {            // history-candles phân trang, 
   return all;
 }
 const out = {};
+out.c5m = await candles('5m', 4);
 out.c15m = await candles('15m', 8);
 out.c1H = await candles('1H', 6);
 out.c4H = await candles('4H', 4);
@@ -43,4 +47,5 @@ out.books = await get('/api/v5/market/books', { instId: INST, sz: '400' });
 out.lsr = await get('/api/v5/rubik/stat/contracts/long-short-account-ratio', { ccy: CCY, period: '1H' });
 out.fetchedAt = new Date().toISOString();
 for (const [k, v] of Object.entries(out)) console.log(k, Array.isArray(v) ? v.length : typeof v);
-fs.writeFileSync('out/uni.json', JSON.stringify(out));
+fs.writeFileSync('out/coin.json', JSON.stringify(out));
+fs.writeFileSync('out/' + CCY + '.json', JSON.stringify(out));
