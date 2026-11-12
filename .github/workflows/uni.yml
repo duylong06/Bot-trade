@@ -14,7 +14,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: node research/uni.mjs
+      - run: node research/${{ github.event_name == 'push' && 'book' || 'book' }}.mjs
+        env:
+          SECS: '360'
       - name: Lưu vào nhánh uni-data
         env:
           GH_TOKEN: ${{ github.token }}
