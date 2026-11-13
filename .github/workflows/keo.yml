@@ -1,0 +1,48 @@
+# Bot thông báo Kèo Pro: quét M30 + H1 cho BTC / ETH / SOL / BNB, đẩy kèo hạng A+ về iPhone.
+name: Kèo Pro — thông báo
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'scan = quét và báo · test-push = gửi tin thử · dry-run = quét, in ra, không gửi'
+        type: choice
+        options: [scan, test-push, dry-run]
+        default: scan
+  # Nến M30 đóng lúc :00 và :30. Đặt sớm 1 phút vì Actions hay chạy trễ.
+  schedule:
+    - cron: '1,31 * * * *'
+
+concurrency:
+  group: keo
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  keo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund web-push@3.6.7
+      - name: Quét và báo
+        env:
+          PUSH_CONFIG: ${{ secrets.PUSH_CONFIG }}
+          MODE: ${{ github.event.inputs.mode || 'scan' }}
+        run: node bot/keo.mjs
+      - name: Lưu trạng thái vào nhánh data
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [ -d out ] || exit 0
+          cd out
+          git init -q -b data
+          git add -A
+          git -c user.name="bot-trade" -c user.email="bot-trade@users.noreply.github.com" commit -qm "trạng thái Kèo Pro $(date -u +%F-%H%M)"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" data

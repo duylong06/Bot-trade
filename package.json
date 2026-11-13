@@ -3,5 +3,10 @@
   "private": true,
   "type": "module",
   "description": "Quét tín hiệu OKX — trang web một file, phân tích futures ngay trong trình duyệt",
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "web-push": "^3.6.7"
+  }
 }
