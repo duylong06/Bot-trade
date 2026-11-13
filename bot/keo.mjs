@@ -1,0 +1,270 @@
+// bot/keo.mjs — bot thông báo Kèo Pro.
+//
+// Chạy trên GitHub Actions mỗi 30 phút. Quét 4 đồng (BTC, ETH, SOL, BNB) trên khung M30 và H1,
+// chạy bộ máy core/keopro.js, và CHỈ đẩy thông báo cho kèo hạng A+ không dính cờ xấu.
+// Mỗi (đồng, khung) chỉ giữ MỘT kèo cùng lúc, giống luật của chỉ báo: có kèo đang chạy thì
+// tín hiệu mới bị bỏ qua. Kèo đang chạy được theo dõi và báo tiếp khi chạm TP1 / TP2 / SL.
+//
+// Biến môi trường:
+//   PUSH_CONFIG  mã app tạo khi bấm "Bật thông báo" (chứa khoá VAPID riêng của bot) — GitHub Secret
+//   MODE         scan (mặc định) · test-push · dry-run (quét, in ra, không gửi)
+//
+// Trạng thái nằm ở nhánh data (state-keo.json). Không có thì bot chạy như lần đầu.
+
+import fs from 'node:fs';
+import crypto from 'node:crypto';
+import webpush from 'web-push';
+import { keoPro, atr } from '../core/keopro.js';
+
+const API = 'https://www.okx.com';
+const PAGES = 'https://duylong06.github.io/Bot-trade/';
+const NTFY = 'https://ntfy.sh/bottrade-duylong06-7f3k9q2m';
+const DATA = 'https://raw.githubusercontent.com/duylong06/Bot-trade/data/';
+const COINS = (process.env.COINS || 'BTC,ETH,SOL,BNB').split(',').map(s => s.trim()).filter(Boolean);
+const TFS = [{ k: '30m', sec: 1800, label: 'M30' }, { k: '1H', sec: 3600, label: 'H1' }];
+const MODE = process.env.MODE || 'scan';
+const TIME_STOP = 60;                  // nến: kèo quá hạn thì đóng (phong cách intraday)
+const t0 = Date.now();
+const log = (...a) => console.log(...a);
+const sha = s => crypto.createHash('sha256').update(s).digest('hex').slice(0, 16);
+const vn = t => new Date(t + 7 * 3600e3).toISOString().slice(5, 16).replace('T', ' ');
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const fmt = (p) => p >= 1000 ? p.toFixed(0) : p >= 10 ? p.toFixed(2) : p >= 1 ? p.toFixed(3) : p.toFixed(5);
+const pct = (a, b) => ((a / b - 1) * 100).toFixed(2) + '%';
+
+/* ---------------- OKX ---------------- */
+async function okx(path, q, tries = 4) {
+  const u = API + path + '?' + new URLSearchParams(q);
+  for (let i = 0; i < tries; i++) {
+    try {
+      const r = await fetch(u, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+      const j = await r.json();
+      if (j.code === '0') return j.data;
+      log('  okx', path, j.code, j.msg);
+    } catch (e) { log('  okx lỗi mạng', path, String(e.message)); }
+    await sleep(900);
+  }
+  return null;
+}
+/** Nến ĐÃ ĐÓNG, cũ → mới. OKX đánh dấu nến đang chạy bằng cột thứ 9 = '0'. */
+async function candles(inst, bar, pages = 3) {
+  let all = [], after;
+  for (let p = 0; p < pages; p++) {
+    const q = { instId: inst, bar, limit: '100' }; if (after) q.after = after;
+    const d = await okx('/api/v5/market/history-candles', q);
+    if (!d || !d.length) break;
+    all = all.concat(d); after = d[d.length - 1][0];
+    await sleep(220);
+  }
+  const rows = all.filter(r => r[8] === '1').reverse().map(r => r.map(Number));
+  return { t: rows.map(r => r[0]), o: rows.map(r => r[1]), h: rows.map(r => r[2]), l: rows.map(r => r[3]), c: rows.map(r => r[4]), v: rows.map(r => r[5]) };
+}
+async function oiSeries(inst, period, pages = 2) {
+  let out = [], end;
+  for (let p = 0; p < pages; p++) {
+    const q = { instId: inst, period, limit: '100' }; if (end) q.end = end;
+    const d = await okx('/api/v5/rubik/stat/contracts/open-interest-history', q);
+    if (!d || !d.length) break;
+    out = out.concat(d.map(r => [+r[0], +r[3]]));
+    end = d[d.length - 1][0];
+    await sleep(350);
+  }
+  return out.sort((a, b) => a[0] - b[0]);
+}
+
+/* ---------------- trạng thái ---------------- */
+async function loadState() {
+  try {
+    const r = await fetch(DATA + 'state-keo.json', { cache: 'no-store' });
+    if (r.ok) return await r.json();
+  } catch {}
+  return {};
+}
+
+/* ---------------- gửi thông báo ---------------- */
+function parseSecret(raw) {
+  if (!raw || !raw.trim()) return [];
+  let items = [];
+  try { const j = JSON.parse(raw); items = Array.isArray(j) ? j : [j]; }
+  catch { items = (raw.match(/\{[^\n]*\}/g) || []).map(s => { try { return JSON.parse(s); } catch { return null; } }).filter(Boolean); }
+  return items.filter(x => x && x.sub && x.sub.endpoint && x.vapid && x.vapid.pub && x.vapid.priv)
+    .map(x => ({ ...x, id: sha(x.sub.endpoint), src: 'secret' }));
+}
+const secret = parseSecret(process.env.PUSH_CONFIG);
+const keys = new Map(secret.map(d => [d.vapid.pub, d.vapid]));
+const PUSH_HOSTS = /^https:\/\/([a-z0-9-]+\.)*(push\.apple\.com|fcm\.googleapis\.com|push\.services\.mozilla\.com|notify\.windows\.com)\//;
+
+/** App gửi đăng ký mới qua ntfy; chỉ nhận đăng ký dùng đúng khoá công khai của bot. */
+async function intake(state) {
+  if (!keys.size) return;
+  state.subs ||= {}; state.dead ||= {};
+  try {
+    const since = state.ntfySince ? String(state.ntfySince + 1) : '24h';
+    const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 8000);
+    const r = await fetch(`${NTFY}/json?poll=1&since=${since}`, { signal: ctl.signal }).finally(() => clearTimeout(tm));
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    let n = 0;
+    for (const line of (await r.text()).split('\n')) {
+      let m; try { m = JSON.parse(line); } catch { continue; }
+      if (m.event !== 'message') continue;
+      state.ntfySince = Math.max(state.ntfySince || 0, m.time || 0);
+      let j; try { j = JSON.parse(m.message); } catch { continue; }
+      const ep = j?.sub?.endpoint;
+      if (!ep || !PUSH_HOSTS.test(ep) || !j.sub.keys?.p256dh || !j.sub.keys?.auth || !keys.has(j.pub)) continue;
+      if (state.dead[sha(ep)]) continue;
+      state.subs[sha(ep)] = { sub: { endpoint: ep, keys: { p256dh: j.sub.keys.p256dh, auth: j.sub.keys.auth } }, pub: j.pub, name: String(j.name || 'iPhone').slice(0, 40), at: (m.time || 0) * 1000 };
+      n++;
+    }
+    const ids = Object.keys(state.subs).sort((a, b) => state.subs[b].at - state.subs[a].at);
+    for (const id of ids.slice(8)) delete state.subs[id];
+    if (n) log(`Nhận ${n} đăng ký mới từ app`);
+  } catch (e) { log('  ntfy:', e.message); }
+}
+function devices(state) {
+  const out = new Map(secret.filter(d => !state.dead?.[d.id]).map(d => [d.id, d]));
+  for (const [id, s] of Object.entries(state.subs || {})) {
+    const v = keys.get(s.pub);
+    if (v && !out.has(id) && !state.dead?.[id]) out.set(id, { id, name: s.name, sub: s.sub, vapid: v, src: 'app' });
+  }
+  return [...out.values()];
+}
+async function push(state, title, body, tag) {
+  if (MODE === 'dry-run') { log(`\n[KHÔNG GỬI] ${title}\n${body}\n`); return 0; }
+  const list = devices(state);
+  if (!list.length) { log('  chưa có máy nào đăng ký nhận thông báo'); return 0; }
+  const payload = JSON.stringify({ web_push: 8030, notification: { title, body, navigate: PAGES, tag, lang: 'vi', silent: false } });
+  let ok = 0;
+  for (const d of list) {
+    try {
+      await webpush.sendNotification(d.sub, payload, { TTL: 3600, urgency: 'high', vapidDetails: { subject: PAGES, publicKey: d.vapid.pub, privateKey: d.vapid.priv } });
+      ok++;
+    } catch (e) {
+      log(`  gửi lỗi ${e.statusCode || 0}`, String(e.body || e.message).slice(0, 120));
+      if (e.statusCode === 404 || e.statusCode === 410) { state.dead ||= {}; state.dead[d.id] = Date.now(); delete state.subs?.[d.id]; }
+    }
+  }
+  log(`  → gửi ${ok}/${list.length} máy`);
+  return ok;
+}
+
+/* ---------------- nội dung thông báo ---------------- */
+function bodyOf(coin, tf, r, s) {
+  const d = s.dir > 0 ? 'MUA' : 'BÁN';
+  const L = [];
+  L.push(`${d} ${coin} ${tf} · ${s.kindName} · hạng ${s.grade} (${s.score >= 0 ? '+' : '−'}${Math.abs(s.score)}/7)`);
+  L.push(`Vì sao: ${s.why}`);
+  L.push('');
+  L.push(`Vào ${fmt(s.e1)}${s.p1 > 0 ? ` (${Math.round(s.p1 * 100)}% ngay)` : ' — chờ hết ở vùng'}`);
+  if (s.p1 < 1) L.push(`Còn ${Math.round((1 - s.p1) * 100)}% chờ ở vùng ${fmt(s.zB)}–${fmt(s.zT)}`);
+  L.push(`SL ${fmt(s.sl)} (${pct(s.sl, s.e1)}) · TP1 ${fmt(s.tp1)} (${pct(s.tp1, s.e1)}) · TP2 ${fmt(s.tp2)} (${pct(s.tp2, s.e1)})`);
+  L.push(`R:R sau phí 1:${s.rr.toFixed(2)} · ATR ${r.atrPct.toFixed(2)}%`);
+  L.push('');
+  L.push('Chỉ số:');
+  for (const w of s.whyList) L.push('  ' + w);
+  L.push('');
+  const flow = [];
+  if (r.volX != null) flow.push(`volume ${r.volX.toFixed(2)}× trung bình`);
+  flow.push(`${r.buyPct.toFixed(0)}% khối lượng 20 nến thuộc nến tăng`);
+  if (Number.isFinite(r.oiChg)) flow.push(`OI ${r.oiChg >= 0 ? '+' : '−'}${Math.abs(r.oiChg).toFixed(1)}%/24h`);
+  L.push('Dòng tiền: ' + flow.join(' · '));
+  const lv = [];
+  if (Number.isFinite(r.res1)) lv.push(`kháng cự ${fmt(r.res1)} (${pct(r.res1, r.px)})`);
+  if (Number.isFinite(r.sup1)) lv.push(`hỗ trợ ${fmt(r.sup1)} (${pct(r.sup1, r.px)})`);
+  if (lv.length) L.push('Mốc gần: ' + lv.join(' · '));
+  L.push(`Khung 4H: ${r.htf.tr === 1 ? 'TĂNG' : r.htf.tr === -1 ? 'GIẢM' : 'chưa rõ'} · EMA ${r.htf.ema === 1 ? 'xếp tăng' : r.htf.ema === -1 ? 'xếp giảm' : 'đan xen'}`);
+  L.push('');
+  L.push('Luật máy — không phải lời khuyên đầu tư.');
+  return L.join('\n');
+}
+
+/* ---------------- theo dõi kèo đang chạy ---------------- */
+function track(open, K) {
+  // trả danh sách sự kiện mới kể từ nến `open.lastBar`
+  const ev = [];
+  const i0 = K.t.findIndex(t => t > open.lastBar);
+  if (i0 < 0) return ev;
+  for (let i = i0; i < K.c.length; i++) {
+    const up = open.dir > 0;
+    const hitSL = up ? K.l[i] <= open.sl : K.h[i] >= open.sl;
+    const hitT1 = up ? K.h[i] >= open.tp1 : K.l[i] <= open.tp1;
+    const hitT2 = up ? K.h[i] >= open.tp2 : K.l[i] <= open.tp2;
+    if (hitSL) { ev.push({ k: 'SL', t: K.t[i], px: open.sl }); open.done = true; break; }
+    if (!open.t1 && hitT1) { open.t1 = true; open.sl = open.e1; ev.push({ k: 'TP1', t: K.t[i], px: open.tp1 }); }
+    if (open.t1 && hitT2) { ev.push({ k: 'TP2', t: K.t[i], px: open.tp2 }); open.done = true; break; }
+    open.bars = (open.bars || 0) + 1;
+    open.lastBar = K.t[i];
+    if (open.bars >= TIME_STOP) { ev.push({ k: 'HẠN', t: K.t[i], px: K.c[i] }); open.done = true; break; }
+  }
+  open.lastBar = K.t[K.c.length - 1];
+  return ev;
+}
+
+/* ---------------- chạy ---------------- */
+const state = await loadState();
+state.open ||= {}; state.sent ||= {}; state.subs ||= {}; state.dead ||= {};
+await intake(state);
+log(`Kèo Pro · ${MODE} · ${vn(t0)} giờ VN · ${COINS.join(' ')} · máy nhận: ${devices(state).length}`);
+
+if (MODE === 'test-push') {
+  await push(state, '🔔 Thử thông báo Kèo Pro', `Bot chạy lúc ${vn(t0)} giờ VN.\nTheo dõi ${COINS.join(', ')} trên khung M30 và H1, chỉ báo kèo hạng A+.`, 'test');
+} else {
+  const report = [];
+  for (const coin of COINS) {
+    const inst = `${coin}-USDT-SWAP`;
+    const H4 = await candles(inst, '4H', 3);
+    if (!H4.c.length) { log(`${coin}: không lấy được nến 4H`); continue; }
+    for (const tf of TFS) {
+      const key = `${coin}|${tf.k}`;
+      const K = await candles(inst, tf.k, 3);
+      if (K.c.length < 220) { log(`${key}: thiếu nến (${K.c.length})`); continue; }
+      const OI = await oiSeries(inst, tf.k === '30m' ? '5m' : '1H', 2);
+
+      // 1) theo dõi kèo đang chạy
+      const open = state.open[key];
+      if (open) {
+        for (const e of track(open, K)) {
+          const r = ((e.k === 'SL' ? -1 : e.k === 'TP1' ? 1 : e.k === 'TP2' ? 3 : 0)).toFixed(0);
+          const icon = e.k === 'SL' ? '🛑' : e.k === 'TP2' ? '🎯' : e.k === 'TP1' ? '✅' : '⏱';
+          await push(state,
+            `${icon} ${coin} ${tf.label} · ${e.k}`,
+            `Kèo ${open.dir > 0 ? 'MUA' : 'BÁN'} ${open.kindName} ${open.grade} mở lúc ${vn(open.at)}.\n` +
+            `${e.k === 'TP1' ? 'Chốt 50%, dời SL về hoà vốn ' + fmt(open.e1) + '.' : e.k === 'TP2' ? 'Chốt nốt phần còn lại.' : e.k === 'SL' ? 'Dừng lỗ, đóng kèo.' : 'Kèo quá hạn, đóng.'}\n` +
+            `Giá ${fmt(e.px)} lúc ${vn(e.t)} giờ VN.`,
+            `${key}|${e.k}`);
+          log(`  ${key}: ${e.k} @ ${fmt(e.px)}`);
+        }
+        if (open.done) delete state.open[key];
+      }
+
+      // 2) tín hiệu mới — chỉ khi không có kèo đang chạy
+      const r = keoPro(K, H4, OI, tf.sec);
+      if (r.err) { log(`${key}: ${r.err}`); continue; }
+      const s = r.sig;
+      report.push(`${key} ${fmt(r.px)} ${s ? `${s.dir > 0 ? 'MUA' : 'BÁN'} ${s.kindName} ${s.grade} ${s.score}/7 bad=${s.bad}` : 'không có tín hiệu'}`);
+      if (!s) continue;
+      if (state.open[key]) { log(`  ${key}: có tín hiệu ${s.grade} nhưng đang giữ kèo khác, bỏ qua`); continue; }
+      if (s.grade !== 'A+') { log(`  ${key}: ${s.kindName} hạng ${s.grade}, chưa đủ A+`); continue; }
+      if (s.bad) { log(`  ${key}: A+ nhưng bị loại (${['', 'mốc cản sát TP1', 'R:R thấp', 'phí quá lớn so với SL'][s.bad]})`); continue; }
+      const id = `${key}|${r.bar}`;
+      if (state.sent[id]) continue;
+      state.sent[id] = t0;
+      state.open[key] = { dir: s.dir, kind: s.kind, kindName: s.kindName, grade: s.grade, e1: s.e1, sl: s.sl, tp1: s.tp1, tp2: s.tp2, at: r.bar, lastBar: r.bar, bars: 0, t1: false };
+      await push(state,
+        `${s.dir > 0 ? '🟢' : '🔴'} ${coin} ${tf.label} · ${s.dir > 0 ? 'MUA' : 'BÁN'} ${s.grade} · ${s.kindName}`,
+        bodyOf(coin, tf.label, r, s),
+        key);
+      log(`  ${key}: ★ ${s.dir > 0 ? 'MUA' : 'BÁN'} ${s.kindName} ${s.grade} ${s.score}/7 R:R ${s.rr.toFixed(2)}`);
+    }
+  }
+  log('\n--- tổng kết lượt quét');
+  for (const line of report) log('  ' + line);
+}
+
+for (const [k, v] of Object.entries(state.sent)) if (t0 - v > 14 * 24 * 3600e3) delete state.sent[k];
+fs.mkdirSync('out', { recursive: true });
+fs.writeFileSync('out/state-keo.json', JSON.stringify(state));
+fs.writeFileSync('out/status-keo.json', JSON.stringify({
+  at: new Date().toISOString(), mode: MODE, coins: COINS, tfs: TFS.map(t => t.label),
+  open: state.open, devices: devices(state).length, tookMs: Date.now() - t0,
+}, null, 1));
+log(`\nXong sau ${((Date.now() - t0) / 1000).toFixed(0)}s · kèo đang giữ: ${Object.keys(state.open).length}`);
