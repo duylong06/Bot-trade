@@ -135,6 +135,23 @@ li.w{color:#E8C9A4}
 #breadth.bn-wait .bn-h{color:var(--dim)}
 #breadth .bn-b{margin-top:6px;font-size:13.5px;line-height:1.55;color:var(--text)}
 #breadth .bn-f{margin-top:8px;font-size:11.5px;color:var(--dim)}
+
+/* tab Theo dõi */
+.ins-head{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:baseline;margin:14px 0 4px}
+.ins-head b{font-size:26px;letter-spacing:-.5px}
+.ins-card{border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:10px 0;background:#121922}
+.ins-card h4{margin:0 0 8px;font-size:13px;letter-spacing:.3px;color:var(--dim);text-transform:uppercase}
+.ins-row{display:flex;justify-content:space-between;gap:12px;padding:3px 0;font-size:13.5px;border-bottom:1px solid #161d26}
+.ins-row:last-child{border-bottom:0}
+.ins-row span:last-child{text-align:right;white-space:nowrap}
+.ins-up{color:#5fd6a4}.ins-dn{color:#ff8a7e}.ins-mut{color:var(--dim)}
+.ins-bar{height:6px;border-radius:3px;background:#1d2733;overflow:hidden;margin:6px 0 10px}
+.ins-bar i{display:block;height:100%;background:linear-gradient(90deg,#2fbe8c,#5fd6a4)}
+.ins-keo{border-radius:14px;padding:12px 14px;margin:10px 0;border:1px solid var(--line);background:#121922}
+.ins-keo.up{border-color:#2f6b52;background:linear-gradient(180deg,#112420,#161a1f)}
+.ins-keo.dn{border-color:#8a3a35;background:linear-gradient(180deg,#2a1513,#161a1f)}
+.ins-keo .t{font-weight:650;font-size:15px}
+.ins-keo ul{margin:6px 0 0;padding-left:18px;font-size:12.5px;color:var(--dim);line-height:1.6}
 </style>
 </head>
 <body>
@@ -144,6 +161,7 @@ li.w{color:#E8C9A4}
   <nav role="tablist">
     <button role="tab" aria-selected="true" data-t="brk">Phá vỡ</button>
     <button role="tab" aria-selected="false" data-t="nbk">Sắp phá</button>
+    <button role="tab" aria-selected="false" data-t="ins">Theo dõi</button>
     <button role="tab" aria-selected="false" data-t="cfg">Cài đặt</button>
   </nav>
 </header>
@@ -227,6 +245,22 @@ li.w{color:#E8C9A4}
     <div id="progN"><div id="barN"></div></div>
     <div id="statN"></div>
     <div id="outN"></div>
+  </section>
+
+  <section id="ins" hidden>
+    <p class="note" style="margin-top:0">Theo dõi <b>liên tục</b> một đồng: sổ lệnh, tường thật hay tường giả, dòng tiền chủ động, Open Interest, và kết luận của <b>Kèo Pro</b> trên M30 và H1. Dữ liệu chỉ ghi từ lúc bạn mở, đóng trang là mất.</p>
+    <div class="row">
+      <input id="insSym" placeholder="BTC" value="BTC" autocapitalize="characters" spellcheck="false">
+      <button id="insGo" class="primary">Bắt đầu</button>
+      <button id="insStop" class="ghost" hidden>Dừng</button>
+    </div>
+    <div id="insBody" hidden>
+      <div id="insHead" class="ins-head"></div>
+      <div id="insKeo"></div>
+      <div id="insBook"></div>
+      <div id="insFlow"></div>
+      <p class="note" id="insFoot"></p>
+    </div>
   </section>
 
   <section id="cfg" hidden>
@@ -2945,7 +2979,7 @@ $('#stopNb').onclick=()=>{SCANN.stop=true;$('#statN').textContent='Đang dừng,
 document.querySelectorAll('nav button').forEach(b=>{
   b.onclick=()=>{
     document.querySelectorAll('nav button').forEach(x=>x.setAttribute('aria-selected',x===b));
-    ['brk','nbk','cfg'].forEach(id=>$('#'+id).hidden=(id!==b.dataset.t));
+    ['brk','nbk','ins','cfg'].forEach(id=>$('#'+id).hidden=(id!==b.dataset.t));
   };
 });
 const CF=['cap','rk','ms','mr','tn','bw'],CK=['cap','risk','minScore','minRR','topN','breadth'];
@@ -2963,6 +2997,164 @@ $('#save').onclick=()=>{
   s.textContent=`Đã lưu. Rủi ro mỗi lệnh: ${(C.cap*C.risk/100).toFixed(1)} USD.`;
   setTimeout(()=>s.textContent='',4000);
 };
+</script>
+
+<script type="module">
+/* ==================================================================
+   TAB THEO DÕI — phân tích liên tục một đồng.
+   Cứ 4 giây lấy sổ lệnh + lệnh khớp; cứ 45 giây lấy nến, OI, funding rồi
+   chạy bộ máy Kèo Pro (core/keopro.js, bản JS của chỉ báo gói 100).
+   Tường THẬT hay GIẢ đo bằng cách ghi lại khối lượng từng mức theo thời gian:
+   mức giữ được ≥ nửa khối lượng đỉnh trên 60% số lần chụp = tường thật.
+   Dữ liệu chỉ nằm trong tab này, đóng là mất — giống Bookmap bản free.
+================================================================== */
+import { keoPro } from './core/keopro.js';
+
+const $ = q => document.querySelector(q);
+const OKX = 'https://www.okx.com';
+const fmtN = p => p >= 1000 ? p.toFixed(0) : p >= 10 ? p.toFixed(2) : p >= 1 ? p.toFixed(3) : p.toFixed(5);
+const pc = (a, b) => ((a / b - 1) * 100).toFixed(2) + '%';
+const usd = v => v >= 1e6 ? (v / 1e6).toFixed(2) + 'M$' : v >= 1e3 ? (v / 1e3).toFixed(0) + 'k$' : v.toFixed(0) + '$';
+const esc2 = t => String(t).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+
+async function api(path, q) {
+  const r = await fetch(OKX + path + '?' + new URLSearchParams(q));
+  const j = await r.json();
+  if (j.code !== '0') throw new Error(j.msg || j.code);
+  return j.data;
+}
+const toK = rows => { const x = rows.filter(r => r[8] === '1').reverse().map(r => r.map(Number));
+  return { t: x.map(r => r[0]), o: x.map(r => r[1]), h: x.map(r => r[2]), l: x.map(r => r[3]), c: x.map(r => r[4]), v: x.map(r => r[5]) }; };
+
+const INS = { on: false, tm: null, tm2: null, lv: new Map(), snaps: 0, trades: new Map(), t0: 0, inst: '', ctVal: 1, tick: 0.01 };
+
+function stop() {
+  INS.on = false; clearInterval(INS.tm); clearInterval(INS.tm2);
+  $('#insGo').hidden = false; $('#insStop').hidden = true;
+}
+async function start() {
+  const base = ($('#insSym').value || 'BTC').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (!base) return;
+  INS.inst = base + '-USDT-SWAP';
+  INS.lv.clear(); INS.trades.clear(); INS.snaps = 0; INS.t0 = Date.now(); INS.on = true;
+  $('#insGo').hidden = true; $('#insStop').hidden = false; $('#insBody').hidden = false;
+  $('#insHead').innerHTML = '<span class="ins-mut">đang tải…</span>';
+  try {
+    const inst = await api('/api/v5/public/instruments', { instType: 'SWAP', instId: INS.inst });
+    INS.ctVal = +inst[0].ctVal; INS.tick = +inst[0].tickSz;
+  } catch (e) { $('#insHead').innerHTML = '<span class="ins-dn">Không tìm thấy ' + esc2(base) + ' trên OKX</span>'; stop(); return; }
+  tickFast(); tickSlow();
+  INS.tm = setInterval(tickFast, 4000);
+  INS.tm2 = setInterval(tickSlow, 45000);
+}
+
+/* ---- nhịp nhanh: sổ lệnh + lệnh khớp ---- */
+async function tickFast() {
+  if (!INS.on) return;
+  let bk, tr;
+  try { [bk, tr] = await Promise.all([
+    api('/api/v5/market/books', { instId: INS.inst, sz: '400' }),
+    api('/api/v5/market/trades', { instId: INS.inst, limit: '100' }),
+  ]); } catch { return; }
+  const b = bk[0], bid = +b.bids[0][0], ask = +b.asks[0][0], mid = (bid + ask) / 2;
+  INS.snaps++;
+  const note = (p, sz, side) => {
+    const k = Math.round(p / INS.tick);
+    let e = INS.lv.get(k);
+    if (!e) { e = { p, side, peak: 0, hold: 0, seen: 0, last: 0 }; INS.lv.set(k, e); }
+    e.side = side; e.last = sz; e.seen++;
+    if (sz > e.peak) e.peak = sz;
+    if (sz >= 0.5 * e.peak) e.hold++;
+  };
+  for (const [p, sz] of b.bids.map(x => [+x[0], +x[1]])) if (Math.abs(p / mid - 1) <= 0.02) note(p, sz, 'mua');
+  for (const [p, sz] of b.asks.map(x => [+x[0], +x[1]])) if (Math.abs(p / mid - 1) <= 0.02) note(p, sz, 'bán');
+  for (const t of tr) INS.trades.set(t.tradeId, { px: +t.px, sz: +t.sz, side: t.side, ts: +t.ts });
+
+  const inBand = (arr, up) => arr.map(x => [+x[0], +x[1]]).filter(([p]) => Math.abs(p / mid - 1) <= 0.005).reduce((s, [, z]) => s + z, 0);
+  const B = inBand(b.bids), A = inBand(b.asks), tot = B + A;
+  const vb = B * INS.ctVal * mid, va = A * INS.ctVal * mid;
+  let buy = 0, sell = 0;
+  for (const t of INS.trades.values()) (t.side === 'buy' ? (buy += t.sz) : (sell += t.sz));
+  const cvd = (buy - sell) * INS.ctVal * mid;
+
+  const MIN_SNAP = 8;                       // dưới 8 lần chụp (~32 giây) thì chưa dám gọi thật hay giả
+  const walls = [...INS.lv.values()].filter(e => e.seen >= Math.min(4, INS.snaps) && e.peak > 0)
+    .map(e => ({ ...e, usd: e.peak * INS.ctVal * e.p, keep: e.hold / e.seen }))
+    .sort((x, y) => y.usd - x.usd).slice(0, 7);
+  const med = (() => { const v = [...INS.lv.values()].map(e => e.peak).filter(x => x > 0).sort((a, c) => a - c); return v.length ? v[v.length >> 1] : 0; })();
+  const verdict = w => INS.snaps < MIN_SNAP ? '<span class="ins-mut">đang đo</span>'
+    : w.keep >= 0.6 ? '<b class="ins-up">thật</b>' : w.keep < 0.3 ? '<b class="ins-dn">giả</b>' : 'ra vào';
+
+  $('#insHead').innerHTML =
+    `<b>${esc2(INS.inst.split('-')[0])}</b><span>${fmtN(mid)}</span>` +
+    `<span class="ins-mut">chênh lệch mua bán ${((ask - bid) / mid * 100).toFixed(3)}%</span>`;
+
+  $('#insBook').innerHTML = `<div class="ins-card"><h4>Sổ lệnh · trong ±0,5% quanh giá</h4>
+    <div class="ins-bar"><i style="width:${tot ? (B / tot * 100).toFixed(1) : 50}%"></i></div>
+    <div class="ins-row"><span>Chờ mua</span><span class="ins-up">${usd(vb)} · ${tot ? (B / tot * 100).toFixed(0) : 0}%</span></div>
+    <div class="ins-row"><span>Chờ bán</span><span class="ins-dn">${usd(va)} · ${tot ? (A / tot * 100).toFixed(0) : 0}%</span></div>
+    <div class="ins-row"><span>Nghiêng</span><span>${B > A ? '<b class="ins-up">MUA</b>' : '<b class="ins-dn">BÁN</b>'} ${tot ? (Math.abs(B - A) / Math.max(B, A) * 100).toFixed(0) : 0}%</span></div>
+    </div>
+    <div class="ins-card"><h4>Tường lệnh · thật hay giả</h4>
+    ${walls.length ? walls.map(w => `<div class="ins-row"><span>${fmtN(w.p)} <span class="ins-mut">${pc(w.p, mid)}</span> · ${w.side}</span>
+      <span>${usd(w.usd)} · ${verdict(w)}${INS.snaps >= MIN_SNAP ? ' ' + (w.keep * 100).toFixed(0) + '%' : ''}</span></div>`).join('')
+      : '<div class="ins-row"><span class="ins-mut">đang gom dữ liệu…</span><span></span></div>'}
+    <div class="ins-row"><span class="ins-mut">đã chụp ${INS.snaps} lần${INS.snaps < MIN_SNAP ? ` · cần ${MIN_SNAP} lần (~${(MIN_SNAP * 4)}s) mới kết luận được` : ` · trung vị mỗi mức ${med >= 10 ? med.toFixed(0) : med.toFixed(2)} HĐ`}</span><span></span></div>
+    </div>`;
+
+  const lvl = new Map();
+  for (const t of INS.trades.values()) { const k = Math.round(t.px / INS.tick); lvl.set(k, (lvl.get(k) || 0) + t.sz); }
+  const hot = [...lvl.entries()].sort((a, c) => c[1] - a[1]).slice(0, 3);
+  const absorb = hot.filter(([k, v]) => { const e = INS.lv.get(k); return e && e.peak > 0 && e.last >= 0.6 * e.peak && v * INS.ctVal * mid > 2000; });
+  $('#insFlow').innerHTML = `<div class="ins-card"><h4>Lệnh đã khớp · từ lúc mở</h4>
+    <div class="ins-row"><span>Mua chủ động</span><span class="ins-up">${usd(buy * INS.ctVal * mid)}</span></div>
+    <div class="ins-row"><span>Bán chủ động</span><span class="ins-dn">${usd(sell * INS.ctVal * mid)}</span></div>
+    <div class="ins-row"><span>CVD</span><span class="${cvd >= 0 ? 'ins-up' : 'ins-dn'}">${cvd >= 0 ? '+' : '−'}${usd(Math.abs(cvd))}</span></div>
+    <div class="ins-row"><span>Mức bị đánh nhiều</span><span>${hot.map(([k, v]) => fmtN(k * INS.tick)).join(' · ') || '—'}</span></div>
+    ${absorb.length ? `<div class="ins-row"><span>Hấp thụ</span><span class="ins-mut">${absorb.map(([k]) => fmtN(k * INS.tick) + ' — lệnh chờ không lùi').join('<br>')}</span></div>` : ''}
+    </div>`;
+  $('#insFoot').textContent = `Ghi từ ${new Date(INS.t0).toLocaleTimeString('vi-VN')} · ${INS.trades.size} lệnh khớp · cập nhật ${new Date().toLocaleTimeString('vi-VN')}. Dữ liệu nằm trong tab này, đóng trang là mất.`;
+}
+
+/* ---- nhịp chậm: nến + OI + Kèo Pro ---- */
+async function tickSlow() {
+  if (!INS.on) return;
+  const out = [];
+  let fund = null;
+  try { fund = (await api('/api/v5/public/funding-rate', { instId: INS.inst }))[0]; } catch {}
+  let H4;
+  try { H4 = toK(await api('/api/v5/market/candles', { instId: INS.inst, bar: '4H', limit: '300' })); } catch { return; }
+  for (const [bar, label, sec, oiP] of [['30m', 'M30', 1800, '5m'], ['1H', 'H1', 3600, '1H']]) {
+    try {
+      const K = toK(await api('/api/v5/market/candles', { instId: INS.inst, bar, limit: '300' }));
+      let OI = [];
+      try { OI = (await api('/api/v5/rubik/stat/contracts/open-interest-history', { instId: INS.inst, period: oiP, limit: '100' })).map(r => [+r[0], +r[3]]); } catch {}
+      const r = keoPro(K, H4, OI, sec);
+      if (r.err) { out.push(`<div class="ins-keo"><div class="t">${label}: ${esc2(r.err)}</div></div>`); continue; }
+      const s = r.sig;
+      const head = s ? `${s.dir > 0 ? '🟢 MUA' : '🔴 BÁN'} · ${esc2(s.kindName)} · hạng ${s.grade} (${s.score >= 0 ? '+' : '−'}${Math.abs(s.score)}/7)`
+                     : 'chưa có tín hiệu';
+      const sc = s ? null : (r.htf.tr === 1 ? r.planBuy : r.planSell);
+      out.push(`<div class="ins-keo ${s ? (s.dir > 0 ? 'up' : 'dn') : ''}">
+        <div class="t">${label} · ${head}</div>
+        ${s ? `<div style="font-size:13px;margin-top:4px">${esc2(s.why)}</div>
+          <div style="font-size:13px;margin-top:6px">Vào ${fmtN(s.e1)} · SL ${fmtN(s.sl)} (${pc(s.sl, s.e1)}) · TP1 ${fmtN(s.tp1)} · TP2 ${fmtN(s.tp2)} · R:R 1:${s.rr.toFixed(2)}${s.bad ? ' <b class="ins-dn">— bị loại: ' + ['', 'mốc cản sát TP1', 'R:R thấp', 'phí quá lớn'][s.bad] + '</b>' : ''}</div>` : ''}
+        <ul>${(s ? s.whyList : (sc ? sc.why : [])).map(w => '<li>' + esc2(w) + '</li>').join('')}</ul>
+        <div style="font-size:12.5px;color:var(--dim);margin-top:6px">
+          Khung 4H ${r.htf.tr === 1 ? 'TĂNG' : r.htf.tr === -1 ? 'GIẢM' : 'chưa rõ'} ·
+          ${Number.isFinite(r.res1) ? 'kháng cự ' + fmtN(r.res1) + ' (' + pc(r.res1, r.px) + ')' : ''}
+          ${Number.isFinite(r.sup1) ? ' · hỗ trợ ' + fmtN(r.sup1) + ' (' + pc(r.sup1, r.px) + ')' : ''}
+          ${Number.isFinite(r.oiChg) ? ' · OI ' + (r.oiChg >= 0 ? '+' : '−') + Math.abs(r.oiChg).toFixed(1) + '%/24h' : ''}
+          ${fund ? ' · funding ' + (+fund.fundingRate * 100).toFixed(4) + '%' : ''}
+        </div></div>`);
+    } catch (e) { out.push(`<div class="ins-keo"><div class="t">${label}: lỗi ${esc2(e.message)}</div></div>`); }
+  }
+  $('#insKeo').innerHTML = out.join('');
+}
+
+$('#insGo').onclick = start;
+$('#insStop').onclick = stop;
+$('#insSym').addEventListener('keydown', e => { if (e.key === 'Enter') start(); });
 </script>
 </body>
 </html>
