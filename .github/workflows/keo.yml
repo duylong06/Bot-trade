@@ -5,9 +5,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'scan = quét và báo · test-push = gửi tin thử · dry-run = quét, in ra, không gửi'
+        description: 'scan = quét và báo · test-push = gửi tin thử · dry-run = quét, in ra, không gửi · reset-open = xoá kèo đang giữ'
         type: choice
-        options: [scan, test-push, dry-run]
+        options: [scan, test-push, dry-run, reset-open]
         default: scan
       grades:
         description: 'hạng được đẩy'

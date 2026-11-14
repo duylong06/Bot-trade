@@ -7,7 +7,8 @@
 //
 // Biến môi trường:
 //   PUSH_CONFIG  mã app tạo khi bấm "Bật thông báo" (chứa khoá VAPID riêng của bot) — GitHub Secret
-//   MODE         scan (mặc định) · test-push · dry-run (quét, in ra, không gửi)
+//   MODE         scan (mặc định) · test-push · dry-run (quét, in ra, không gửi, không ghi trạng thái)
+//                · reset-open (xoá kèo đang giữ, giữ danh sách máy nhận)
 //   GRADES       hạng được đẩy, mặc định 'A+,A'. Đặt 'A+' nếu chỉ muốn kèo mạnh nhất.
 //
 // Trạng thái nằm ở nhánh data (state-keo.json). Không có thì bot chạy như lần đầu.
@@ -214,7 +215,11 @@ state.open ||= {}; state.sent ||= {}; state.subs ||= {}; state.dead ||= {};
 await intake(state);
 log(`Kèo Pro · ${MODE} · ${vn(t0)} giờ VN · ${COINS.join(' ')} · ${TFS.map(t => t.label).join(' ')} · hạng ${[...GRADES].join('/')} · máy nhận: ${devices(state).length}`);
 
-if (MODE === 'test-push') {
+if (MODE === 'reset-open') {
+  const n = Object.keys(state.open).length;
+  state.open = {}; state.sent = {};
+  log(`đã xoá ${n} kèo đang giữ · giữ lại ${devices(state).length} máy nhận`);
+} else if (MODE === 'test-push') {
   await push(state, '🔔 Thử thông báo Kèo Pro', `Bot chạy lúc ${vn(t0)} giờ VN.\nTheo dõi ${COINS.join(', ')} trên khung ${TFS.map(t => t.label).join(', ')}, báo kèo hạng ${[...GRADES].join(' và ')}.`, 'test');
 } else {
   const report = [];
@@ -273,7 +278,10 @@ if (MODE === 'test-push') {
 
 for (const [k, v] of Object.entries(state.sent)) if (t0 - v > 14 * 24 * 3600e3) delete state.sent[k];
 fs.mkdirSync('out', { recursive: true });
-fs.writeFileSync('out/state-keo.json', JSON.stringify(state));
+// dry-run chỉ để xem, không được ghi trạng thái: nếu ghi thì các kèo vừa thấy bị coi là
+// "đang giữ" và lượt quét thật sau đó sẽ bỏ qua, người dùng mất thông báo vào lệnh.
+if (MODE === 'dry-run') log('dry-run: không ghi trạng thái');
+else fs.writeFileSync('out/state-keo.json', JSON.stringify(state));
 fs.writeFileSync('out/status-keo.json', JSON.stringify({
   at: new Date().toISOString(), mode: MODE, coins: COINS, tfs: TFS.map(t => t.label), grades: [...GRADES],
   open: state.open, devices: devices(state).length, tookMs: Date.now() - t0,
