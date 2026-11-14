@@ -43,7 +43,7 @@ Repo này từng là bot báo phá vỡ trendline chạy trên GitHub Actions, �
 
 ## Bot thông báo Kèo Pro
 
-`bot/keo.mjs` chạy trên GitHub Actions lúc phút **:01 và :31** mỗi giờ — **tự động, không cần mở app hay bấm quét**. Quét **BTC, ETH, SOL, BNB** trên khung **M30, H1 và H4** bằng `core/keopro.js` — bản JavaScript của chỉ báo TradingView "Bot Kèo Pro" gói 100.
+`bot/keo.mjs` chạy trên GitHub Actions — **tự động, không cần mở app hay bấm quét**. Quét **BTC, ETH, SOL, BNB** trên khung **M30, H1 và H4** bằng `core/keopro.js` — bản JavaScript của chỉ báo TradingView "Bot Kèo Pro" gói 100.
 
 Đẩy thông báo cho kèo hạng **A+** (điểm đồng thuận chỉ số ≥ 5/7) và **A** (≥ 3/7), không dính cờ loại. Đổi bằng biến `GRADES` (mặc định `A+,A`; đặt `A+` nếu chỉ muốn kèo mạnh nhất). Mỗi (đồng, khung) giữ **một kèo cùng lúc**, giống luật của chỉ báo; kèo đang chạy được theo dõi và báo tiếp khi chạm TP1, TP2, SL hoặc hết hạn.
 
@@ -51,7 +51,25 @@ Phong cách lấy theo khung chart đúng như bản Pine: **M30 và H1 = intrad
 
 Mỗi tin kèm luôn phân tích: vì sao vào, điểm từng chỉ số, Entry/SL/TP1/TP2, R:R sau phí, volume, OI, mốc gần, xu hướng khung 4H.
 
-Chạy tay trong tab Actions với `mode`: `scan` · `test-push` (gửi tin thử) · `dry-run` (quét, in ra, không gửi).
+### Lịch chạy — và vì sao phải bù
+
+GitHub **bỏ gần hết lịch**: repo này đặt 2 lượt mỗi giờ mà thực tế chỉ chạy **1 trong 17 lượt**. Nên:
+
+- Lịch đặt **4 lượt mỗi giờ** (phút :01 :16 :31 :46) cho tăng cơ hội.
+- Mỗi lượt chạy được thì **soi lại vài nến đã đóng** chứ không chỉ nến cuối (M30 lùi 5 nến, H1 lùi 4, H4 lùi 2). Kèo ở nến cũ chỉ được báo nếu giá **chưa chạm SL và chưa chạm TP1** — đúng luật chờ ở vùng của chỉ báo. Tin nhắn ghi rõ nến xác nhận đóng lúc nào và trễ mấy nến.
+
+Muốn đúng giờ thì cho **cron-job.org** gọi thẳng:
+
+- URL: `https://api.github.com/repos/duylong06/Bot-trade/actions/workflows/keo.yml/dispatches`
+- Lịch: mỗi 15 phút, hoặc phút :01 và :31
+- Method **POST** · Headers: `Authorization: Bearer <token>` · `Accept: application/vnd.github+json` · `X-GitHub-Api-Version: 2022-11-28`
+- Body: `{"ref":"main"}` · Test run thấy **204** là xong
+
+Token không bao giờ nằm trong repo này.
+
+### Chạy tay
+
+Tab Actions → `mode`: `scan` · `test-push` (gửi tin thử) · `dry-run` (quét, in ra, không gửi, không ghi trạng thái) · `reset-open` (xoá kèo đang giữ). Ô `grades` chọn `A+,A` hoặc chỉ `A+`.
 
 Khoá thông báo nằm trong GitHub Secret `PUSH_CONFIG`, không bao giờ nằm trong code.
 

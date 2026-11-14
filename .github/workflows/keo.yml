@@ -14,9 +14,12 @@ on:
         type: choice
         options: ['A+,A', 'A+']
         default: 'A+,A'
-  # Nến M30 đóng lúc :00 và :30. Đặt sớm 1 phút vì Actions hay chạy trễ.
+  # Lịch dự phòng. GitHub BỎ gần hết lịch: repo này đặt 2 lượt/giờ mà thực tế chỉ chạy
+  # 1 trong 17 lượt. Đặt 4 lượt/giờ cho tăng cơ hội, và bot tự soi lại vài nến đã đóng
+  # (TFS[].back) nên lượt chạy trễ vẫn bắt được kèo. Muốn đúng giờ thì dùng cron-job.org
+  # gọi workflow_dispatch — xem README.
   schedule:
-    - cron: '1,31 * * * *'
+    - cron: '1,16,31,46 * * * *'
 
 concurrency:
   group: keo

@@ -26,9 +26,9 @@ const COINS = (process.env.COINS || 'BTC,ETH,SOL,BNB').split(',').map(s => s.tri
 // htf = khung lớn mà bản Pine lấy cho chart đó · oi = độ mịn chuỗi OI · stop = số nến quá hạn
 // (bản Pine: intraday 60 giờ, swing 240 giờ, chia cho độ dài nến)
 const TFS = [
-  { k: '30m', sec: 1800, label: 'M30', htf: '4H', oi: '5m', stop: 120 },
-  { k: '1H', sec: 3600, label: 'H1', htf: '4H', oi: '1H', stop: 60 },
-  { k: '4H', sec: 14400, label: 'H4', htf: '1Dutc', oi: '1H', stop: 60 },
+  { k: '30m', sec: 1800, label: 'M30', htf: '4H', oi: '5m', stop: 120, back: 5 },
+  { k: '1H', sec: 3600, label: 'H1', htf: '4H', oi: '1H', stop: 60, back: 4 },
+  { k: '4H', sec: 14400, label: 'H4', htf: '1Dutc', oi: '1H', stop: 60, back: 2 },
 ];
 const MODE = process.env.MODE || 'scan';
 // hạng tối thiểu để đẩy thông báo: A+ (điểm ≥ 5/7) hoặc A (≥ 3/7)
@@ -187,6 +187,26 @@ function bodyOf(coin, tf, r, s, htfLabel) {
   return L.join('\n');
 }
 
+/* ---------------- bù lượt bị bỏ ----------------
+   Lịch GitHub Actions hay bị bỏ (repo này có lúc chỉ chạy 1 trong 17 lượt), nên khi bot
+   chạy được thì soi lại vài nến đã đóng gần nhất chứ không chỉ nến cuối. Kèo tìm thấy ở
+   nến cũ chỉ còn giá trị nếu giá chưa chạm SL và chưa chạm TP1 — chỉ báo cũng cho phép
+   chờ ở vùng (intraday 16 giờ, swing 72 giờ), nên kèo trễ vài nến vẫn vào được. */
+const cut = (K, b) => b === 0 ? K : {
+  t: K.t.slice(0, -b), o: K.o.slice(0, -b), h: K.h.slice(0, -b),
+  l: K.l.slice(0, -b), c: K.c.slice(0, -b), v: K.v.slice(0, -b),
+};
+// kèo mở ở nến `bi` còn vào được không: xét các nến sau nó
+function stillOk(K, bi, s) {
+  const i0 = K.t.indexOf(bi);
+  if (i0 < 0) return { ok: false, lý: 'không tìm thấy nến' };
+  for (let i = i0 + 1; i < K.c.length; i++) {
+    if (s.dir > 0 ? K.l[i] <= s.sl : K.h[i] >= s.sl) return { ok: false, lý: 'đã chạm SL' };
+    if (s.dir > 0 ? K.h[i] >= s.tp1 : K.l[i] <= s.tp1) return { ok: false, lý: 'đã chạm TP1' };
+  }
+  return { ok: true };
+}
+
 /* ---------------- theo dõi kèo đang chạy ---------------- */
 function track(open, K, stop) {
   // trả danh sách sự kiện mới kể từ nến `open.lastBar`
@@ -252,24 +272,37 @@ if (MODE === 'reset-open') {
         if (open.done) delete state.open[key];
       }
 
-      // 2) tín hiệu mới — chỉ khi không có kèo đang chạy
-      const r = keoPro(K, H, OI, tf.sec);
-      if (r.err) { log(`${key}: ${r.err}`); continue; }
-      const s = r.sig;
-      report.push(`${key} ${fmt(r.px)} ${s ? `${s.dir > 0 ? 'MUA' : 'BÁN'} ${s.kindName} ${s.grade} ${s.score}/7 bad=${s.bad}` : 'không có tín hiệu'}`);
-      if (!s) continue;
-      if (state.open[key]) { log(`  ${key}: có tín hiệu ${s.grade} nhưng đang giữ kèo khác, bỏ qua`); continue; }
-      if (!GRADES.has(s.grade)) { log(`  ${key}: ${s.kindName} hạng ${s.grade}, chưa đủ ${[...GRADES].join('/')}`); continue; }
-      if (s.bad) { log(`  ${key}: ${s.grade} nhưng bị loại (${['', 'mốc cản sát TP1', 'R:R thấp', 'phí quá lớn so với SL'][s.bad]})`); continue; }
-      const id = `${key}|${r.bar}`;
-      if (state.sent[id]) continue;
-      state.sent[id] = t0;
+      // 2) tín hiệu mới — chỉ khi không có kèo đang chạy, soi từ nến mới nhất lùi dần
+      let r0 = null, hit = null;
+      for (let b = 0; b < tf.back; b++) {
+        const Kb = cut(K, b);
+        if (Kb.c.length < 220) break;
+        const Hb = b === 0 ? H : { t: [], o: [], h: [], l: [], c: [], v: [] };
+        if (b > 0) { const lim = Kb.t[Kb.t.length - 1]; for (let i = 0; i < H.t.length; i++) if (H.t[i] <= lim) { Hb.t.push(H.t[i]); Hb.o.push(H.o[i]); Hb.h.push(H.h[i]); Hb.l.push(H.l[i]); Hb.c.push(H.c[i]); Hb.v.push(H.v[i]); } }
+        if (Hb.c.length < 160) break;
+        const rb = keoPro(Kb, Hb, OI, tf.sec);
+        if (rb.err) { if (b === 0) log(`${key}: ${rb.err}`); break; }
+        if (b === 0) r0 = rb;
+        const sb = rb.sig;
+        if (!sb || !GRADES.has(sb.grade) || sb.bad) continue;
+        if (state.sent[`${key}|${rb.bar}`]) continue;
+        const v = stillOk(K, rb.bar, sb);
+        if (!v.ok) { log(`  ${key}: ${sb.kindName} ${sb.grade} ở nến ${vn(rb.bar)} — bỏ, ${v.lý}`); continue; }
+        hit = { r: rb, s: sb, b }; break;
+      }
+      const s0 = r0 && r0.sig;
+      report.push(`${key} ${r0 ? fmt(r0.px) : '?'} ${s0 ? `${s0.dir > 0 ? 'MUA' : 'BÁN'} ${s0.kindName} ${s0.grade} ${s0.score}/7 bad=${s0.bad}` : 'không có tín hiệu'}${hit && hit.b > 0 ? ` · bù nến ${vn(hit.r.bar)}` : ''}`);
+      if (!hit) continue;
+      if (state.open[key]) { log(`  ${key}: có tín hiệu ${hit.s.grade} nhưng đang giữ kèo khác, bỏ qua`); continue; }
+      const { r, s, b: lag } = hit;
+      state.sent[`${key}|${r.bar}`] = t0;
       state.open[key] = { dir: s.dir, kind: s.kind, kindName: s.kindName, grade: s.grade, e1: s.e1, sl: s.sl, tp1: s.tp1, tp2: s.tp2, at: r.bar, lastBar: r.bar, bars: 0, t1: false };
       await push(state,
         `${s.dir > 0 ? '🟢' : '🔴'} ${coin} ${tf.label} · ${s.dir > 0 ? 'MUA' : 'BÁN'} ${s.grade} · ${s.kindName}`,
-        bodyOf(coin, tf.label, r, s, tf.htf === '1Dutc' ? '1D' : tf.htf),
+        bodyOf(coin, tf.label, r, s, tf.htf === '1Dutc' ? '1D' : tf.htf) +
+          (lag ? `\n\nNến xác nhận đóng lúc ${vn(r.bar)} giờ VN (${lag} nến trước, giá nay ${fmt(r0 ? r0.px : s.e1)}) — lịch chạy bị trễ. Giá chưa chạm SL hay TP1 nên vùng chờ vẫn còn.` : ''),
         key);
-      log(`  ${key}: ★ ${s.dir > 0 ? 'MUA' : 'BÁN'} ${s.kindName} ${s.grade} ${s.score}/7 R:R ${s.rr.toFixed(2)}`);
+      log(`  ${key}: ★ ${s.dir > 0 ? 'MUA' : 'BÁN'} ${s.kindName} ${s.grade} ${s.score}/7 R:R ${s.rr.toFixed(2)}${lag ? ` (bù ${lag} nến)` : ''}`);
     }
   }
   log('\n--- tổng kết lượt quét');
