@@ -31,7 +31,9 @@ export const P = {
   iZone: 0.25,       // vùng quanh mốc phá ± … ATR
   iBuf: 0.3,         // đệm SL ngoài vùng
   iSlAtr: 1.0,       // SL tối thiểu … ATR
-  slPct: 0.8,        // SL tối thiểu … % giá (phong cách intraday)
+  // SL tối thiểu … % giá, theo phong cách — bản Pine tự chọn theo khung chart:
+  // chart ≤ 15m = scalp · 30m–2H = intraday · từ 4H = swing
+  slPctScalp: 0.4, slPct: 0.8, slPctSwing: 1.5,
   tp1R: 1.5, tp2R: 3.0,
   minRR: 1.2,        // R:R tối thiểu tới TP1 sau phí
   maxCostR: 0.35,    // phí + trượt tối đa tính theo R
@@ -102,7 +104,7 @@ export function htfState(H) {
 /* ------------------------------------------------------------------ máy chính */
 /**
  * K  nến khung chart (cũ → mới, CHỈ nến đã đóng)
- * H  nến khung lớn (4H cho cả M30 và H1), cũ → mới, đã đóng
+ * H  nến khung lớn, cũ → mới, đã đóng. Bản Pine chọn: chart M30 và H1 → 4H · chart H4 → 1D
  * OI mảng [[giờ, oiUsd], …] khớp mốc giờ của K; để trống thì bỏ qua loại ⑤ và điểm OI
  * tfSec số giây mỗi nến khung chart
  */
@@ -112,6 +114,10 @@ export function keoPro(K, H, OI, tfSec) {
   const A = atr(K, 14), a = A[n];
   if (!(a > 0)) return { err: 'ATR = 0' };
   const px = K.c[n];
+  // phong cách theo khung chart, y như bản Pine: ≤ 15m scalp · 30m–2H intraday · từ 4H swing
+  const style = tfSec <= 900 ? 1 : tfSec <= 7200 ? 2 : 3;
+  const styleTxt = style === 1 ? 'SCALP' : style === 2 ? 'INTRADAY' : 'SWING';
+  const slPct = style === 1 ? P.slPctScalp : style === 2 ? P.slPct : P.slPctSwing;
   const body = K.c.map((c, i) => Math.abs(c - K.o[i]));
   const avgBody = sma(body, 20);
   const volMa = sma(K.v, 20);
@@ -338,7 +344,7 @@ export function keoPro(K, H, OI, tfSec) {
     const p1 = (isBO ? c - L : c - e2) > P.iExt * a ? 0 : P.p1;
     const avg = p1 * c + (1 - p1) * e2;
     let sl = (isBO ? zB : Math.min(ll, zB)) - P.iBuf * a;
-    const mr = Math.max(P.iSlAtr * a, Math.abs(avg) * P.slPct / 100);
+    const mr = Math.max(P.iSlAtr * a, Math.abs(avg) * slPct / 100);
     if (avg - sl < mr) sl = avg - mr;
     const ru = avg - sl, cst = Math.abs(avg) * P.cost / 100;
     let t1 = avg + P.tp1R * (ru + cst) + cst, t2 = avg + P.tp2R * (ru + cst) + cst;
@@ -353,7 +359,7 @@ export function keoPro(K, H, OI, tfSec) {
   };
 
   const out = {
-    px, atr: a, atrPct: a / px * 100, bar: K.t[n], rsi: rsiNow, adx, emaSt, htf: h,
+    px, atr: a, atrPct: a / px * 100, bar: K.t[n], rsi: rsiNow, adx, emaSt, htf: h, style, styleTxt, slPct,
     trd, res1, res2, sup1, sup2, oiChg, pxChg24, oiDrop, crowdL, crowdS, oiDir,
     buyPct: (() => { const w = 20; let u = 0, t = 0; for (let i = n - w + 1; i <= n; i++) { const q = volOk ? K.v[i] : body[i]; t += q; if (K.c[i] > K.o[i]) u += q; } return t ? u / t * 100 : 50; })(),
     volX: volOk ? K.v[n] / volMa[n] : null,

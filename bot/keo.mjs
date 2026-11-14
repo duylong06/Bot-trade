@@ -1,13 +1,14 @@
 // bot/keo.mjs — bot thông báo Kèo Pro.
 //
-// Chạy trên GitHub Actions mỗi 30 phút. Quét 4 đồng (BTC, ETH, SOL, BNB) trên khung M30 và H1,
-// chạy bộ máy core/keopro.js, và CHỈ đẩy thông báo cho kèo hạng A+ không dính cờ xấu.
+// Chạy trên GitHub Actions mỗi 30 phút. Quét 4 đồng (BTC, ETH, SOL, BNB) trên khung M30, H1 và H4,
+// chạy bộ máy core/keopro.js, và chỉ đẩy thông báo cho kèo hạng A+ hoặc A không dính cờ xấu.
 // Mỗi (đồng, khung) chỉ giữ MỘT kèo cùng lúc, giống luật của chỉ báo: có kèo đang chạy thì
 // tín hiệu mới bị bỏ qua. Kèo đang chạy được theo dõi và báo tiếp khi chạm TP1 / TP2 / SL.
 //
 // Biến môi trường:
 //   PUSH_CONFIG  mã app tạo khi bấm "Bật thông báo" (chứa khoá VAPID riêng của bot) — GitHub Secret
 //   MODE         scan (mặc định) · test-push · dry-run (quét, in ra, không gửi)
+//   GRADES       hạng được đẩy, mặc định 'A+,A'. Đặt 'A+' nếu chỉ muốn kèo mạnh nhất.
 //
 // Trạng thái nằm ở nhánh data (state-keo.json). Không có thì bot chạy như lần đầu.
 
@@ -21,9 +22,16 @@ const PAGES = 'https://duylong06.github.io/Bot-trade/';
 const NTFY = 'https://ntfy.sh/bottrade-duylong06-7f3k9q2m';
 const DATA = 'https://raw.githubusercontent.com/duylong06/Bot-trade/data/';
 const COINS = (process.env.COINS || 'BTC,ETH,SOL,BNB').split(',').map(s => s.trim()).filter(Boolean);
-const TFS = [{ k: '30m', sec: 1800, label: 'M30' }, { k: '1H', sec: 3600, label: 'H1' }];
+// htf = khung lớn mà bản Pine lấy cho chart đó · oi = độ mịn chuỗi OI · stop = số nến quá hạn
+// (bản Pine: intraday 60 giờ, swing 240 giờ, chia cho độ dài nến)
+const TFS = [
+  { k: '30m', sec: 1800, label: 'M30', htf: '4H', oi: '5m', stop: 120 },
+  { k: '1H', sec: 3600, label: 'H1', htf: '4H', oi: '1H', stop: 60 },
+  { k: '4H', sec: 14400, label: 'H4', htf: '1Dutc', oi: '1H', stop: 60 },
+];
 const MODE = process.env.MODE || 'scan';
-const TIME_STOP = 60;                  // nến: kèo quá hạn thì đóng (phong cách intraday)
+// hạng tối thiểu để đẩy thông báo: A+ (điểm ≥ 5/7) hoặc A (≥ 3/7)
+const GRADES = new Set((process.env.GRADES || 'A+,A').split(',').map(s => s.trim()).filter(Boolean));
 const t0 = Date.now();
 const log = (...a) => console.log(...a);
 const sha = s => crypto.createHash('sha256').update(s).digest('hex').slice(0, 16);
@@ -148,10 +156,10 @@ async function push(state, title, body, tag) {
 }
 
 /* ---------------- nội dung thông báo ---------------- */
-function bodyOf(coin, tf, r, s) {
+function bodyOf(coin, tf, r, s, htfLabel) {
   const d = s.dir > 0 ? 'MUA' : 'BÁN';
   const L = [];
-  L.push(`${d} ${coin} ${tf} · ${s.kindName} · hạng ${s.grade} (${s.score >= 0 ? '+' : '−'}${Math.abs(s.score)}/7)`);
+  L.push(`${d} ${coin} ${tf} · ${s.kindName} · hạng ${s.grade} (${s.score >= 0 ? '+' : '−'}${Math.abs(s.score)}/7) · ${r.styleTxt}`);
   L.push(`Vì sao: ${s.why}`);
   L.push('');
   L.push(`Vào ${fmt(s.e1)}${s.p1 > 0 ? ` (${Math.round(s.p1 * 100)}% ngay)` : ' — chờ hết ở vùng'}`);
@@ -171,14 +179,15 @@ function bodyOf(coin, tf, r, s) {
   if (Number.isFinite(r.res1)) lv.push(`kháng cự ${fmt(r.res1)} (${pct(r.res1, r.px)})`);
   if (Number.isFinite(r.sup1)) lv.push(`hỗ trợ ${fmt(r.sup1)} (${pct(r.sup1, r.px)})`);
   if (lv.length) L.push('Mốc gần: ' + lv.join(' · '));
-  L.push(`Khung 4H: ${r.htf.tr === 1 ? 'TĂNG' : r.htf.tr === -1 ? 'GIẢM' : 'chưa rõ'} · EMA ${r.htf.ema === 1 ? 'xếp tăng' : r.htf.ema === -1 ? 'xếp giảm' : 'đan xen'}`);
+  L.push(`Khung ${htfLabel}: ${r.htf.tr === 1 ? 'TĂNG' : r.htf.tr === -1 ? 'GIẢM' : 'chưa rõ'} · EMA ${r.htf.ema === 1 ? 'xếp tăng' : r.htf.ema === -1 ? 'xếp giảm' : 'đan xen'}`);
+  if (s.grade === 'A') L.push('Hạng A — yếu hơn A+, cân nhắc giảm khối lượng.');
   L.push('');
   L.push('Luật máy — không phải lời khuyên đầu tư.');
   return L.join('\n');
 }
 
 /* ---------------- theo dõi kèo đang chạy ---------------- */
-function track(open, K) {
+function track(open, K, stop) {
   // trả danh sách sự kiện mới kể từ nến `open.lastBar`
   const ev = [];
   const i0 = K.t.findIndex(t => t > open.lastBar);
@@ -193,7 +202,7 @@ function track(open, K) {
     if (open.t1 && hitT2) { ev.push({ k: 'TP2', t: K.t[i], px: open.tp2 }); open.done = true; break; }
     open.bars = (open.bars || 0) + 1;
     open.lastBar = K.t[i];
-    if (open.bars >= TIME_STOP) { ev.push({ k: 'HẠN', t: K.t[i], px: K.c[i] }); open.done = true; break; }
+    if (open.bars >= stop) { ev.push({ k: 'HẠN', t: K.t[i], px: K.c[i] }); open.done = true; break; }
   }
   open.lastBar = K.t[K.c.length - 1];
   return ev;
@@ -203,26 +212,28 @@ function track(open, K) {
 const state = await loadState();
 state.open ||= {}; state.sent ||= {}; state.subs ||= {}; state.dead ||= {};
 await intake(state);
-log(`Kèo Pro · ${MODE} · ${vn(t0)} giờ VN · ${COINS.join(' ')} · máy nhận: ${devices(state).length}`);
+log(`Kèo Pro · ${MODE} · ${vn(t0)} giờ VN · ${COINS.join(' ')} · ${TFS.map(t => t.label).join(' ')} · hạng ${[...GRADES].join('/')} · máy nhận: ${devices(state).length}`);
 
 if (MODE === 'test-push') {
-  await push(state, '🔔 Thử thông báo Kèo Pro', `Bot chạy lúc ${vn(t0)} giờ VN.\nTheo dõi ${COINS.join(', ')} trên khung M30 và H1, chỉ báo kèo hạng A+.`, 'test');
+  await push(state, '🔔 Thử thông báo Kèo Pro', `Bot chạy lúc ${vn(t0)} giờ VN.\nTheo dõi ${COINS.join(', ')} trên khung ${TFS.map(t => t.label).join(', ')}, báo kèo hạng ${[...GRADES].join(' và ')}.`, 'test');
 } else {
   const report = [];
   for (const coin of COINS) {
     const inst = `${coin}-USDT-SWAP`;
-    const H4 = await candles(inst, '4H', 3);
-    if (!H4.c.length) { log(`${coin}: không lấy được nến 4H`); continue; }
+    const HC = new Map();                        // khung lớn, lấy một lần rồi dùng lại
     for (const tf of TFS) {
       const key = `${coin}|${tf.k}`;
+      if (!HC.has(tf.htf)) HC.set(tf.htf, await candles(inst, tf.htf, 3));
+      const H = HC.get(tf.htf);
+      if (H.c.length < 160) { log(`${key}: thiếu nến khung lớn ${tf.htf} (${H.c.length})`); continue; }
       const K = await candles(inst, tf.k, 3);
       if (K.c.length < 220) { log(`${key}: thiếu nến (${K.c.length})`); continue; }
-      const OI = await oiSeries(inst, tf.k === '30m' ? '5m' : '1H', 2);
+      const OI = await oiSeries(inst, tf.oi, 2);
 
       // 1) theo dõi kèo đang chạy
       const open = state.open[key];
       if (open) {
-        for (const e of track(open, K)) {
+        for (const e of track(open, K, tf.stop)) {
           const r = ((e.k === 'SL' ? -1 : e.k === 'TP1' ? 1 : e.k === 'TP2' ? 3 : 0)).toFixed(0);
           const icon = e.k === 'SL' ? '🛑' : e.k === 'TP2' ? '🎯' : e.k === 'TP1' ? '✅' : '⏱';
           await push(state,
@@ -237,21 +248,21 @@ if (MODE === 'test-push') {
       }
 
       // 2) tín hiệu mới — chỉ khi không có kèo đang chạy
-      const r = keoPro(K, H4, OI, tf.sec);
+      const r = keoPro(K, H, OI, tf.sec);
       if (r.err) { log(`${key}: ${r.err}`); continue; }
       const s = r.sig;
       report.push(`${key} ${fmt(r.px)} ${s ? `${s.dir > 0 ? 'MUA' : 'BÁN'} ${s.kindName} ${s.grade} ${s.score}/7 bad=${s.bad}` : 'không có tín hiệu'}`);
       if (!s) continue;
       if (state.open[key]) { log(`  ${key}: có tín hiệu ${s.grade} nhưng đang giữ kèo khác, bỏ qua`); continue; }
-      if (s.grade !== 'A+') { log(`  ${key}: ${s.kindName} hạng ${s.grade}, chưa đủ A+`); continue; }
-      if (s.bad) { log(`  ${key}: A+ nhưng bị loại (${['', 'mốc cản sát TP1', 'R:R thấp', 'phí quá lớn so với SL'][s.bad]})`); continue; }
+      if (!GRADES.has(s.grade)) { log(`  ${key}: ${s.kindName} hạng ${s.grade}, chưa đủ ${[...GRADES].join('/')}`); continue; }
+      if (s.bad) { log(`  ${key}: ${s.grade} nhưng bị loại (${['', 'mốc cản sát TP1', 'R:R thấp', 'phí quá lớn so với SL'][s.bad]})`); continue; }
       const id = `${key}|${r.bar}`;
       if (state.sent[id]) continue;
       state.sent[id] = t0;
       state.open[key] = { dir: s.dir, kind: s.kind, kindName: s.kindName, grade: s.grade, e1: s.e1, sl: s.sl, tp1: s.tp1, tp2: s.tp2, at: r.bar, lastBar: r.bar, bars: 0, t1: false };
       await push(state,
         `${s.dir > 0 ? '🟢' : '🔴'} ${coin} ${tf.label} · ${s.dir > 0 ? 'MUA' : 'BÁN'} ${s.grade} · ${s.kindName}`,
-        bodyOf(coin, tf.label, r, s),
+        bodyOf(coin, tf.label, r, s, tf.htf === '1Dutc' ? '1D' : tf.htf),
         key);
       log(`  ${key}: ★ ${s.dir > 0 ? 'MUA' : 'BÁN'} ${s.kindName} ${s.grade} ${s.score}/7 R:R ${s.rr.toFixed(2)}`);
     }
@@ -264,7 +275,7 @@ for (const [k, v] of Object.entries(state.sent)) if (t0 - v > 14 * 24 * 3600e3) 
 fs.mkdirSync('out', { recursive: true });
 fs.writeFileSync('out/state-keo.json', JSON.stringify(state));
 fs.writeFileSync('out/status-keo.json', JSON.stringify({
-  at: new Date().toISOString(), mode: MODE, coins: COINS, tfs: TFS.map(t => t.label),
+  at: new Date().toISOString(), mode: MODE, coins: COINS, tfs: TFS.map(t => t.label), grades: [...GRADES],
   open: state.open, devices: devices(state).length, tookMs: Date.now() - t0,
 }, null, 1));
 log(`\nXong sau ${((Date.now() - t0) / 1000).toFixed(0)}s · kèo đang giữ: ${Object.keys(state.open).length}`);

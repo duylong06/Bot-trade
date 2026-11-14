@@ -1,4 +1,4 @@
-# Bot thông báo Kèo Pro: quét M30 + H1 cho BTC / ETH / SOL / BNB, đẩy kèo hạng A+ về iPhone.
+# Bot thông báo Kèo Pro: quét M30 + H1 + H4 cho BTC / ETH / SOL / BNB, đẩy kèo hạng A+ và A về iPhone.
 name: Kèo Pro — thông báo
 
 on:
@@ -9,6 +9,11 @@ on:
         type: choice
         options: [scan, test-push, dry-run]
         default: scan
+      grades:
+        description: 'hạng được đẩy'
+        type: choice
+        options: ['A+,A', 'A+']
+        default: 'A+,A'
   # Nến M30 đóng lúc :00 và :30. Đặt sớm 1 phút vì Actions hay chạy trễ.
   schedule:
     - cron: '1,31 * * * *'
@@ -34,6 +39,7 @@ jobs:
         env:
           PUSH_CONFIG: ${{ secrets.PUSH_CONFIG }}
           MODE: ${{ github.event.inputs.mode || 'scan' }}
+          GRADES: ${{ github.event.inputs.grades || 'A+,A' }}
         run: node bot/keo.mjs
       - name: Lưu trạng thái vào nhánh data
         if: always()
