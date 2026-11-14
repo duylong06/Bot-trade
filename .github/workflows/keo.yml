@@ -1,26 +1,34 @@
 # Bot thông báo Kèo Pro: quét M30 + H1 + H4 cho BTC / ETH / SOL / BNB, đẩy kèo hạng A+ và A về iPhone.
+#
+# Vì sao job chạy liên tục nhiều giờ thay vì để lịch gọi từng lượt:
+# GitHub BỎ gần hết lịch — repo này đặt 2 lượt/giờ mà thực tế chỉ chạy 1 trong 17 lượt, tức
+# thông báo trễ hàng giờ. Nên một job tự lặp trong ~5 giờ 40, mỗi lần ngủ tới đúng lúc nến
+# M30 / H1 / H4 đóng rồi quét ngay, nhờ đó tin tới trong vòng một phút sau khi nến đóng.
+# Lịch chỉ còn việc khởi động lại job khi nó hết hạn: nhóm concurrency giữ đúng một lượt chờ,
+# nên job vừa hết là lượt chờ chạy tiếp, gần như không có khoảng trống.
+# Repo công khai nên Actions không tính phút.
 name: Kèo Pro — thông báo
 
 on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'scan = quét và báo · test-push = gửi tin thử · dry-run = quét, in ra, không gửi · reset-open = xoá kèo đang giữ'
+        description: 'loop = chạy liên tục · scan = quét một lượt · test-push = gửi tin thử · dry-run = quét, in ra, không gửi · reset-open = xoá kèo đang giữ'
         type: choice
-        options: [scan, test-push, dry-run, reset-open]
-        default: scan
+        options: [loop, scan, test-push, dry-run, reset-open]
+        default: loop
       grades:
         description: 'hạng được đẩy'
         type: choice
         options: ['A+,A', 'A+']
         default: 'A+,A'
-  # Lịch dự phòng. GitHub BỎ gần hết lịch: repo này đặt 2 lượt/giờ mà thực tế chỉ chạy
-  # 1 trong 17 lượt. Đặt 4 lượt/giờ cho tăng cơ hội, và bot tự soi lại vài nến đã đóng
-  # (TFS[].back) nên lượt chạy trễ vẫn bắt được kèo. Muốn đúng giờ thì dùng cron-job.org
-  # gọi workflow_dispatch — xem README.
-  schedule:
-    - cron: '1,16,31,46 * * * *'
 
+  # Chỉ để khởi động lại job khi hết hạn. Đặt dày vì GitHub bỏ phần lớn lượt.
+  schedule:
+    - cron: '*/15 * * * *'
+
+# Đúng một job chạy, đúng một lượt chờ. Lượt chờ cũ bị huỷ — đó là các dòng "cancelled"
+# trong tab Actions, bình thường, không phải lỗi.
 concurrency:
   group: keo
   cancel-in-progress: false
@@ -31,27 +39,62 @@ permissions:
 jobs:
   keo:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 350
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - run: npm install --no-audit --no-fund web-push@3.6.7
+
       - name: Quét và báo
         env:
           PUSH_CONFIG: ${{ secrets.PUSH_CONFIG }}
-          MODE: ${{ github.event.inputs.mode || 'scan' }}
+          MODE: ${{ github.event.inputs.mode || 'loop' }}
           GRADES: ${{ github.event.inputs.grades || 'A+,A' }}
-        run: node bot/keo.mjs
-      - name: Lưu trạng thái vào nhánh data
-        if: always()
-        env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          [ -d out ] || exit 0
-          cd out
-          git init -q -b data
-          git add -A
-          git -c user.name="bot-trade" -c user.email="bot-trade@users.noreply.github.com" commit -qm "trạng thái Kèo Pro $(date -u +%F-%H%M)"
-          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" data
+          set -u
+          REPO_URL="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+          # Lưu trạng thái lên nhánh data sau MỖI lượt quét, để job có chết giữa đường
+          # thì lượt sau vẫn biết kèo nào đang giữ.
+          luu() {
+            [ -d out ] || return 0
+            ( cd out
+              git init -q -b data 2>/dev/null || true
+              git add -A
+              git -c user.name="bot-trade" -c user.email="bot-trade@users.noreply.github.com" \
+                  commit -qm "trạng thái Kèo Pro $(date -u +%F-%H%M)" 2>/dev/null || return 0
+              git push -qf "$REPO_URL" data 2>/dev/null || echo "  (đẩy trạng thái lỗi, bỏ qua)"
+            )
+          }
+
+          if [ "$MODE" != "loop" ]; then
+            node bot/keo.mjs
+            luu
+            exit 0
+          fi
+
+          # Nến M30 đóng lúc :00 và :30 → chờ tới mốc 1800 giây kế tiếp, cộng 20 giây cho
+          # sàn chốt nến. Nến H1 và H4 cũng đóng tại các mốc đó nên một nhịp phục vụ cả ba.
+          HET=$(( $(date +%s) + 5*3600 + 2400 ))
+          LUOT=0
+          while :; do
+            LUOT=$((LUOT+1))
+            echo "::group::Lượt $LUOT — $(TZ=Asia/Ho_Chi_Minh date +'%H:%M:%S giờ VN')"
+            MODE=scan node bot/keo.mjs || echo "lượt này lỗi, bỏ qua, chờ lượt sau"
+            luu
+            echo "::endgroup::"
+
+            GIO=$(date +%s)
+            CHO=$(( 1800 - GIO % 1800 + 20 ))
+            CON=$(( HET - GIO ))
+            if [ "$CON" -lt "$CHO" ]; then
+              echo "Hết hạn job sau $((CON/60)) phút, không đủ cho nhịp kế tiếp. Dừng để lượt chờ chạy tiếp."
+              break
+            fi
+            echo "Ngủ $CHO giây, quét lại lúc $(TZ=Asia/Ho_Chi_Minh date -d "+$CHO seconds" +'%H:%M:%S giờ VN')"
+            sleep "$CHO"
+          done
+          echo "Đã quét $LUOT lượt trong job này."

@@ -51,25 +51,26 @@ Phong cách lấy theo khung chart đúng như bản Pine: **M30 và H1 = intrad
 
 Mỗi tin kèm luôn phân tích: vì sao vào, điểm từng chỉ số, Entry/SL/TP1/TP2, R:R sau phí, volume, OI, mốc gần, xu hướng khung 4H.
 
-### Lịch chạy — và vì sao phải bù
+### Vì sao bot chạy liên tục
 
-GitHub **bỏ gần hết lịch**: repo này đặt 2 lượt mỗi giờ mà thực tế chỉ chạy **1 trong 17 lượt**. Nên:
+GitHub **bỏ gần hết lịch**: repo này đặt 2 lượt mỗi giờ mà thực tế chỉ chạy **1 trong 17 lượt** — tức thông báo trễ hàng giờ. Nên bot không chờ lịch gọi từng lượt nữa:
 
-- Lịch đặt **4 lượt mỗi giờ** (phút :01 :16 :31 :46) cho tăng cơ hội.
-- Mỗi lượt chạy được thì **soi lại vài nến đã đóng** chứ không chỉ nến cuối (M30 lùi 5 nến, H1 lùi 4, H4 lùi 2). Kèo ở nến cũ chỉ được báo nếu giá **chưa chạm SL và chưa chạm TP1** — đúng luật chờ ở vùng của chỉ báo. Tin nhắn ghi rõ nến xác nhận đóng lúc nào và trễ mấy nến.
+- Một job **chạy liên tục ~5 giờ 40**, mỗi nhịp ngủ tới đúng lúc nến M30 / H1 / H4 đóng (phút :00 và :30, cộng 20 giây cho sàn chốt nến) rồi quét ngay. Tin tới **trong vòng một phút** sau khi nến đóng.
+- Lịch `*/15` chỉ còn việc khởi động lại job khi nó hết hạn. Nhóm concurrency giữ đúng một lượt chờ, nên job vừa hết là lượt chờ chạy tiếp — gần như không có khoảng trống. Các dòng **cancelled** trong tab Actions là những lượt chờ bị thay thế, bình thường, không phải lỗi.
+- Repo công khai nên Actions **không tính phút**.
+- Trạng thái được đẩy lên nhánh `data` sau **mỗi** lượt quét, nên job có chết giữa đường thì lượt sau vẫn biết kèo nào đang giữ.
 
-Muốn đúng giờ thì cho **cron-job.org** gọi thẳng:
+Vẫn giữ phần **bù lượt bị bỏ** cho trường hợp job chết hẳn: mỗi lượt soi lại vài nến đã đóng (M30 lùi 5 nến, H1 lùi 4, H4 lùi 2), và kèo ở nến cũ chỉ được báo nếu giá **chưa chạm SL và chưa chạm TP1** — đúng luật chờ ở vùng của chỉ báo. Tin nhắn ghi rõ nến xác nhận đóng lúc nào và trễ mấy nến.
+
+Muốn chắc hơn nữa thì cho **cron-job.org** gọi thẳng (token bạn tự điền, không bao giờ nằm trong repo):
 
 - URL: `https://api.github.com/repos/duylong06/Bot-trade/actions/workflows/keo.yml/dispatches`
-- Lịch: mỗi 15 phút, hoặc phút :01 và :31
 - Method **POST** · Headers: `Authorization: Bearer <token>` · `Accept: application/vnd.github+json` · `X-GitHub-Api-Version: 2022-11-28`
 - Body: `{"ref":"main"}` · Test run thấy **204** là xong
 
-Token không bao giờ nằm trong repo này.
-
 ### Chạy tay
 
-Tab Actions → `mode`: `scan` · `test-push` (gửi tin thử) · `dry-run` (quét, in ra, không gửi, không ghi trạng thái) · `reset-open` (xoá kèo đang giữ). Ô `grades` chọn `A+,A` hoặc chỉ `A+`.
+Tab Actions → `mode`: `loop` (chạy liên tục, mặc định) · `scan` (một lượt) · `test-push` (gửi tin thử) · `dry-run` (quét, in ra, không gửi, không ghi trạng thái) · `reset-open` (xoá kèo đang giữ). Ô `grades` chọn `A+,A` hoặc chỉ `A+`.
 
 Khoá thông báo nằm trong GitHub Secret `PUSH_CONFIG`, không bao giờ nằm trong code.
 

@@ -83,6 +83,15 @@ async function oiSeries(inst, period, pages = 2) {
 
 /* ---------------- trạng thái ---------------- */
 async function loadState() {
+  // Trong chế độ chạy liên tục, bot quét nhiều lượt trong cùng một job. Nhánh data đi qua
+  // CDN nên đọc lại ngay sau khi ghi có thể ra bản cũ — vì vậy ưu tiên file ngay tại máy.
+  try {
+    if (fs.existsSync('out/state-keo.json')) {
+      const st = JSON.parse(fs.readFileSync('out/state-keo.json', 'utf8'));
+      log('trạng thái: lấy từ lượt quét trước trong cùng job');
+      return st;
+    }
+  } catch (e) { log('trạng thái tại máy đọc lỗi, lấy từ nhánh data:', e.message); }
   try {
     const r = await fetch(DATA + 'state-keo.json', { cache: 'no-store' });
     if (r.ok) return await r.json();
