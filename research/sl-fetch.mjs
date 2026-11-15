@@ -34,7 +34,9 @@ async function candles(inst, bar, want) {
 
 const top = await okx('/api/v5/public/instruments', { instType: 'SWAP' });
 const tick = await okx('/api/v5/market/tickers', { instType: 'SWAP' });
-const vol = new Map((tick || []).map(t => [t.instId, +t.volCcy24h || 0]));
+// volCcy24h là khối lượng tính bằng SỐ COIN, nên coin giá rẻ sẽ có số khổng lồ.
+// Phải quy ra USD bằng cách nhân giá, nếu không danh sách toàn meme coin.
+const vol = new Map((tick || []).map(t => [t.instId, (+t.volCcy24h || 0) * (+t.last || 0)]));
 const NOT = new Set(['XAU','XAG','XPT','XPD','CL','BZ','NG','HG','SPX','NDX','DJI','VIX']);
 const list = (top || [])
   .filter(x => x.settleCcy === 'USDT' && x.state === 'live' && String(x.instCategory || '') === '1')
