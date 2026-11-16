@@ -1,5 +1,5 @@
 # Nhánh tạm: lấy lịch sử H1 để kiểm chứng cách đặt SL khi phá trendline. Không liên quan bot.
-name: Lấy lịch sử H1 (tạm)
+name: Đếm coin futures (tạm)
 on:
   push:
     branches: [sl-1115]
@@ -15,10 +15,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: node research/sl-fetch.mjs
-        env:
-          BARS: '12000'
-          COINS_N: '20'
+      - run: node research/dem.mjs
       - name: Lưu vào nhánh sl-data
         env:
           GH_TOKEN: ${{ github.token }}
@@ -26,5 +23,5 @@ jobs:
           cd out
           git init -q -b sl-data
           git add -A
-          git -c user.name="bot-trade" -c user.email="bot-trade@users.noreply.github.com" commit -qm "lịch sử H1 $(date -u +%F-%H%M)"
+          git -c user.name="bot-trade" -c user.email="bot-trade@users.noreply.github.com" commit -qm "đếm coin $(date -u +%F-%H%M)"
           git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" sl-data
