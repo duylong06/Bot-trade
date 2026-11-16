@@ -1,10 +1,18 @@
-// Số cặp vĩnh cửu của Binance và OKX, lấy qua CoinGecko (Binance chặn IP của Actions).
-const get = async u => { for (let i=0;i<3;i++){ try{ const r=await fetch(u,{headers:{'User-Agent':'Mozilla/5.0'}});
-  if(r.ok) return await r.json(); console.log('HTTP',r.status,u); }catch(e){ console.log(e.message); }
-  await new Promise(s=>setTimeout(s,2500)); } return null; };
-for (const san of ['binance_futures','okex_swap','bybit','gate_futures']) {
-  const d = await get(`https://api.coingecko.com/api/v3/derivatives/exchanges/${san}`);
-  if (!d) { console.log(`${san}: không lấy được`); continue; }
-  console.log(`${(d.name||san).padEnd(26)} vĩnh cửu ${String(d.number_of_perpetual_pairs).padStart(4)} · có hạn ${String(d.number_of_futures_pairs).padStart(3)}`);
-  await new Promise(s=>setTimeout(s,3000));
+// Nến 15m hôm nay của vài đồng, để so hành vi trong ngày.
+import fs from 'node:fs';
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const okx=async(p,q)=>{const u=new URL('https://www.okx.com'+p);
+ for(const[k,v]of Object.entries(q))u.searchParams.set(k,v);
+ for(let i=0;i<3;i++){try{const r=await fetch(u);const j=await r.json();if(j.code==='0')return j.data;}catch(e){}await sleep(800);}return null;};
+const COINS=(process.env.LIST||'BTC,ETH,SOL,PUMP,WLD,DOGE,SUI,XRP,PEPE,ENA').split(',');
+const out={};
+for(const c of COINS){
+  let all=[],after;
+  while(all.length<300){ const q={instId:`${c}-USDT-SWAP`,bar:'15m',limit:'100'}; if(after)q.after=after;
+    const d=await okx('/api/v5/market/history-candles',q); if(!d||!d.length)break;
+    all=all.concat(d); after=d[d.length-1][0]; await sleep(160); }
+  out[c]=all.filter(r=>r[8]==='1').map(r=>[+r[0],+r[1],+r[2],+r[3],+r[4],+r[5]]).sort((a,b)=>a[0]-b[0]);
+  console.log(`${c}: ${out[c].length} nến 15m, cuối ${new Date(out[c].at(-1)[0]).toISOString().slice(5,16)}`);
 }
+fs.mkdirSync('out',{recursive:true});
+fs.writeFileSync('out/m15.json',JSON.stringify(out));

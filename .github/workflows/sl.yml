@@ -16,6 +16,8 @@ jobs:
         with:
           node-version: 22
       - run: node research/dem.mjs
+        env:
+          LIST: 'BTC,ETH,SOL,PUMP,WLD,DOGE,SUI,XRP,PEPE,ENA'
       - name: Lưu vào nhánh sl-data
         env:
           GH_TOKEN: ${{ github.token }}
