@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
-      - run: node research/bn-fetch.mjs
+      - run: node research/bn-list.mjs
       - name: Lưu vào nhánh bn-klines
         env:
           GH_TOKEN: ${{ github.token }}
