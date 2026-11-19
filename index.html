@@ -148,6 +148,30 @@ li.w{color:#E8C9A4}
 .ins-bar{height:6px;border-radius:3px;background:#1d2733;overflow:hidden;margin:6px 0 10px}
 .ins-bar i{display:block;height:100%;background:linear-gradient(90deg,#2fbe8c,#5fd6a4)}
 .ins-keo{border-radius:14px;padding:12px 14px;margin:10px 0;border:1px solid var(--line);background:#121922}
+/* --- tab Top 70 --- */
+.tp-r{display:flex;align-items:center;gap:10px;padding:10px 2px;border-top:1px solid var(--line);cursor:pointer}
+.tp-r:first-child{border-top:0}
+.tp-r .no{width:26px;color:var(--faint);font-size:12px;text-align:right;flex:none}
+.tp-r .sy{font-size:15.5px;font-weight:600;letter-spacing:-.2px;flex:1;min-width:0}
+.tp-r .pz{font-variant-numeric:tabular-nums;font-size:14.5px;white-space:nowrap}
+.tp-r .ch{font-variant-numeric:tabular-nums;font-size:13px;width:66px;text-align:right;flex:none;white-space:nowrap}
+.tp-r.open .sy{color:var(--mark)}
+.tp-up{color:#5fd6a4}.tp-dn{color:#ff8a7e}
+@keyframes tpF{from{background:#1d3a2d}to{background:transparent}}
+@keyframes tpFd{from{background:#3a1f1d}to{background:transparent}}
+.tp-r.fu{animation:tpF .6s ease-out}.tp-r.fd{animation:tpFd .6s ease-out}
+.tp-d{padding:4px 0 18px;border-top:1px dashed var(--line)}
+.tp-d canvas{margin-bottom:8px}
+.tp-tb{width:100%;border-collapse:collapse;font-size:13px;margin:4px 0 10px}
+.tp-tb th{text-align:right;font-weight:500;color:var(--dim);font-size:11.5px;text-transform:uppercase;letter-spacing:.3px;padding:4px 6px;border-bottom:1px solid var(--line)}
+.tp-tb th:first-child{text-align:left}
+.tp-tb td{text-align:right;padding:5px 6px;border-bottom:1px solid #161d26;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tp-tb td:last-child{white-space:normal;font-size:12px;line-height:1.4}
+.tp-tb td:first-child{text-align:left;color:var(--dim)}
+.tp-y{color:#E8C44A}.tp-rd{color:#E45A50}
+.tp-lv{display:flex;justify-content:space-between;gap:10px;padding:4px 0;font-size:13.5px;border-bottom:1px solid #161d26}
+.tp-lv:last-child{border-bottom:0}
+.tp-lv span:last-child{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 .ins-keo.up{border-color:#2f6b52;background:linear-gradient(180deg,#112420,#161a1f)}
 .ins-keo.dn{border-color:#8a3a35;background:linear-gradient(180deg,#2a1513,#161a1f)}
 .ins-keo .t{font-weight:650;font-size:15px}
@@ -161,6 +185,7 @@ li.w{color:#E8C9A4}
   <nav role="tablist">
     <button role="tab" aria-selected="true" data-t="brk">Phá vỡ</button>
     <button role="tab" aria-selected="false" data-t="nbk">Sắp phá</button>
+    <button role="tab" aria-selected="false" data-t="top">Top 70</button>
     <button role="tab" aria-selected="false" data-t="ins">Theo dõi</button>
     <button role="tab" aria-selected="false" data-t="cfg">Cài đặt</button>
   </nav>
@@ -247,6 +272,18 @@ li.w{color:#E8C9A4}
     <div id="outN"></div>
   </section>
 
+  <section id="top" hidden>
+    <p class="note" style="margin-top:0">70 đồng coin thanh khoản cao nhất trên OKX, <b>giá chạy liên tục</b>. Chạm vào một đồng để xem <b>biểu đồ bao quát</b>, <b>hai đường Stoch</b> (32·13·5 vàng và 10·5·5 đỏ) trên ba khung M15 · H1 · H4, và <b>kháng cự – hỗ trợ</b> của H1 và H4.</p>
+    <div class="row">
+      <select id="tpTf">
+        <option value="1H" selected>Biểu đồ khung H1</option>
+        <option value="4H">Biểu đồ khung H4</option>
+      </select>
+      <button class="act" id="tpGo">Tải danh sách</button>
+    </div>
+    <div id="tpStat" class="note" style="margin:0 0 10px"></div>
+    <div id="tpList"></div>
+  </section>
   <section id="ins" hidden>
     <p class="note" style="margin-top:0">Theo dõi <b>liên tục</b> một đồng: sổ lệnh, tường thật hay tường giả, dòng tiền chủ động, Open Interest, và kết luận của <b>Kèo Pro</b> trên M30 và H1. Dữ liệu chỉ ghi từ lúc bạn mở, đóng trang là mất.</p>
     <div class="row">
@@ -2979,7 +3016,8 @@ $('#stopNb').onclick=()=>{SCANN.stop=true;$('#statN').textContent='Đang dừng,
 document.querySelectorAll('nav button').forEach(b=>{
   b.onclick=()=>{
     document.querySelectorAll('nav button').forEach(x=>x.setAttribute('aria-selected',x===b));
-    ['brk','nbk','ins','cfg'].forEach(id=>$('#'+id).hidden=(id!==b.dataset.t));
+    ['brk','nbk','top','ins','cfg'].forEach(id=>$('#'+id).hidden=(id!==b.dataset.t));
+    if(b.dataset.t==='top')TOPtab.vao();else TOPtab.ra();
   };
 });
 const CF=['cap','rk','ms','mr','tn','bw'],CK=['cap','risk','minScore','minRR','topN','breadth'];
@@ -2996,6 +3034,237 @@ $('#save').onclick=()=>{
   const s=$('#saved');
   s.textContent=`Đã lưu. Rủi ro mỗi lệnh: ${(C.cap*C.risk/100).toFixed(1)} USD.`;
   setTimeout(()=>s.textContent='',4000);
+};
+
+/* ============================================================ TAB TOP 70
+   Danh sách 70 đồng thanh khoản cao nhất, giá chạy liên tục bằng MỘT lệnh gọi
+   tickers cho cả sàn mỗi 4 giây (nhẹ hơn nhiều so với gọi riêng từng đồng).
+   Chạm một đồng mới tải nến — không tải sẵn 70 đồng × 3 khung. */
+
+/* Stoch theo đúng cách TradingView tính: %K thô làm trơn kSm lần, rồi %D làm trơn dSm lần */
+function stoch(k,len,kSm,dSm){
+  const n=k.c.length,raw=new Array(n);
+  let hi=-Infinity,lo=Infinity;
+  for(let i=0;i<n;i++){
+    const s=Math.max(0,i-len+1);
+    hi=-Infinity;lo=Infinity;
+    for(let j=s;j<=i;j++){if(k.h[j]>hi)hi=k.h[j];if(k.l[j]<lo)lo=k.l[j];}
+    raw[i]=hi===lo?50:(k.c[i]-lo)/(hi-lo)*100;
+  }
+  const K=sma(raw,kSm);
+  return {k:K,d:sma(K,dSm)};
+}
+const stTxt=v=>!Number.isFinite(v)?'—':v>=80?'quá mua':v<=20?'quá bán':'trung tính';
+const stCls=v=>!Number.isFinite(v)?'ins-mut':v>=80?'ins-dn':v<=20?'ins-up':'ins-mut';
+
+/* Biểu đồ bao quát: nhiều nến hơn và dẹt hơn biểu đồ ở tab Phá vỡ, kèm mức
+   kháng cự / hỗ trợ vẽ thẳng lên chart. */
+function drawTop(cv,k,lv,tf){
+  const N=Math.min(170,k.c.length),s=k.c.length-N;
+  const o=k.o.slice(s),h=k.h.slice(s),l=k.l.slice(s),c=k.c.slice(s),v=k.v.slice(s),tm=k.t.slice(s);
+  const e200=(k.ema200||ema(k.c,200)).slice(s);
+  const dpr=window.devicePixelRatio||1;
+  const W=cv.clientWidth||340,HH=Math.round(W*0.60);
+  cv.width=W*dpr;cv.height=HH*dpr;
+  const x=cv.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);
+  const padR=62,padL=4,padT=8,padB=16,volH=Math.round(HH*.14),gap=5;
+  const pH=HH-volH-gap-padT-padB;
+  const lo=Math.min(...l),hi=Math.max(...h),rg=(hi-lo)||1;
+  const iw=(W-padL-padR)/N,px=i=>padL+(i+.5)*iw,py=p=>padT+(hi-p)/rg*pH;
+  const bw=Math.max(1,iw*.62);
+  x.fillStyle='#131A21';x.fillRect(0,0,W,HH);
+  const st=stepFor(rg);
+  x.font='9.5px -apple-system,sans-serif';x.textBaseline='middle';
+  for(let p=Math.ceil(lo/st)*st;p<=hi;p+=st){
+    const y=py(p);if(y<padT||y>padT+pH)continue;
+    x.strokeStyle='#1E2732';x.lineWidth=1;x.beginPath();x.moveTo(padL,y);x.lineTo(W-padR,y);x.stroke();
+    x.fillStyle='#5C6773';x.fillText(fmt(p),W-padR+5,y);
+  }
+  const tStep=Math.max(1,Math.round(N/5));x.textAlign='center';
+  for(let i=N-1;i>=0;i-=tStep){
+    const xx=px(i);x.strokeStyle='#1A222C';x.beginPath();x.moveTo(xx,padT);x.lineTo(xx,padT+pH+gap+volH);x.stroke();
+    x.fillStyle='#4A5561';x.fillText(tlabel(tm[i],tf),xx,HH-6);
+  }
+  x.textAlign='left';
+  /* mức kháng cự / hỗ trợ */
+  x.setLineDash([5,4]);x.lineWidth=1;
+  (lv||[]).slice(0,8).forEach(L=>{
+    const y=py(L.lvl);if(y<padT-1||y>padT+pH+1)return;
+    const col=L.side==='res'?'#E45A50':'#2FBE8C';
+    x.strokeStyle=col;x.globalAlpha=.42;x.beginPath();x.moveTo(padL,y);x.lineTo(W-padR,y);x.stroke();
+    x.globalAlpha=1;x.fillStyle=col;x.font='9px -apple-system,sans-serif';
+    x.fillText(fmt(L.lvl),W-padR+5,y);
+  });
+  x.setLineDash([]);
+  /* EMA 200 */
+  x.strokeStyle='#E5A03C';x.lineWidth=1.2;x.globalAlpha=.85;x.beginPath();
+  e200.forEach((val,i)=>{const yy=py(val);i?x.lineTo(px(i),yy):x.moveTo(px(i),yy);});
+  x.stroke();x.globalAlpha=1;
+  for(let i=0;i<N;i++){
+    const up=c[i]>=o[i],col=up?'#2FBE8C':'#E45A50';
+    x.strokeStyle=col;x.fillStyle=col;x.lineWidth=1;
+    x.beginPath();x.moveTo(Math.round(px(i))+.5,py(h[i]));x.lineTo(Math.round(px(i))+.5,py(l[i]));x.stroke();
+    const yt=py(Math.max(o[i],c[i])),yb=py(Math.min(o[i],c[i]));
+    x.fillRect(px(i)-bw/2,yt,bw,Math.max(1,yb-yt));
+  }
+  const vTop=padT+pH+gap,vMax=Math.max(...v)||1;
+  for(let i=0;i<N;i++){
+    x.fillStyle=c[i]>=o[i]?'rgba(47,190,140,.45)':'rgba(228,90,80,.45)';
+    const bh=v[i]/vMax*volH;x.fillRect(px(i)-bw/2,vTop+volH-bh,bw,bh);
+  }
+  x.fillStyle='#5C6773';x.font='9px -apple-system,sans-serif';
+  x.fillText('EMA 200',padL+3,padT+8);
+}
+
+/* Khung Stoch: vàng (32·13·5) dài hạn, đỏ (10·5·5) ngắn hạn, kèm mốc 80/20 */
+function drawStoch(cv,k){
+  const A=stoch(k,32,13,5),B=stoch(k,10,5,5);
+  const N=Math.min(170,k.c.length),s=k.c.length-N;
+  const dpr=window.devicePixelRatio||1;
+  const W=cv.clientWidth||340,HH=Math.round(W*0.26);
+  cv.width=W*dpr;cv.height=HH*dpr;
+  const x=cv.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);
+  const padR=62,padL=4,padT=6,padB=6,pH=HH-padT-padB;
+  const iw=(W-padL-padR)/N,px=i=>padL+(i+.5)*iw,py=val=>padT+(100-val)/100*pH;
+  x.fillStyle='#131A21';x.fillRect(0,0,W,HH);
+  x.font='9px -apple-system,sans-serif';x.textBaseline='middle';
+  [[80,'#E45A50'],[50,'#242E39'],[20,'#2FBE8C']].forEach(([val,col])=>{
+    const y=py(val);x.strokeStyle=col;x.globalAlpha=val===50?1:.35;x.lineWidth=1;
+    x.setLineDash(val===50?[]:[4,3]);x.beginPath();x.moveTo(padL,y);x.lineTo(W-padR,y);x.stroke();
+    x.setLineDash([]);x.globalAlpha=1;
+    if(val!==50){x.fillStyle=col;x.fillText(String(val),W-padR+5,y);}
+  });
+  const ve=(arr,col,wd,al)=>{
+    x.strokeStyle=col;x.lineWidth=wd;x.globalAlpha=al;x.beginPath();
+    let st2=false;
+    for(let i=0;i<N;i++){const val=arr[s+i];if(!Number.isFinite(val))continue;
+      const yy=py(val);st2?x.lineTo(px(i),yy):(x.moveTo(px(i),yy),st2=true);}
+    x.stroke();x.globalAlpha=1;
+  };
+  ve(A.d,'#E8C44A',1,.5);ve(A.k,'#E8C44A',1.5,1);
+  ve(B.d,'#E45A50',1,.5);ve(B.k,'#E45A50',1.5,1);
+  return {a:A.k.at(-1),ad:A.d.at(-1),b:B.k.at(-1),bd:B.d.at(-1)};
+}
+
+const TOPtab={
+  rows:[],        // {id, nm, vol}
+  px:new Map(),   // id -> {last, chg}
+  tm:null,
+  mo:null,        // id đang mở
+  async vao(){
+    if(!this.rows.length)return;
+    this.nhip();
+  },
+  ra(){ if(this.tm){clearInterval(this.tm);this.tm=null;} },
+  nhip(){
+    this.ra();
+    const chay=async()=>{
+      try{
+        const t=await api('/api/v5/market/tickers',{instType:'SWAP'});
+        const m=new Map(t.map(x=>[x.instId,x]));
+        for(const r of this.rows){
+          const q=m.get(r.id);if(!q)continue;
+          const last=+q.last,op=+q.open24h||last;
+          const cu=this.px.get(r.id);
+          this.px.set(r.id,{last,chg:(last-op)/op*100});
+          const el=document.querySelector(`.tp-r[data-id="${r.id}"]`);
+          if(!el)continue;
+          const pz=el.querySelector('.pz'),ch=el.querySelector('.ch');
+          pz.textContent=fmt(last);
+          const c2=(last-op)/op*100;
+          ch.textContent=(c2>=0?'+':'')+c2.toFixed(2)+'%';
+          ch.className='ch '+(c2>=0?'tp-up':'tp-dn');
+          if(cu&&cu.last!==last){
+            el.classList.remove('fu','fd');void el.offsetWidth;
+            el.classList.add(last>cu.last?'fu':'fd');
+          }
+        }
+        $('#tpStat').textContent=`Giá cập nhật lúc ${new Date().toLocaleTimeString('vi-VN')} · làm mới mỗi 4 giây`;
+      }catch(e){ $('#tpStat').textContent='Không lấy được giá: '+e.message; }
+    };
+    chay();
+    this.tm=setInterval(chay,4000);
+  },
+  async tai(){
+    const b=$('#tpGo');b.disabled=true;b.textContent='Đang tải...';
+    try{
+      const arr=await listSymbols('all');
+      this.rows=arr.slice(0,70).map((x,i)=>({id:x.id,nm:x.id.replace('-USDT-SWAP',''),vol:x.vol,no:i+1}));
+      $('#tpList').innerHTML=this.rows.map(r=>
+        `<div class="tp-r" data-id="${r.id}"><span class="no">${r.no}</span>`+
+        `<span class="sy">${esc(r.nm)}</span><span class="pz">—</span><span class="ch">—</span></div>`+
+        `<div class="tp-d" data-d="${r.id}" hidden></div>`).join('');
+      $('#tpList').querySelectorAll('.tp-r').forEach(el=>{
+        el.onclick=()=>this.mo_dong(el.dataset.id,el);
+      });
+      this.nhip();
+    }catch(e){ $('#tpStat').textContent='Lỗi: '+e.message; }
+    b.disabled=false;b.textContent='Tải lại danh sách';
+  },
+  async mo_dong(id,el){
+    const d=document.querySelector(`.tp-d[data-d="${id}"]`);
+    if(!d.hidden){d.hidden=true;el.classList.remove('open');this.mo=null;return;}
+    document.querySelectorAll('.tp-d').forEach(z=>z.hidden=true);
+    document.querySelectorAll('.tp-r').forEach(z=>z.classList.remove('open'));
+    el.classList.add('open');d.hidden=false;this.mo=id;
+    d.innerHTML='<p class="note">Đang tải nến ba khung...</p>';
+    try{
+      const tf=$('#tpTf').value;
+      const [m15,h1,h4]=await Promise.all([
+        candles(id,'15m',300),candles(id,'1H',300),candles(id,'4H',300)
+      ]);
+      const K={'15m':m15,'1H':h1,'4H':h4};
+      const kc=enrich(K[tf]);
+      const lvC=keyLevels(kc,160,.6);
+      const nm=id.replace('-USDT-SWAP','');
+      d.innerHTML=`<canvas class="cv-gia"></canvas><canvas class="cv-st"></canvas>
+        <p class="hint">Vàng = Stoch 32·13·5 (dài hạn) · Đỏ = Stoch 10·5·5 (ngắn hạn). Nét đậm là %K, nét mờ là %D.</p>
+        <table class="tp-tb"><thead><tr><th>Khung</th><th>Stoch dài hạn</th><th>Stoch ngắn hạn</th><th>Trạng thái</th></tr></thead><tbody id="tb-${CSS.escape(nm)}"></tbody></table>
+        <h3 style="margin:14px 0 6px;font-size:13px;color:var(--dim);text-transform:uppercase;letter-spacing:.3px">Kháng cự – hỗ trợ H1</h3>
+        <div id="lv1-${CSS.escape(nm)}"></div>
+        <h3 style="margin:14px 0 6px;font-size:13px;color:var(--dim);text-transform:uppercase;letter-spacing:.3px">Kháng cự – hỗ trợ H4</h3>
+        <div id="lv4-${CSS.escape(nm)}"></div>`;
+      drawTop(d.querySelector('.cv-gia'),kc,lvC,tf);
+      drawStoch(d.querySelector('.cv-st'),kc);
+      /* bảng đa khung */
+      const tb=d.querySelector('tbody');
+      tb.innerHTML=['15m','1H','4H'].map(key=>{
+        const A=stoch(K[key],32,13,5),B=stoch(K[key],10,5,5);
+        const a=A.k.at(-1),ad=A.d.at(-1),b2=B.k.at(-1),bd=B.d.at(-1);
+        const ten=key==='15m'?'M15':key;
+        const tr2=!Number.isFinite(a)||!Number.isFinite(b2)?'—'
+          :(a>=80&&b2>=80)?'cả hai quá mua':(a<=20&&b2<=20)?'cả hai quá bán'
+          :`dài hạn ${stTxt(a)}, ngắn hạn ${stTxt(b2)}`;
+        const f1=v=>Number.isFinite(v)?v.toFixed(1):'—';
+        return `<tr><td>${ten}</td>`+
+          `<td class="tp-y">${f1(a)} / ${f1(ad)}</td>`+
+          `<td class="tp-rd">${f1(b2)} / ${f1(bd)}</td>`+
+          `<td class="${stCls(b2)}">${tr2}</td></tr>`;
+      }).join('');
+      /* mức giá H1 và H4 */
+      const veLv=(box,k2)=>{
+        const lv=keyLevels(enrich(k2),160,.6),gia=k2.c.at(-1);
+        const res=lv.filter(x=>x.side==='res').slice(0,4);
+        const sup=lv.filter(x=>x.side==='sup').slice(0,4);
+        const dong=(L,nhan)=>`<div class="tp-lv"><span>${nhan} <b class="${L.side==='res'?'tp-dn':'tp-up'}">${fmt(L.lvl)}</b> · chạm ${L.n} lần</span><span>${L.dist.toFixed(2)}%</span></div>`;
+        box.innerHTML=(res.length?res.slice().reverse().map(L=>dong(L,'Kháng cự')).join(''):'<p class="note" style="margin:0">Không có kháng cự rõ phía trên.</p>')
+          +`<div class="tp-lv" style="border-top:1px solid var(--line);border-bottom:0;margin-top:4px;padding-top:7px"><span><b>Giá hiện tại</b></span><span><b>${fmt(gia)}</b></span></div>`
+          +(sup.length?sup.map(L=>dong(L,'Hỗ trợ')).join(''):'<p class="note" style="margin:0">Không có hỗ trợ rõ phía dưới.</p>');
+      };
+      veLv(d.querySelector(`[id^="lv1-"]`),h1);
+      veLv(d.querySelector(`[id^="lv4-"]`),h4);
+    }catch(e){ d.innerHTML=`<p class="note">Lỗi: ${esc(e.message)}</p>`; }
+  }
+};
+$('#tpGo').onclick=()=>TOPtab.tai();
+/* đổi khung biểu đồ: vẽ lại đồng đang mở, không đóng rồi mở lại */
+$('#tpTf').onchange=()=>{
+  if(!TOPtab.mo)return;
+  const id=TOPtab.mo,el=document.querySelector(`.tp-r[data-id="${id}"]`);
+  const d=document.querySelector(`.tp-d[data-d="${id}"]`);
+  if(!el||!d)return;
+  d.hidden=true;el.classList.remove('open');TOPtab.mo=null;
+  TOPtab.mo_dong(id,el);
 };
 </script>
 

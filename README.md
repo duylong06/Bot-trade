@@ -4,14 +4,28 @@ Trang web một file, phân tích futures OKX **ngay trong trình duyệt** — 
 
 Mở: <https://duylong06.github.io/Bot-trade/>
 
-## Bốn tab
+## Năm tab
 
 | Tab | Làm gì |
 |---|---|
 | **Phá vỡ** | Coin đang phá đường xu hướng, phá vùng tích luỹ, hoặc vừa hoàn tất mô hình giá. Trên cùng là **bảng xu hướng chung** |
 | **Sắp phá** | Coin nén sát một mức chưa bị phá, kèm một cây volume mạnh ép vào mức đó |
+| **Top 70** | 70 coin thanh khoản cao nhất, **giá chạy liên tục**. Chạm một đồng để xem biểu đồ bao quát, **hai đường Stoch** trên M15 · H1 · H4, và **kháng cự – hỗ trợ** H1 + H4 |
 | **Theo dõi** | Theo dõi **liên tục** một đồng: sổ lệnh, tường thật hay giả, dòng tiền chủ động, OI, và kết luận **Kèo Pro** trên M30 + H1 |
 | **Cài đặt** | Số coin quét, ngưỡng lọc, ngưỡng kết luận xu hướng |
+
+## Tab Top 70
+
+Danh sách 70 cặp USDT-SWAP có khối lượng USD lớn nhất, chỉ coin. Giá và % 24 giờ làm mới **mỗi 4 giây** bằng **một** lệnh gọi `tickers` cho cả sàn, nên nhẹ; giá tăng nháy xanh, giảm nháy đỏ.
+
+Chạm một đồng mới tải nến — không tải sẵn 70 đồng × 3 khung. Phần chi tiết gồm:
+
+- **Biểu đồ bao quát** 170 nến, dẹt hơn biểu đồ tab Phá vỡ để nhìn được bức tranh rộng, có EMA 200 và các mức kháng cự / hỗ trợ vẽ thẳng lên chart
+- **Hai đường Stoch** đúng thiết lập đang dùng: **32·13·5 màu vàng** (dài hạn) và **10·5·5 màu đỏ** (ngắn hạn), nét đậm là %K, nét mờ là %D, kèm mốc 80 và 20
+- **Bảng đa khung M15 · H1 · H4** với giá trị cả hai Stoch và kết luận quá mua / quá bán
+- **Kháng cự – hỗ trợ riêng cho H1 và H4**, kèm số lần chạm và khoảng cách tới giá hiện tại
+
+Tab này **không** tìm điểm phá vỡ — đó là việc của tab Phá vỡ.
 
 Mỗi thẻ có biểu đồ nến, các mức quan trọng, và giải thích bằng tiếng Việt.
 
