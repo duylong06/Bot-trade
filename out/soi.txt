@@ -1,0 +1,47 @@
+CFG.WINDOW = 1000 · MIN_SPAN = 10
+các khoá CFG: WINDOW WARMUP PIVOT SCALE SCALE_MAX MIN_SPAN MIN_PATTERN TREND_ONLY NEEDLE_OUT NEEDLE_WICK RUT_WICK RUT_OUT ABNORMAL SPIKE_WICK SPIKE_RATIO MIN_TOUCH MAJOR REACT RETR ANCHOR_GAP NEAR_TOUCH GAP ATR TOL BREAK BREAK_MIN FAIL TOUCH BODY_TOUCH WICK_TOUCH OUT_TOUCH WICK_MAX WICK_ALLOW RUT_ALLOW POKE_TOTAL SHORT_WICK CL_MIN CL_BODY CL_TIP PAR PROM LEFT LEFT_MAX LEFT_NEAR AWAY RETEST_MAX VOL_N VOL_K RANGE_MAX FLAT FLAT_TOTAL STEEP SHOW_PER_SIDE SHOW_BROKEN SHOW_BROKEN_WITHIN ZONE_ATR NEAR_ATR
+
+BTC-USDT-SWAP  299 nến (1 trang) → 1 đường, 0 còn sống, 14 sự kiện
+   S hỗ trợ tăng        chạm 2 dài 90 ngang=false phá=rồi đường 60220.8048 giá 59066 cách 1.92%
+
+BTC-USDT-SWAP  599 nến (2 trang) → 1 đường, 0 còn sống, 16 sự kiện
+   S hỗ trợ tăng        chạm 2 dài 90 ngang=false phá=rồi đường 60220.8048 giá 59066 cách 1.92%
+
+BTC-USDT-SWAP  1199 nến (4 trang) → 1 đường, 0 còn sống, 47 sự kiện
+   S hỗ trợ tăng        chạm 2 dài 90 ngang=false phá=rồi đường 60220.8048 giá 59066 cách 1.92%
+
+ETH-USDT-SWAP  299 nến (1 trang) → 1 đường, 0 còn sống, 16 sự kiện
+   S hỗ trợ tăng        chạm 2 dài 92 ngang=false phá=rồi đường 1692.2953 giá 1644.39 cách 2.83%
+
+ETH-USDT-SWAP  599 nến (2 trang) → 1 đường, 0 còn sống, 22 sự kiện
+   S hỗ trợ tăng        chạm 2 dài 92 ngang=false phá=rồi đường 1692.2953 giá 1644.39 cách 2.83%
+
+ETH-USDT-SWAP  1199 nến (4 trang) → 1 đường, 0 còn sống, 57 sự kiện
+   S hỗ trợ tăng        chạm 2 dài 92 ngang=false phá=rồi đường 1692.2953 giá 1644.39 cách 2.83%
+
+SOL-USDT-SWAP  299 nến (1 trang) → 1 đường, 0 còn sống, 24 sự kiện
+   S hỗ trợ tăng        chạm 2 dài 91 ngang=false phá=rồi đường 69.6585 giá 67.67 cách 2.85%
+
+SOL-USDT-SWAP  599 nến (2 trang) → 1 đường, 0 còn sống, 14 sự kiện
+   S hỗ trợ tăng        chạm 2 dài 91 ngang=false phá=rồi đường 69.6585 giá 67.67 cách 2.85%
+
+SOL-USDT-SWAP  1199 nến (4 trang) → 1 đường, 0 còn sống, 30 sự kiện
+   S hỗ trợ tăng        chạm 2 dài 91 ngang=false phá=rồi đường 69.6585 giá 67.67 cách 2.85%
+
+WLD-USDT-SWAP  299 nến (1 trang) → 1 đường, 0 còn sống, 27 sự kiện
+   S hỗ trợ tăng        chạm 2 dài 75 ngang=false phá=rồi đường 0.2496 giá 0.2293 cách 8.15%
+
+WLD-USDT-SWAP  599 nến (2 trang) → 1 đường, 0 còn sống, 24 sự kiện
+   S hỗ trợ tăng        chạm 2 dài 75 ngang=false phá=rồi đường 0.2496 giá 0.2293 cách 8.15%
+
+WLD-USDT-SWAP  1199 nến (4 trang) → 1 đường, 0 còn sống, 37 sự kiện
+   S hỗ trợ tăng        chạm 2 dài 75 ngang=false phá=rồi đường 0.2496 giá 0.2293 cách 8.15%
+
+DOGE-USDT-SWAP  299 nến (1 trang) → 1 đường, 0 còn sống, 16 sự kiện
+   S hỗ trợ tăng        chạm 2 dài 91 ngang=false phá=rồi đường 0.0553 giá 0.05402 cách 2.37%
+
+DOGE-USDT-SWAP  599 nến (2 trang) → 1 đường, 0 còn sống, 18 sự kiện
+   S hỗ trợ tăng        chạm 2 dài 91 ngang=false phá=rồi đường 0.0553 giá 0.05402 cách 2.37%
+
+DOGE-USDT-SWAP  1199 nến (4 trang) → 1 đường, 0 còn sống, 30 sự kiện
+   S hỗ trợ tăng        chạm 2 dài 91 ngang=false phá=rồi đường 0.0553 giá 0.05402 cách 2.37%
