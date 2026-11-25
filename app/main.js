@@ -105,6 +105,7 @@ const CV = {
         on: {
           hover: b => this.leg(b),
           drafted: m => this.moTam(m),
+          badSecond: () => { $('#cvHint').textContent = 'Hai điểm rơi vào cùng một cây nến — chạm điểm thứ hai xa ra một chút.'; },
           moved: () => {},
         },
       });

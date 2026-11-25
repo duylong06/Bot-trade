@@ -331,8 +331,14 @@ export class ChartView {
 
       if (this.mode === 'draw') {
         if (!this.pending1) { this.pending1 = { t, p }; this.ov.update(); }
-        else {
-          const m = { id: 'm' + Date.now().toString(36), ta: this.pending1.t, pa: this.pending1.p, tb: t, pb: p };
+        else if (t === this.pending1.t) {
+          // Hai điểm neo rơi vào cùng một cây nến thì không thành đường — độ dốc vô nghĩa.
+          if (this.on.badSecond) this.on.badSecond();
+        } else {
+          // luôn xếp điểm neo cũ trước, mới sau — chạm từ phải sang trái cũng ra đúng đường
+          const a = this.pending1, b = { t, p };
+          const [x, y] = a.t < b.t ? [a, b] : [b, a];
+          const m = { id: 'm' + Date.now().toString(36), ta: x.t, pa: x.p, tb: y.t, pb: y.p };
           this.pending1 = null; this.draft = m; this.mode = 'pan'; this.setPad();
           this.ov.update();
           if (this.on.drafted) this.on.drafted(m);
