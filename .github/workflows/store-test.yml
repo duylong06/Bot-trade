@@ -6,45 +6,45 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: thu kho luu
+      - name: thu ntfy
         run: |
           mkdir -p out
           exec > out/ket-qua.txt 2>&1
-          echo "=== 1. jsonblob: POST tao blob ==="
-          curl -s -D - -o /tmp/body1 -X POST https://jsonblob.com/api/jsonBlob \
-            -H 'Content-Type: application/json' -H 'Origin: https://duylong06.github.io' \
-            -d '{"hello":"world"}' | tr -d '\r' | head -25
-          echo "body: $(cat /tmp/body1 | head -c 200)"
+          TOPIC="botrade-test-$(date +%s)-ab12cd"
+          echo "topic=$TOPIC"
           echo ""
-          echo "=== 2. jsonblob: OPTIONS preflight cho PUT (trinh duyet hoi truoc) ==="
-          curl -s -D - -o /dev/null -X OPTIONS https://jsonblob.com/api/jsonBlob \
+          echo "=== 1. gui 3 tin (nhu app gui 3 lenh ve mot duong) ==="
+          for i in 1 2 3; do
+            curl -s -o /dev/null -w "gui $i -> %{http_code}\n" \
+              -X POST "https://ntfy.sh/$TOPIC" \
+              -H 'Content-Type: application/json' \
+              -d "{\"id\":\"cmd$i\",\"act\":\"add\",\"coin\":\"WLD-USDT-SWAP\",\"n\":$i}"
+          done
+          sleep 3
+          echo ""
+          echo "=== 2. bot doc lai toan bo (poll since=all) ==="
+          curl -s -w "\n[status %{http_code}]\n" "https://ntfy.sh/$TOPIC/json?poll=1&since=all"
+          echo ""
+          echo "=== 3. doc chi tin moi (since=10s) ==="
+          curl -s "https://ntfy.sh/$TOPIC/json?poll=1&since=10s" | head -5
+          echo ""
+          echo "=== 4. gioi han kich thuoc than tin ==="
+          python3 -c "import json;print(json.dumps({'id':'big','pad':'x'*3500}))" > /tmp/big.json
+          curl -s -o /dev/null -w "than 3,5KB -> %{http_code}\n" -X POST "https://ntfy.sh/$TOPIC" --data-binary @/tmp/big.json
+          python3 -c "import json;print(json.dumps({'id':'huge','pad':'x'*9000}))" > /tmp/huge.json
+          curl -s -o /dev/null -w "than 9KB   -> %{http_code}\n" -X POST "https://ntfy.sh/$TOPIC" --data-binary @/tmp/huge.json
+          echo ""
+          echo "=== 5. CORS cho POST tu trang github.io ==="
+          curl -s -D - -o /dev/null -X OPTIONS "https://ntfy.sh/$TOPIC" \
             -H 'Origin: https://duylong06.github.io' \
-            -H 'Access-Control-Request-Method: PUT' \
-            -H 'Access-Control-Request-Headers: content-type' | tr -d '\r' | head -25
-          echo ""
-          echo "=== 3. jsonblob: vong doi day du ==="
-          LOC=$(curl -s -D - -o /dev/null -X POST https://jsonblob.com/api/jsonBlob -H 'Content-Type: application/json' -d '{"a":1}' | tr -d '\r' | awk 'tolower($1)=="location:"{print $2}')
-          echo "Location=$LOC"
-          ID="${LOC##*/}"; echo "ID=$ID"
-          if [ -n "$ID" ]; then
-            curl -s -X PUT "https://jsonblob.com/api/jsonBlob/$ID" -H 'Content-Type: application/json' -d '{"a":2,"b":"da sua"}' -o /dev/null -w 'PUT status=%{http_code}\n'
-            echo -n "GET lai: "; curl -s "https://jsonblob.com/api/jsonBlob/$ID"; echo ""
-            echo -n "GET co CORS khong: "; curl -s -D - -o /dev/null "https://jsonblob.com/api/jsonBlob/$ID" -H 'Origin: https://duylong06.github.io' | tr -d '\r' | grep -i 'access-control' || echo "(khong co header CORS)"
-          fi
-          echo ""
-          echo "=== 4. du phong: ntfy.sh ==="
-          curl -s -D - -o /dev/null -X OPTIONS https://ntfy.sh/ \
-            -H 'Origin: https://duylong06.github.io' -H 'Access-Control-Request-Method: POST' | tr -d '\r' | head -15
-          echo ""
-          echo "=== 5. GitHub API tu Actions ==="
-          curl -s -o /dev/null -w 'api.github.com status=%{http_code}\n' https://api.github.com/repos/duylong06/Bot-trade
+            -H 'Access-Control-Request-Method: POST' \
+            -H 'Access-Control-Request-Headers: content-type' | tr -d '\r' | grep -i 'http/\|access-control'
       - name: day ket qua
         if: always()
         run: |
           git config user.name bot; git config user.email bot@local
-          git checkout -q --orphan store-data
+          git checkout -q --orphan store-data2
           git rm -rq --cached . || true
           find . -maxdepth 1 ! -name . ! -name .git ! -name out -exec rm -rf {} +
-          git add -f out/ket-qua.txt
-          git commit -qm "ket qua thu kho luu"
-          git push -q -f origin store-data
+          git add -f out/ket-qua.txt && git commit -qm "ket qua ntfy"
+          git push -q -f origin store-data2
