@@ -1,0 +1,28 @@
+topic=botrade-test-1795603003-ab12cd
+
+=== 1. gui 3 tin (nhu app gui 3 lenh ve mot duong) ===
+gui 1 -> 200
+gui 2 -> 200
+gui 3 -> 200
+
+=== 2. bot doc lai toan bo (poll since=all) ===
+{"id":"gzZOq5RGJQta","time":1795603004,"expires":1795646204,"event":"message","topic":"botrade-test-1795603003-ab12cd","message":"{\"id\":\"cmd3\",\"act\":\"add\",\"coin\":\"WLD-USDT-SWAP\",\"n\":3}"}
+{"id":"S37nIlIAG7Wk","time":1795603004,"expires":1795646204,"event":"message","topic":"botrade-test-1795603003-ab12cd","message":"{\"id\":\"cmd1\",\"act\":\"add\",\"coin\":\"WLD-USDT-SWAP\",\"n\":1}"}
+{"id":"bXhsDpmS1FQx","time":1795603004,"expires":1795646204,"event":"message","topic":"botrade-test-1795603003-ab12cd","message":"{\"id\":\"cmd2\",\"act\":\"add\",\"coin\":\"WLD-USDT-SWAP\",\"n\":2}"}
+
+[status 200]
+
+=== 3. doc chi tin moi (since=10s) ===
+{"id":"gzZOq5RGJQta","time":1795603004,"expires":1795646204,"event":"message","topic":"botrade-test-1795603003-ab12cd","message":"{\"id\":\"cmd3\",\"act\":\"add\",\"coin\":\"WLD-USDT-SWAP\",\"n\":3}"}
+{"id":"S37nIlIAG7Wk","time":1795603004,"expires":1795646204,"event":"message","topic":"botrade-test-1795603003-ab12cd","message":"{\"id\":\"cmd1\",\"act\":\"add\",\"coin\":\"WLD-USDT-SWAP\",\"n\":1}"}
+{"id":"bXhsDpmS1FQx","time":1795603004,"expires":1795646204,"event":"message","topic":"botrade-test-1795603003-ab12cd","message":"{\"id\":\"cmd2\",\"act\":\"add\",\"coin\":\"WLD-USDT-SWAP\",\"n\":2}"}
+
+=== 4. gioi han kich thuoc than tin ===
+than 3,5KB -> 200
+than 9KB   -> 200
+
+=== 5. CORS cho POST tu trang github.io ===
+HTTP/2 200 
+access-control-allow-headers: *
+access-control-allow-methods: GET, PUT, POST, PATCH, DELETE
+access-control-allow-origin: *
