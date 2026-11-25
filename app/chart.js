@@ -182,7 +182,9 @@ export class ChartView {
       },
       grid: { vertLines: { color: C.grid }, horzLines: { color: C.grid } },
       rightPriceScale: { borderColor: C.line, scaleMargins: { top: .08, bottom: .22 } },
-      timeScale: { borderColor: C.line, timeVisible: true, secondsVisible: false, rightOffset: 6, barSpacing: 7, minBarSpacing: .6 },
+      // rightOffset: chừa sẵn khoảng trống bên phải cây nến cuối, để còn chỗ kẻ đường
+      // vượt qua giá hiện tại
+      timeScale: { borderColor: C.line, timeVisible: true, secondsVisible: false, rightOffset: 14, barSpacing: 7, minBarSpacing: .6 },
       crosshair: {
         mode: 0,
         vertLine: { color: 'rgba(139,150,163,.5)', width: 1, style: 2, labelBackgroundColor: '#26313C' },
@@ -275,11 +277,14 @@ export class ChartView {
     } catch (e) {}
     return b.t.at(-1);
   }
-  /* Bắt điểm neo về đúng nến gần nhất. */
+  /* Bắt điểm neo về đúng nến gần nhất.
+     Cho phép đặt neo ra PHÍA PHẢI cây nến cuối (khoảng trống tương lai) — kẻ trendline
+     thường phải kéo qua giá hiện tại. Chỉ chặn phía trái, chỗ không có dữ liệu. */
   snapT(tMs) {
     const b = this.bars; if (!b) return tMs;
     const i = Math.round((tMs - b.t[0]) / this.step);
-    return b.t[0] + Math.max(0, Math.min(b.t.length - 1, i)) * this.step;
+    const max = b.t.length - 1 + 1000;
+    return b.t[0] + Math.max(0, Math.min(max, i)) * this.step;
   }
 
   readAt(p) {

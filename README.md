@@ -33,6 +33,8 @@ nên không phụ thuộc mạng ngoài. Kéo ngang, phóng to thu nhỏ, crossh
    ngón đi, nên ngón đặt xa điểm cần ngắm cũng được, không che mất. Ngắm trúng thì **chạm một cái** để
    chốt điểm thứ nhất. Rê tiếp, đường kéo theo dấu thập, chạm thêm một cái là xong điểm thứ hai.
    Giá và giờ chỗ đang ngắm hiện ở thẻ vàng bên phải và dưới đáy.
+   Đặt được neo ra **phía phải cây nến cuối** (khoảng trống tương lai), để kẻ đường vượt qua giá hiện
+   tại. Chỗ đó không có nến nên nam châm không bám.
 3. **Nam châm** bật sẵn: ngón ở nửa trên cây nến thì bám râu trên hoặc mép thân trên, nửa dưới thì bám
    râu dưới hoặc mép thân dưới — râu được ưu tiên. Tắt được bằng nút Nam châm trên thanh công cụ.
 4. Kéo lại hai đầu tròn cho khớp, rồi bấm **Xong**.
