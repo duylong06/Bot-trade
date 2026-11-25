@@ -105,6 +105,7 @@ const CV = {
         on: {
           hover: b => this.leg(b),
           ready: () => this.nutVe('xong'),
+          daChua: () => { $('#cvHint').textContent = 'Khung nhìn trôi ra chỗ trống, đã kéo về.'; },
           tapMode: () => { this.nutVe('cham2'); },
           live: d => this.veLive(d),
           badSecond: () => { this.nutVe('ve'); $('#cvHint').textContent = 'Hai đầu rơi vào cùng một cây nến — kéo xa ra một chút.'; },
@@ -115,6 +116,7 @@ const CV = {
     }
     if (this.view) this.view.cancelDraw();      // mở đồng mới thì bỏ hết nét đang kẻ dở
     this.nutVe('ve');
+    $('#cvErr').hidden = true;
     $('#cvHint').textContent = 'Đang tải nến…';
     this.dangNap = true;
     try {
@@ -124,7 +126,8 @@ const CV = {
       this.leg(null);
       $('#cvHint').textContent = '';
     } catch (e) {
-      $('#cvHint').textContent = 'Không tải được nến: ' + e.message;
+      // Không để màn hình trống không nói gì: nói rõ hỏng ở đâu và cho bấm lại.
+      this.loi(`Không tải được nến ${this.base} khung ${this.tf}.\n${e.message}\n\nThường là OKX chặn tạm vì gọi quá dày. Chờ vài giây rồi thử lại.`);
     } finally { this.dangNap = false; }
     await this.napMoc();
     if (opts.line) { this.view.draft = { ...opts.line, id: 'xem' }; this.view.ov.update(); }
@@ -141,12 +144,20 @@ const CV = {
 
   thanh() {
     const el = $('#cvTf');
+    const s = this.view ? this.view.show : { magnet: true, levels: true, bot: true, ema: true };
     el.innerHTML = TFS.map(t => `<button data-tf="${t.id}" aria-pressed="${t.id === this.tf}">${t.label}</button>`).join('')
       + `<span class="sp"></span>`
-      + `<button data-sw="magnet" class="hot" aria-pressed="${this.view ? this.view.show.magnet : true}">Nam châm</button>`
-      + `<button data-sw="levels" aria-pressed="true">Kháng cự</button>`
-      + `<button data-sw="bot" aria-pressed="true">Đường bot</button>`
-      + `<button data-sw="ema" aria-pressed="true">EMA200</button>`;
+      + `<button data-act="fit" class="hot">Về nến</button>`
+      + `<span class="sp"></span>`
+      + `<button data-sw="magnet" aria-pressed="${s.magnet}">Nam châm</button>`
+      + `<button data-sw="levels" aria-pressed="${s.levels}">Kháng cự</button>`
+      + `<button data-sw="bot" aria-pressed="${s.bot}">Đường bot</button>`
+      + `<button data-sw="ema" aria-pressed="${s.ema}">EMA200</button>`;
+    el.querySelector('[data-act="fit"]').onclick = () => {
+      if (!this.view) return;
+      this.view.fit();
+      $('#cvHint').textContent = '';
+    };
     el.querySelectorAll('[data-tf]').forEach(b => b.onclick = async () => {
       this.tf = b.dataset.tf;
       el.querySelectorAll('[data-tf]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
@@ -154,7 +165,9 @@ const CV = {
       try {
         const xong = await this.view.load(sym, tf, this.tick);
         if (!xong || sym !== this.sym || tf !== this.tf) return;
-        this.view.fit(); this.leg(null); this.napMoc();
+        this.view.fit(); this.leg(null);
+        this.view.setMarks(this.marks.map(m => ({ ...m, label: m.cho ? 'chờ bot nhận' : null })));
+        this.view.setBotLines(this.botLines);
       } catch (e) {}
     });
     el.querySelectorAll('[data-sw]').forEach(b => b.onclick = () => {
@@ -214,6 +227,12 @@ const CV = {
     this.view.setBotLines(this.botLines);
   },
 
+  loi(txt) {
+    $('#cvErrTxt').textContent = txt;
+    $('#cvErr').hidden = false;
+    $('#cvHint').textContent = '';
+  },
+
   /* Nút dưới đáy đổi theo việc đang làm. */
   nutVe(trangThai) {
     const d = {
@@ -252,6 +271,7 @@ const CV = {
   },
 };
 $('#cvBack').onclick = () => CV.dong();
+$('#cvRetry').onclick = () => { dropCandleCache(); store.quenCache(); if (CV.sym) CV.mo(CV.sym, { tf: CV.tf }); };
 $('#cvDraw').onclick = () => { CV.view.startDraw(); CV.nutVe('dangVe'); };
 $('#cvRedo').onclick = () => { CV.view.startDraw(); CV.nutVe('dangVe'); };
 $('#cvCancel').onclick = () => { CV.view.cancelDraw(); CV.nutVe('ve'); };

@@ -236,7 +236,10 @@ export class ChartView {
     this.candle.attachPrimitive(this.ov);
 
     chart.subscribeCrosshairMove(p => this.on.hover && this.on.hover(this.readAt(p)));
-    chart.timeScale().subscribeVisibleLogicalRangeChange(() => this.ov.update());
+    chart.timeScale().subscribeVisibleLogicalRangeChange(() => {
+      this.ov.update();
+      this.tuChua();
+    });
 
     this.layout();
     this.bindPointer();
@@ -359,6 +362,21 @@ export class ChartView {
       const chung = Math.min(r.to, b.c.length) - Math.max(r.from, 0);
       return chung / Math.max(1, r.to - r.from) > 0.15;
     } catch (e) { return false; }
+  }
+
+  /* Lưới an toàn: khung nhìn mà trôi hẳn ra chỗ không có nến thì tự kéo về.
+     Không ai cố ý nhìn vào khoảng trống trắng, nên trường hợp này luôn là hỏng — dù hỏng
+     vì lý do gì. Chỉ chạy khi KHÔNG đang kẻ và KHÔNG đang chạm, để không giật tay người dùng. */
+  tuChua() {
+    if (this._dangCham || this.mode === 'draw') return;
+    if (!this.bars || this.coNen()) { this._hen = null; return; }
+    if (this._hen) return;
+    this._hen = setTimeout(() => {
+      this._hen = null;
+      if (this._dangCham || this.mode === 'draw' || this.coNen()) return;
+      this.fit();
+      if (this.on.daChua) this.on.daChua();
+    }, 500);
   }
 
   /* Đưa khung nhìn về cây nến mới nhất, chừa sẵn khoảng trống bên phải.
@@ -607,6 +625,7 @@ export class ChartView {
     };
 
     el.addEventListener('pointerdown', ev => {
+      this._dangCham = true;                       // đang chạm thì đừng tự kéo khung nhìn
       if (this.mode !== 'sua' || !this.draft) return;
       const { x, y } = pos(ev);
       const m = this.draft;
@@ -634,6 +653,8 @@ export class ChartView {
     }, true);
 
     const het = ev => {
+      this._dangCham = false;
+      setTimeout(() => this.tuChua(), 60);         // nhả tay rồi mới xét có cần kéo về không
       if (!drag) return;
       ev.stopPropagation();
       const m = drag.m; drag = null;

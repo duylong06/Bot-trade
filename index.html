@@ -91,6 +91,10 @@ input:focus,select:focus{outline:2px solid var(--mark);outline-offset:-1px}
 .cv-leg{position:absolute;top:8px;left:10px;z-index:6;font-size:11px;line-height:1.5;
   color:var(--dim);pointer-events:none;text-shadow:0 1px 3px #0E1318}
 .cv-leg b{color:var(--text);font-weight:600}
+.cv-err{position:absolute;inset:0;z-index:70;background:rgba(14,19,24,.93);display:flex;
+  flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center}
+.cv-err[hidden]{display:none}
+.cv-err p{margin:0;font-size:14px;color:var(--dim);line-height:1.6;max-width:300px}
 .cv-foot{flex:0 0 auto;border-top:1px solid var(--line);padding:9px 12px calc(9px + env(safe-area-inset-bottom));
   font-size:12.5px;color:var(--dim);display:flex;align-items:center;gap:10px;min-height:44px}
 .cv-foot .act,.cv-foot .ghost{padding:9px 13px;font-size:13.5px}
@@ -190,7 +194,13 @@ input:focus,select:focus{outline:2px solid var(--mark);outline-offset:-1px}
     <span class="cv-px" id="cvPx"><b>—</b><i></i></span>
   </div>
   <div class="cv-bar" id="cvTf"></div>
-  <div id="chart"><div class="cv-leg" id="cvLeg"></div></div>
+  <div id="chart">
+    <div class="cv-leg" id="cvLeg"></div>
+    <div class="cv-err" id="cvErr" hidden>
+      <p id="cvErrTxt"></p>
+      <button class="act" id="cvRetry">Thử lại</button>
+    </div>
+  </div>
   <div class="cv-foot">
     <span class="cv-hint" id="cvHint"></span>
     <button class="ghost" id="cvCancel" hidden>Huỷ</button>

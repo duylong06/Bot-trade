@@ -13,7 +13,30 @@
 
 const REPO = 'duylong06/Bot-trade';
 const BRANCH = 'moc-data';
-const FILE = 'moc.json';
+
+// Đọc qua raw.githubusercontent.com, KHÔNG qua api.github.com: api không đăng nhập chỉ cho
+// 60 lượt mỗi giờ, mà mỗi lần mở một đồng là đã 2 lượt — dùng một lúc là bị chặn, tab Bot vẽ
+// trống trơn. raw không có giới hạn đó.
+const RAW = `https://raw.githubusercontent.com/${REPO}/${BRANCH}/`;
+
+/* Giữ lại kết quả trong 45 giây: mở liên tiếp mấy đồng thì không gọi lại mỗi lần. */
+const CACHE = new Map();
+async function doc(file, macDinh) {
+  const now = Date.now(), hit = CACHE.get(file);
+  if (hit && now - hit.t < 45000) return hit.d;
+  try {
+    const r = await fetch(RAW + file + '?t=' + Math.floor(now / 30000), { cache: 'no-store' });
+    if (r.status === 404) { const d = { ...macDinh, missing: true }; CACHE.set(file, { t: now, d }); return d; }
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    CACHE.set(file, { t: now, d: j });
+    return j;
+  } catch (e) {
+    if (hit) return hit.d;                 // mạng chập chờn thì dùng tạm bản cũ
+    return { ...macDinh, err: e.message };
+  }
+}
+export const quenCache = () => CACHE.clear();
 
 export const DEFAULT_TOPIC = 'botrade-duylong06-moc-7k3x9q';
 
@@ -40,29 +63,16 @@ export const delMark = markId => send({ act: 'del', markId });
 
 /* ---------- đọc trạng thái bot đang giữ ---------- */
 
-/* Nhánh data công khai nên đọc không cần khoá. */
+/* Nhánh moc-data công khai nên đọc không cần khoá. */
 export async function readMarks() {
-  const url = `https://api.github.com/repos/${REPO}/contents/${FILE}?ref=${BRANCH}&t=${Date.now()}`;
-  try {
-    const r = await fetch(url, { headers: { Accept: 'application/vnd.github.raw' } });
-    if (r.status === 404) return { marks: [], ts: 0, missing: true };
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    const j = await r.json();
-    return { marks: Array.isArray(j.marks) ? j.marks : [], ts: j.ts || 0, fired: j.fired || [] };
-  } catch (e) {
-    return { marks: [], ts: 0, err: e.message };
-  }
+  const j = await doc('moc.json', { marks: [], ts: 0 });
+  return { marks: Array.isArray(j.marks) ? j.marks : [], ts: j.ts || 0, missing: j.missing, err: j.err };
 }
 
 /* Danh sách kèo bot tự vẽ. Cùng nhánh, file khác. */
 export async function readBotLines() {
-  const url = `https://api.github.com/repos/${REPO}/contents/sap-pha.json?ref=${BRANCH}&t=${Date.now()}`;
-  try {
-    const r = await fetch(url, { headers: { Accept: 'application/vnd.github.raw' } });
-    if (!r.ok) return { items: [], ts: 0 };
-    const j = await r.json();
-    return { items: Array.isArray(j.items) ? j.items : [], ts: j.ts || 0 };
-  } catch (e) { return { items: [], ts: 0, err: e.message }; }
+  const j = await doc('sap-pha.json', { items: [], ts: 0 });
+  return { items: Array.isArray(j.items) ? j.items : [], ts: j.ts || 0, err: j.err };
 }
 
 /* ---------- mốc chờ gửi, giữ tạm trong máy ---------- */

@@ -63,6 +63,10 @@ app  --(gửi lệnh)-->  ntfy.sh  --(bot rút mỗi lượt)-->  moc.json trên
 app  <--(đọc trạng thái)------------------------------  moc.json trên nhánh moc-data
 ```
 
+Chiều đọc đi qua `raw.githubusercontent.com`, **không** qua `api.github.com`: API không đăng nhập
+chỉ cho 60 lượt mỗi giờ, mà mỗi lần mở một đồng đã tốn 2 lượt — dùng một lúc là bị chặn và tab Bot vẽ
+trống trơn. Kết quả còn được giữ lại 45 giây để mở liên tiếp mấy đồng không phải gọi lại.
+
 `ntfy.sh` là hộp thư công khai, không cần đăng nhập, cho gửi thẳng từ trình duyệt. Tin ở đó tự hết
 hạn sau 12 giờ — nó chỉ là **đường đi**, nơi lưu thật là nhánh `moc-data` do bot ghi. Bot rút hộp thư
 mỗi 30 phút nên không kịp mất tin.
@@ -142,6 +146,9 @@ Khoá thông báo nằm trong GitHub Secret `PUSH_CONFIG`, **không bao giờ** 
 - Danh sách "sắp phá" là **tham khảo**. Đo trên dữ liệu cũ cho thấy chưa có cách đặt SL nào có lợi
   nhuận dương sau phí ở kiểu vào lệnh đã thử.
 - Mốc đã lưu chỉ **xoá** được từ tab Mốc của tôi; muốn đổi thì xoá rồi kẻ lại.
+- Khung nhìn mà trôi ra chỗ không có nến thì app **tự kéo về** sau nửa giây, và lúc nào cũng có nút
+  **Về nến** trên thanh công cụ. Không tải được nến thì hiện bảng báo rõ kèm nút Thử lại, không để
+  màn hình trống không nói gì.
 - Đang ngắm thì hai ngón không phóng to được ngay — nhả tay ra một nhịp rồi mới chụm.
 
 ## Lịch sử
