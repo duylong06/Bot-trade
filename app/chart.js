@@ -345,7 +345,13 @@ export class ChartView {
     this.candle.update({ time: toSec(b.t[i]), open: b.o[i], high: b.h[i], low: b.l[i], close: last });
   }
 
-  fit() { try { this.chart.timeScale().scrollToRealTime(); } catch (e) {} }
+  /* Đưa khung nhìn về cây nến mới nhất, chừa sẵn khoảng trống bên phải.
+     scrollToRealTime() không kéo về khi biểu đồ đã bị cuộn xa ra tương lai, nên đặt thẳng vị trí. */
+  fit() {
+    const ts = this.chart.timeScale();
+    try { ts.scrollToPosition(ts.options().rightOffset || 14, false); }
+    catch (e) { try { ts.scrollToRealTime(); } catch (e2) {} }
+  }
 
   /* ---------- chạm, kéo, kẻ đường ---------- */
 
@@ -392,6 +398,39 @@ export class ChartView {
     return best ? { t, p: best.p, bam: best.ten } : { t, p, bam: null };
   }
 
+  /* Đặt dấu thập theo toạ độ điểm ảnh, cập nhật nét xem trước và dòng chữ dưới đáy. */
+  datNgam(nx, ny) {
+    const d = this.diem(nx, ny);
+    if (!d) return;
+    this.cross = d;
+    if (this.pending1) {
+      this.draft = { id: 'nhap', ta: this.pending1.t, pa: this.pending1.p, tb: d.t, pb: d.p, nhap: true };
+    }
+    this.ov.update();
+    if (this.on.live) this.on.live(d);
+  }
+
+  /* Giữ dấu thập ở mép thì cuộn biểu đồ về phía đó, mỗi nhịp một chút.
+     huong: 1 sang phải (ra tương lai) · −1 sang trái · 0 dừng. */
+  tuCuon(huong, nx, ny) {
+    if (this._cuonHuong === huong) return;
+    this._cuonHuong = huong;
+    clearInterval(this._cuon);
+    this._cuon = null;
+    if (!huong) return;
+    const ts = this.chart.timeScale();
+    this._cuon = setInterval(() => {
+      let p;
+      try { p = ts.scrollPosition(); } catch (e) { return; }
+      // chặn hai đầu để không lạc mất hẳn chuỗi nến
+      const moi = Math.max(-(this.bars ? this.bars.c.length - 10 : 0), Math.min(600, p + huong * 1.6));
+      if (moi === p) return;
+      try { ts.scrollToPosition(moi, false); } catch (e) { return; }
+      this.datNgam(nx, ny);
+    }, 40);
+  }
+  dungCuon() { clearInterval(this._cuon); this._cuon = null; this._cuonHuong = 0; }
+
   bindPointer() {
     const el = this.el;
     this.pad = document.createElement('div');
@@ -418,7 +457,7 @@ export class ChartView {
       if (a.t === b.t) { if (this.on.badSecond) this.on.badSecond(); return false; }
       const [x, y] = a.t < b.t ? [a, b] : [b, a];
       this.draft = { id: 'm' + Date.now().toString(36), ta: x.t, pa: x.p, tb: y.t, pb: y.p };
-      this.pending1 = null; this.cross = null;
+      this.pending1 = null; this.cross = null; this.dungCuon();
       this.mode = 'sua';                 // vẫn giữ pad để kéo lại hai đầu
       this.setPad(); this.ov.update();
       if (this.on.ready) this.on.ready(this.draft);
@@ -430,7 +469,7 @@ export class ChartView {
       nPointer++;
       // Hai ngón = muốn phóng to. Bỏ nét đang kẻ dở và nhả pad ra cho biểu đồ nhận.
       if (nPointer > 1) {
-        drag = null;
+        drag = null; this.dungCuon();
         if (this.mode === 'draw' && !this.draft) { this.pending1 = null; this.ov.update(); }
         this.pad.style.pointerEvents = 'none';
         setTimeout(() => { this.pad.style.pointerEvents = ''; }, 700);
@@ -478,12 +517,12 @@ export class ChartView {
         const k = this.khungVe();
         const nx = Math.max(2, Math.min(k.w - 2, drag.cx + (x - drag.fx)));
         const ny = Math.max(2, Math.min(k.h - 2, drag.cy + (y - drag.fy)));
-        const d = this.diem(nx, ny);
-        if (!d) return;
-        this.cross = d;
-        if (this.pending1) { this.draft = { id: 'nhap', ta: this.pending1.t, pa: this.pending1.p, tb: d.t, pb: d.p, nhap: true }; }
-        this.ov.update();
-        bao(d);
+        this.datNgam(nx, ny);
+        // Đẩy tới mép thì biểu đồ tự chạy, nhờ vậy kẻ ra xa tới đâu cũng được —
+        // không bị bó trong khoảng trống có sẵn bên phải.
+        const MEP = 44;
+        const huong = nx >= k.w - MEP ? 1 : nx <= MEP ? -1 : 0;
+        this.tuCuon(huong, nx, ny);
         return;
       }
 
@@ -498,6 +537,7 @@ export class ChartView {
 
     const xong = ev => {
       nPointer = Math.max(0, nPointer - 1);
+      this.dungCuon();
       if (!drag) return;
       const k = drag; drag = null;
       if (k.kieu === 'ngam') {
@@ -554,11 +594,11 @@ export class ChartView {
     this.datCross(); this.setPad(); this.ov.update();
     if (this.on.live && this.cross) this.on.live(this.cross);
   }
-  cancelDraw() { this.mode = 'pan'; this.pending1 = null; this.draft = null; this.cross = null; this.setPad(); this.ov.update(); }
+  cancelDraw() { this.dungCuon(); this.mode = 'pan'; this.pending1 = null; this.draft = null; this.cross = null; this.setPad(); this.ov.update(); }
   select(id) { this.selId = id; this.draft = null; this.mode = 'pan'; this.setPad(); this.ov.update(); }
   setMarks(a) { this.marks = a || []; this.ov.update(); }
   setBotLines(a) { this.botLines = a || []; this.ov.update(); }
   toggle(key, on) { this.show[key] = on; if (key === 'ema') this.setBars(this.bars); else this.ov.update(); }
 
-  destroy() { try { this.chart.remove(); } catch (e) {} }
+  destroy() { this.dungCuon(); try { this.chart.remove(); } catch (e) {} }
 }

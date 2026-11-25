@@ -366,5 +366,7 @@ $('#save').onclick = () => {
   $('#saved').textContent = 'Đã lưu trên máy này.';
 };
 
+window.__CV = CV;            // để soi và kiểm thử từ console
+
 /* ================= khởi động ================= */
 TOP.tai();
