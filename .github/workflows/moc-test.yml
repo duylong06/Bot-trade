@@ -1,0 +1,42 @@
+name: moc-test
+on:
+  push:
+    branches: [moc-test]
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund web-push@3.6.7
+      - name: Chay bot that
+        env:
+          NTFY_TOPIC: botrade-thu-moc-20261125c
+          SCAN_N: 40
+        run: |
+          mkdir -p out
+          node bot/thu/moc-thu.mjs > out/log.txt 2>&1
+          sleep 4
+          echo "" >> out/log.txt
+          echo "=== bot chay that ===" >> out/log.txt
+          MODE=scan node bot/moc.mjs >> out/log.txt 2>&1
+          echo "" >> out/log.txt
+          echo "=== kiem ket qua ===" >> out/log.txt
+          node bot/thu/xem.mjs >> out/log.txt 2>&1
+      - name: Day ket qua
+        if: always()
+        run: |
+          git config user.name bot
+          git config user.email bot@local
+          git checkout -q --orphan moc-data4
+          git rm -rq --cached . || true
+          find . -maxdepth 1 ! -name . ! -name .git ! -name out -exec rm -rf {} +
+          git add -f out/
+          git commit -qm "ket qua"
+          git push -q -f origin moc-data4
