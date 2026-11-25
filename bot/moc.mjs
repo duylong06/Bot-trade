@@ -26,6 +26,7 @@ const MODE = process.env.MODE || 'scan';
 const DRY = MODE === 'dry-run';
 const SCAN_N = +(process.env.SCAN_N || 60);
 const NEAR = 1.5;                      // coi là "sắp phá" khi giá cách đường dưới 1,5%
+const BACK = 6;                        // soi lại bấy nhiêu nến M30 đã đóng, phòng khi job chết vài tiếng
 
 const log = (...a) => console.log(...a);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
