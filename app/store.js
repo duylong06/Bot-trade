@@ -3,16 +3,17 @@
 // Vì sao phải vòng vèo: app chạy trong trình duyệt trên trang công khai, nên KHÔNG được
 // giữ khoá ghi vào repo — ai xem mã nguồn cũng thấy. Nên:
 //
-//   app  --(gửi lệnh)-->  ntfy.sh  --(bot rút mỗi lượt quét)-->  moc.json trên nhánh data
-//   app  <--(đọc trạng thái hiện tại)--------------------------  moc.json trên nhánh data
+//   app  --(gửi lệnh)-->  ntfy.sh  --(bot rút mỗi lượt quét)-->  moc.json trên nhánh moc-data
+//   app  <--(đọc trạng thái hiện tại)--------------------------  moc.json trên nhánh moc-data
 //
 // ntfy.sh là hộp thư công khai, không cần đăng nhập, cho gửi từ trình duyệt (CORS mở).
 // Tin trong đó tự hết hạn sau 12 giờ — chỉ là đường đi, không phải nơi lưu. Nơi lưu thật
-// là nhánh data của repo, do bot ghi.
+// là nhánh moc-data của repo, do bot ghi. (Kèo Pro dùng nhánh data riêng: hai bot cùng ép
+// đẩy một nhánh thì đè mất file của nhau.)
 
 const REPO = 'duylong06/Bot-trade';
-const BRANCH = 'data';
-const FILE = 'out/moc.json';
+const BRANCH = 'moc-data';
+const FILE = 'moc.json';
 
 export const DEFAULT_TOPIC = 'botrade-duylong06-moc-7k3x9q';
 
@@ -55,7 +56,7 @@ export async function readMarks() {
 
 /* Danh sách kèo bot tự vẽ. Cùng nhánh, file khác. */
 export async function readBotLines() {
-  const url = `https://api.github.com/repos/${REPO}/contents/out/sap-pha.json?ref=${BRANCH}&t=${Date.now()}`;
+  const url = `https://api.github.com/repos/${REPO}/contents/sap-pha.json?ref=${BRANCH}&t=${Date.now()}`;
   try {
     const r = await fetch(url, { headers: { Accept: 'application/vnd.github.raw' } });
     if (!r.ok) return { items: [], ts: 0 };

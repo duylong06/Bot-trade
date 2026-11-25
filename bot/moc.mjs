@@ -2,7 +2,7 @@
 //
 // Hai việc mỗi lượt chạy:
 //   1. Rút lệnh app gửi qua ntfy (thêm mốc / xoá mốc) rồi ghi vào out/moc.json.
-//      Nhánh data mới là nơi lưu thật; ntfy chỉ là đường đi, tin tự hết hạn sau 12 giờ.
+//      Nhánh moc-data mới là nơi lưu thật; ntfy chỉ là đường đi, tin tự hết hạn sau 12 giờ.
 //   2. Kiểm từng mốc đang canh trên nến M30 ĐÃ ĐÓNG. Đúng điều kiện thì đẩy thông báo
 //      về iPhone rồi tắt mốc đó (báo một lần, không báo lặp).
 //   3. Quét top đồng OKX bằng core/breakout.js, tìm đường còn sống mà giá đang áp sát,
@@ -20,6 +20,7 @@ import { parseSecret, devices, send } from './push.mjs';
 
 const API = 'https://www.okx.com';
 const DATA = 'https://raw.githubusercontent.com/duylong06/Bot-trade/data/';
+const MOCDATA = 'https://raw.githubusercontent.com/duylong06/Bot-trade/moc-data/';
 const TOPIC = process.env.NTFY_TOPIC || 'botrade-duylong06-moc-7k3x9q';
 const NTFY = 'https://ntfy.sh/' + TOPIC;
 const MODE = process.env.MODE || 'scan';
@@ -80,7 +81,7 @@ async function loadMoc() {
     if (fs.existsSync('out/moc.json')) return JSON.parse(fs.readFileSync('out/moc.json', 'utf8'));
   } catch (e) {}
   try {
-    const r = await fetch(DATA + 'moc.json', { cache: 'no-store' });
+    const r = await fetch(MOCDATA + 'moc.json', { cache: 'no-store' });
     if (r.ok) return await r.json();
   } catch (e) {}
   return { marks: [], seen: [], ntfySince: 0, ts: 0 };

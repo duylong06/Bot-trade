@@ -46,13 +46,13 @@ App chạy trên trang công khai nên **không được giữ khoá ghi vào re
 Nên đường đi là:
 
 ```
-app  --(gửi lệnh)-->  ntfy.sh  --(bot rút mỗi lượt)-->  out/moc.json trên nhánh data
-app  <--(đọc trạng thái)------------------------------  out/moc.json trên nhánh data
+app  --(gửi lệnh)-->  ntfy.sh  --(bot rút mỗi lượt)-->  moc.json trên nhánh moc-data
+app  <--(đọc trạng thái)------------------------------  moc.json trên nhánh moc-data
 ```
 
 `ntfy.sh` là hộp thư công khai, không cần đăng nhập, cho gửi thẳng từ trình duyệt. Tin ở đó tự hết
-hạn sau 12 giờ — nó chỉ là **đường đi**, nơi lưu thật là nhánh `data` do bot ghi. Bot rút hộp thư mỗi
-30 phút nên không kịp mất tin.
+hạn sau 12 giờ — nó chỉ là **đường đi**, nơi lưu thật là nhánh `moc-data` do bot ghi. Bot rút hộp thư
+mỗi 30 phút nên không kịp mất tin.
 
 Đổi hộp thư thì phải đổi **cả hai chỗ**: ô trong tab Cài đặt của app, và biến `NTFY_TOPIC` ở
 Settings → Secrets and variables → Actions → Variables.
@@ -60,14 +60,31 @@ Settings → Secrets and variables → Actions → Variables.
 Đã thử (25/11/2026): ntfy.sh gửi và đọc lại được từ GitHub Actions, CORS mở cho trình duyệt, thân tin
 9 KB vẫn nhận. `jsonblob.com` thì **không dùng được** — Cloudflare chặn IP của GitHub Actions (403).
 
+## Hai bot chạy riêng
+
+| Bot | Workflow | Nhánh ghi ra | Việc |
+| --- | --- | --- | --- |
+| Mốc | `moc.yml` | `moc-data` | Canh đường bạn kẻ, tìm đồng sắp phá |
+| Kèo Pro | `keo.yml` | `data` | Kèo A+ / A cho BTC, ETH, SOL, BNB |
+
+Tách riêng vì job chạy liên tục gần 6 tiếng: gộp chung thì mốc vừa kẻ phải đợi job kia hết hạn mới
+được canh, có khi 5 tiếng. Và job nào chết cũng không kéo job kia chết theo. Mỗi bot đẩy ra một nhánh
+riêng — cùng một nhánh thì hai bên ép đẩy đè mất file của nhau.
+
 ## Bot tự tìm đồng sắp phá
 
-`bot/moc.mjs` quét top 60 đồng OKX trên khung H1 và H4 bằng `core/breakout.js` — đúng bộ dò trendline
-đã dùng từ trước. Giữ lại đường **còn sống** (chưa bị phá), chạm từ 2 lần trở lên, và giá đang cách
-đường dưới **1,5%**. Mỗi đồng giữ một đường gần nhất, lấy tối đa 25 đồng, ghi ra `out/sap-pha.json`.
+`bot/moc.mjs` quét top đồng OKX trên khung H1 và H4 bằng `core/breakout.js` — đúng bộ dò trendline đã
+dùng từ trước. Giữ hai loại, chạm từ 2 lần trở lên:
 
-Chạm vào một dòng là mở biểu đồ đồng đó với đường bot vẽ hiện sẵn (màu tím), để bạn tự xem rồi kẻ lại
-theo ý mình.
+- **sắp phá** — đường còn sống, giá cách dưới 1,5%;
+- **vừa phá** — đường bị phá trong vòng 10 nến, có ghi đã xác nhận gãy cấu trúc hay đã retest chưa.
+
+Phải có cả loại thứ hai: thử lúc 17:55 ngày 25/11 trên 30 đồng ra **0 kết quả**, vì cả thị trường vừa
+phá xuống sáng đó nên mọi đường hỗ trợ đều đã gãy. Chỉ lấy đường còn sống thì tab trống trơn đúng lúc
+có nhiều việc nhất.
+
+Mỗi (đồng, khung) giữ một đường, lấy tối đa 25, ghi ra `sap-pha.json`. Chạm vào một dòng là mở biểu đồ
+đồng đó với đường bot vẽ hiện sẵn (màu tím), để bạn tự xem rồi kẻ lại theo ý mình.
 
 ## Bot thông báo Kèo Pro
 
@@ -91,8 +108,13 @@ GitHub **bỏ gần hết lịch**: repo này đặt 2 lượt mỗi giờ mà t
 
 ## Chạy tay
 
-Tab Actions → `mode`: `loop` (mặc định) · `scan` (một lượt) · `test-push` (gửi tin thử) ·
-`dry-run` (quét, in ra, không gửi, không ghi) · `reset-open` (xoá kèo Kèo Pro đang giữ).
+Tab Actions, chọn workflow rồi Run workflow.
+
+- **Mốc**: `loop` (mặc định) · `scan` (một lượt) · `dry-run` (quét, in ra, không gửi không ghi).
+- **Kèo Pro**: thêm `test-push` (gửi tin thử) · `reset-open` (xoá kèo đang giữ).
+
+Kiểm tại máy, không cần mạng: `node /tmp/.../bot-local.mjs` dựng sẵn mạng giả lập rồi chạy
+`bot/moc.mjs` thật — bắt được loại lỗi mà `node --check` không thấy.
 
 ## Khoá
 

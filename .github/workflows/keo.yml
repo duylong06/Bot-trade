@@ -52,9 +52,6 @@ jobs:
           PUSH_CONFIG: ${{ secrets.PUSH_CONFIG }}
           MODE: ${{ github.event.inputs.mode || 'loop' }}
           GRADES: ${{ github.event.inputs.grades || 'A+,A' }}
-          # Hộp thư app gửi mốc sang bot. Đổi thì đặt biến NTFY_TOPIC trong
-          # Settings → Variables và đổi luôn trong tab Cài đặt của app.
-          NTFY_TOPIC: ${{ vars.NTFY_TOPIC }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -u
@@ -73,17 +70,8 @@ jobs:
             )
           }
 
-          # Canh mốc bạn kẻ + tìm đồng sắp phá. Chỉ chạy ở các chế độ quét bình thường;
-          # test-push và reset-open chỉ liên quan tới bot Kèo Pro.
-          moc() {
-            case "$1" in
-              loop|scan|dry-run) MODE="$1" node bot/moc.mjs || echo "  (moc lỗi, bỏ qua lượt này)" ;;
-            esac
-          }
-
           if [ "$MODE" != "loop" ]; then
             node bot/keo.mjs
-            moc "$MODE"
             luu
             exit 0
           fi
@@ -96,7 +84,6 @@ jobs:
             LUOT=$((LUOT+1))
             echo "::group::Lượt $LUOT — $(TZ=Asia/Ho_Chi_Minh date +'%H:%M:%S giờ VN')"
             MODE=scan node bot/keo.mjs || echo "lượt này lỗi, bỏ qua, chờ lượt sau"
-            moc scan
             luu
             echo "::endgroup::"
 

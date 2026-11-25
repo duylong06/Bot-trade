@@ -1,0 +1,90 @@
+# Canh mốc bạn kẻ trong app + tìm đồng sắp phá trendline.
+#
+# Chạy RIÊNG, không chung job với Kèo Pro. Hai lý do:
+#   1. Job Kèo Pro chạy liên tục gần 6 tiếng. Gộp vào thì mốc vừa kẻ phải đợi job đó
+#      hết hạn mới được canh — có khi 5 tiếng.
+#   2. Job nào chết cũng không kéo job kia chết theo.
+#
+# Mỗi job đẩy ra MỘT nhánh riêng (Kèo Pro → data, bot này → moc-data). Cùng một nhánh
+# thì hai bên ép đẩy đè lên nhau, mất file của nhau.
+name: Mốc — canh đường bạn kẻ
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'loop = chạy liên tục · scan = một lượt · dry-run = quét, in ra, không gửi không ghi'
+        type: choice
+        options: [loop, scan, dry-run]
+        default: loop
+  schedule:
+    - cron: '*/15 * * * *'
+
+concurrency:
+  group: moc
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  moc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund web-push@3.6.7
+
+      - name: Canh mốc
+        env:
+          PUSH_CONFIG: ${{ secrets.PUSH_CONFIG }}
+          MODE: ${{ github.event.inputs.mode || 'loop' }}
+          NTFY_TOPIC: ${{ vars.NTFY_TOPIC }}
+          SCAN_N: ${{ vars.SCAN_N }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -u
+          REPO_URL="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+          luu() {
+            [ -d out ] || return 0
+            ( cd out
+              git init -q -b moc-data 2>/dev/null || true
+              git add -A
+              git -c user.name="bot-trade" -c user.email="bot-trade@users.noreply.github.com" \
+                  commit -qm "mốc $(date -u +%F-%H%M)" 2>/dev/null || return 0
+              git push -qf "$REPO_URL" moc-data 2>/dev/null || echo "  (đẩy lỗi, bỏ qua)"
+            )
+          }
+
+          if [ "$MODE" != "loop" ]; then
+            node bot/moc.mjs
+            [ "$MODE" = "dry-run" ] || luu
+            exit 0
+          fi
+
+          # Nến M30 đóng lúc :00 và :30 → chờ tới mốc 1800 giây kế tiếp, cộng 20 giây
+          # cho sàn chốt nến.
+          HET=$(( $(date +%s) + 5*3600 + 2400 ))
+          LUOT=0
+          while :; do
+            LUOT=$((LUOT+1))
+            echo "::group::Lượt $LUOT — $(TZ=Asia/Ho_Chi_Minh date +'%H:%M:%S giờ VN')"
+            MODE=scan node bot/moc.mjs || echo "lượt này lỗi, bỏ qua, chờ lượt sau"
+            luu
+            echo "::endgroup::"
+
+            GIO=$(date +%s)
+            CHO=$(( 1800 - GIO % 1800 + 20 ))
+            CON=$(( HET - GIO ))
+            if [ "$CON" -lt "$CHO" ]; then
+              echo "Hết hạn job sau $((CON/60)) phút. Dừng để lượt chờ chạy tiếp."
+              break
+            fi
+            echo "Ngủ $CHO giây, canh lại lúc $(TZ=Asia/Ho_Chi_Minh date -d "+$CHO seconds" +'%H:%M:%S giờ VN')"
+            sleep "$CHO"
+          done
+          echo "Đã canh $LUOT lượt trong job này."
