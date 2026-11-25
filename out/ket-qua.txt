@@ -1,0 +1,51 @@
+=== 1. jsonblob: POST tao blob ===
+HTTP/2 403 
+date: Wed, 25 Nov 2026 10:35:33 GMT
+content-type: text/html; charset=UTF-8
+cache-control: private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0
+expires: Thu, 01 Jan 1970 00:00:01 GMT
+referrer-policy: same-origin
+x-frame-options: SAMEORIGIN
+report-to: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=EGQp4LtThzt4BvLNm7WQ%2B7oGKNwgMrs7563fz7CgUr8FOjk%2FD3QDBQg%2FH33DJpaCsGhZvKzx5uY%2BAk4buSaG0Ad1Mno46XnRdwLOUTuX5VWeebVq6cDsW64ObmZKIdo%3D"}]}
+nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+server: cloudflare
+cf-ray: a60001dca9c1a5d2-ORD
+alt-svc: h3=":443"; ma=86400
+
+body: <!DOCTYPE html>
+<!--[if lt IE 7]> <html class="no-js ie6 oldie" lang="en-US"> <![endif]-->
+<!--[if IE 7]>    <html class="no-js ie7 oldie" lang="en-US"> <![endif]-->
+<!--[if IE 8]>    <html class="no-
+
+=== 2. jsonblob: OPTIONS preflight cho PUT (trinh duyet hoi truoc) ===
+HTTP/2 204 
+date: Wed, 25 Nov 2026 10:35:33 GMT
+access-control-allow-origin: *
+vary: Access-Control-Request-Headers
+access-control-allow-headers: Content-Type,Authorization,X-jsonblob-id,X-jsonblob-last-modified,If-Match,If-None-Match,If-Modified-Since,Cache-Control,ETag,X-jsonblob-generate
+access-control-allow-methods: GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS
+access-control-expose-headers: Content-Type,Location,X-jsonblob-id,X-jsonblob-last-modified,X-jsonblob-expires-at,X-jsonblob-expires-at-precision,X-jsonblob-sql-skipped-blobs,X-jsonblob-sql-warning,ETag,Last-Modified,Cache-Control,Retry-After,Vary
+access-control-max-age: 86400
+cf-placement: local-ORD
+report-to: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=1kdU9LdHMy614fh5FPxlU3xilUfGWalE4PZtTVX47wyQaOVm3TpZi9%2B2HivGj%2FtPkO%2FVdKyVGujYJH1bWsImyCTyIhgJ9VXS1sldoaj%2FTfx2QRnRrn7ztL1DYIW8bHM%3D"}]}
+nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+server: cloudflare
+cf-ray: a60001dcea751500-ORD
+alt-svc: h3=":443"; ma=86400
+
+
+=== 3. jsonblob: vong doi day du ===
+Location=
+ID=
+
+=== 4. du phong: ntfy.sh ===
+HTTP/2 200 
+access-control-allow-headers: *
+access-control-allow-methods: GET, PUT, POST, PATCH, DELETE
+access-control-allow-origin: *
+date: Wed, 25 Nov 2026 10:35:33 GMT
+content-length: 0
+
+
+=== 5. GitHub API tu Actions ===
+api.github.com status=200
