@@ -41,9 +41,14 @@ export async function api(path, params = {}) {
 
 /* Nến. Nến cuối là nến ĐANG CHẠY (OKX đánh dấu cột 9 bằng '0'). */
 const KC = new Map();
+
+/* Luôn trả BẢN SAO. Biểu đồ có sửa mảng nến (cây cuối chạy theo giá) nên nếu đưa thẳng
+   đồ trong bộ đệm ra thì nó bị sửa theo, lần sau lấy lại là dữ liệu đã hỏng. */
+const chep = k => ({ t: k.t.slice(), o: k.o.slice(), h: k.h.slice(), l: k.l.slice(), c: k.c.slice(), v: k.v.slice(), live: k.live });
+
 export async function candles(sym, bar, limit = 300) {
   const key = sym + '|' + bar + '|' + limit, now = Date.now(), hit = KC.get(key);
-  if (hit && now - hit.t < 15000) return hit.d;
+  if (hit && now - hit.t < 15000) return chep(hit.d);
   const d = await api('/api/v5/market/candles', { instId: sym, bar, limit: String(limit) });
   const rows = d.slice().reverse();
   if (!rows.length) throw new Error('Không có dữ liệu nến');
@@ -54,7 +59,7 @@ export async function candles(sym, bar, limit = 300) {
   };
   if (KC.size > 400) KC.clear();
   KC.set(key, { t: now, d: res });
-  return res;
+  return chep(res);
 }
 export const dropCandleCache = () => KC.clear();
 

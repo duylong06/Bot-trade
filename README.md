@@ -147,7 +147,8 @@ Khoá thông báo nằm trong GitHub Secret `PUSH_CONFIG`, **không bao giờ** 
   nhuận dương sau phí ở kiểu vào lệnh đã thử.
 - Mốc đã lưu chỉ **xoá** được từ tab Mốc của tôi; muốn đổi thì xoá rồi kẻ lại.
 - Khung nhìn mà trôi ra chỗ không có nến thì app **tự kéo về** sau nửa giây, và lúc nào cũng có nút
-  **Về nến** trên thanh công cụ. Không tải được nến thì hiện bảng báo rõ kèm nút Thử lại, không để
+  **Về nến** trên thanh công cụ.
+- Bài kiểm chạy trong trình duyệt thật nằm ở `test/`, kèm ghi chép lỗi đã bắt được. Không tải được nến thì hiện bảng báo rõ kèm nút Thử lại, không để
   màn hình trống không nói gì.
 - Đang ngắm thì hai ngón không phóng to được ngay — nhả tay ra một nhịp rồi mới chụm.
 

@@ -63,7 +63,7 @@ const TOP = {
         }
       }
       this.ve();
-      if (CV.sym) { const x = t.get(CV.sym); if (x) CV.gia(x.last, x.open24h); CV.canNenMoi(); }
+      if (CV.sym) { const x = t.get(CV.sym); if (x) CV.gia(x.last, x.open24h, CV.sym); CV.canNenMoi(); }
     } catch (e) {}
   },
 
@@ -131,7 +131,7 @@ const CV = {
     } finally { this.dangNap = false; }
     await this.napMoc();
     if (opts.line) { this.view.draft = { ...opts.line, id: 'xem' }; this.view.ov.update(); }
-    if (r) this.gia(r.last, r.open24h);
+    if (r) this.gia(r.last, r.open24h, id);
     TOP.vao();
   },
 
@@ -198,11 +198,14 @@ const CV = {
     } catch (e) {} finally { this.dangNap = false; }
   },
 
-  gia(last, open24h) {
+  gia(last, open24h, sym) {
+    if (sym && sym !== this.sym) return;
     const d = open24h ? (last - open24h) / open24h * 100 : 0;
     $('#cvPx').innerHTML = `<b>${fmtPrice(last, decimalsOf(this.tick, last))}</b>` +
       `<i class="${d >= 0 ? 'tp-up' : 'tp-dn'}">${d >= 0 ? '+' : ''}${d.toFixed(2)}%</i>`;
-    if (this.view) this.view.tick(last);
+    // Biểu đồ có thể còn đang vẽ đồng CŨ trong lúc chờ tải đồng mới — đừng ghi giá
+    // đồng mới vào nến đồng cũ.
+    if (this.view) this.view.tick(last, this.sym);
   },
 
   leg(b) {

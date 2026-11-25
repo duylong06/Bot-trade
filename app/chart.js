@@ -343,9 +343,17 @@ export class ChartView {
     this.ov.update();
   }
 
-  /* Cập nhật giá cây nến đang chạy mà không tải lại cả chuỗi. */
-  tick(last) {
-    const b = this.bars; if (!b || !Number.isFinite(last)) return;
+  /* Cập nhật giá cây nến đang chạy mà không tải lại cả chuỗi.
+     Chỉ nhận giá CỦA ĐÚNG ĐỒNG đang vẽ, và phải nằm trong khoảng hợp lý so với cây nến
+     hiện tại — giá lệch cả chục lần là giá của đồng khác lọt sang, ghi vào là nến bẹp dí. */
+  tick(last, sym) {
+    const b = this.bars; if (!b || !Number.isFinite(last) || last <= 0) return;
+    if (sym && sym !== this.sym) return;
+    const truoc = b.c.at(-1);
+    if (Number.isFinite(truoc) && truoc > 0) {
+      const ti = last / truoc;
+      if (ti > 1.5 || ti < 0.67) return;
+    }
     const i = b.c.length - 1;
     b.c[i] = last;
     if (last > b.h[i]) b.h[i] = last;
