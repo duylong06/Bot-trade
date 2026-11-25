@@ -104,13 +104,16 @@ const CV = {
       this.view = new ChartView($('#chart'), {
         on: {
           hover: b => this.leg(b),
-          drafted: m => this.moTam(m),
-          badSecond: () => { $('#cvHint').textContent = 'Hai điểm rơi vào cùng một cây nến — chạm điểm thứ hai xa ra một chút.'; },
+          ready: () => this.nutVe('xong'),
+          tapMode: () => { this.nutVe('cham2'); },
+          live: d => this.veLive(d),
+          badSecond: () => { this.nutVe('ve'); $('#cvHint').textContent = 'Hai đầu rơi vào cùng một cây nến — kéo xa ra một chút.'; },
           moved: () => {},
         },
       });
       window.__cv = this.view;            // để soi từ console khi cần
     }
+    this.nutVe('ve');
     $('#cvHint').textContent = 'Đang tải nến…';
     try {
       await this.view.load(id, this.tf, this.tick);
@@ -135,6 +138,7 @@ const CV = {
     const el = $('#cvTf');
     el.innerHTML = TFS.map(t => `<button data-tf="${t.id}" aria-pressed="${t.id === this.tf}">${t.label}</button>`).join('')
       + `<span class="sp"></span>`
+      + `<button data-sw="magnet" class="hot" aria-pressed="${this.view ? this.view.show.magnet : true}">Nam châm</button>`
       + `<button data-sw="levels" aria-pressed="true">Kháng cự</button>`
       + `<button data-sw="bot" aria-pressed="true">Đường bot</button>`
       + `<button data-sw="ema" aria-pressed="true">EMA200</button>`;
@@ -194,6 +198,28 @@ const CV = {
     this.view.setBotLines(this.botLines);
   },
 
+  /* Nút dưới đáy đổi theo việc đang làm. */
+  nutVe(trangThai) {
+    const d = {
+      ve:    { draw: 1, cancel: 0, redo: 0, done: 0, hint: '' },
+      dangVe:{ draw: 0, cancel: 1, redo: 0, done: 0, hint: 'Đặt ngón ở điểm thứ nhất rồi <b>kéo</b> tới điểm thứ hai.' },
+      cham2: { draw: 0, cancel: 1, redo: 0, done: 0, hint: 'Đã đặt điểm thứ nhất. Chạm điểm thứ hai.' },
+      xong:  { draw: 0, cancel: 1, redo: 1, done: 1, hint: 'Kéo hai đầu tròn để chỉnh cho khớp râu nến. Vừa ý thì bấm Xong.' },
+    }[trangThai];
+    $('#cvDraw').hidden = !d.draw;
+    $('#cvCancel').hidden = !d.cancel;
+    $('#cvRedo').hidden = !d.redo;
+    $('#cvDone').hidden = !d.done;
+    $('#cvHint').innerHTML = d.hint;
+  },
+
+  /* Giá và giờ của đầu đang kéo, hiện ngay dưới đáy như bên OKX. */
+  veLive(p) {
+    const v = this.view;
+    $('#cvHint').innerHTML = `${fmtPrice(p.p, v.dec)} · ${hhmm(p.t)}` +
+      (p.bam ? ` <span style="color:var(--mark)">bám ${esc(p.bam)}</span>` : '');
+  },
+
   /* vừa kẻ xong hai điểm → mở tấm lưu mốc */
   moTam(m) {
     this.tam = m;
@@ -203,19 +229,13 @@ const CV = {
       ` Đường dốc ${m.pb > m.pa ? 'lên' : 'xuống'}, bot sẽ nối dài sang phải theo đúng độ dốc đó.`;
     $('#shNote').textContent = 'Nến M30 đóng ngoài đường chắc hơn: râu quét qua rồi thụt lại thì không báo.';
     $('#sheet').classList.add('on');
-    $('#cvDraw').hidden = true; $('#cvCancel').hidden = true;
   },
 };
 $('#cvBack').onclick = () => CV.dong();
-$('#cvDraw').onclick = () => {
-  CV.view.startDraw();
-  $('#cvHint').textContent = 'Chạm điểm thứ nhất, rồi chạm điểm thứ hai.';
-  $('#cvDraw').hidden = true; $('#cvCancel').hidden = false;
-};
-$('#cvCancel').onclick = () => {
-  CV.view.cancelDraw();
-  $('#cvHint').textContent = ''; $('#cvDraw').hidden = false; $('#cvCancel').hidden = true;
-};
+$('#cvDraw').onclick = () => { CV.view.startDraw(); CV.nutVe('dangVe'); };
+$('#cvRedo').onclick = () => { CV.view.startDraw(); CV.nutVe('dangVe'); };
+$('#cvCancel').onclick = () => { CV.view.cancelDraw(); CV.nutVe('ve'); };
+$('#cvDone').onclick = () => { if (CV.view.draft) CV.moTam(CV.view.draft); };
 
 /* ---- tấm lưu mốc ---- */
 let shDir = 'down', shMode = 'close';
@@ -232,9 +252,8 @@ $('#shMode').querySelectorAll('button').forEach(b => b.onclick = () => {
 });
 function dongTam() {
   $('#sheet').classList.remove('on');
-  $('#cvDraw').hidden = false; $('#cvCancel').hidden = true;
-  $('#cvHint').textContent = '';
   CV.view.cancelDraw();
+  CV.nutVe('ve');
 }
 $('#shDrop').onclick = dongTam;
 $('#shSave').onclick = async () => {

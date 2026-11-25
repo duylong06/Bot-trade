@@ -29,11 +29,16 @@ nên không phụ thuộc mạng ngoài. Kéo ngang, phóng to thu nhỏ, crossh
 ## Kẻ đường và nhờ bot canh
 
 1. Mở một đồng, bấm **Kẻ đường**.
-2. Chạm điểm thứ nhất, chạm điểm thứ hai. Điểm neo tự bám vào đúng cây nến.
-3. Chọn **phá xuống** hay **phá lên**, và lúc nào thì báo:
+2. Đặt ngón ở điểm thứ nhất rồi **kéo một mạch** tới điểm thứ hai — đường chạy theo tay, giá và giờ
+   của đầu đang kéo hiện ngay dưới đáy. (Chạm một cái rồi nhả cũng được: nó chuyển sang kiểu chấm hai
+   phát.)
+3. **Nam châm** bật sẵn: ngón ở nửa trên cây nến thì bám râu trên hoặc mép thân trên, nửa dưới thì bám
+   râu dưới hoặc mép thân dưới — râu được ưu tiên. Tắt được bằng nút Nam châm trên thanh công cụ.
+4. Kéo lại hai đầu tròn cho khớp, rồi bấm **Xong**.
+5. Chọn **phá xuống** hay **phá lên**, và lúc nào thì báo:
    - **Nến M30 đóng ngoài đường** — chắc hơn, râu quét qua rồi thụt lại thì không báo.
    - **Giá chạm đường** — nhanh hơn, nhiễu hơn.
-4. Bấm **Lưu mốc**.
+6. Bấm **Lưu mốc**.
 
 Bot nối dài đường theo đúng độ dốc hai điểm neo, kiểm mỗi lượt quét trên nến M30 **đã đóng**.
 Đúng điều kiện thì đẩy thông báo về iPhone rồi **tắt mốc đó**, không báo lặp.
@@ -128,7 +133,8 @@ Khoá thông báo nằm trong GitHub Secret `PUSH_CONFIG`, **không bao giờ** 
   là bản rút gọn.
 - Danh sách "sắp phá" là **tham khảo**. Đo trên dữ liệu cũ cho thấy chưa có cách đặt SL nào có lợi
   nhuận dương sau phí ở kiểu vào lệnh đã thử.
-- Mốc chỉ xoá được từ tab **Mốc của tôi**, chưa sửa được trực tiếp trên biểu đồ.
+- Mốc đã lưu chỉ **xoá** được từ tab Mốc của tôi; muốn đổi thì xoá rồi kẻ lại.
+- Đang kẻ thì hai ngón không phóng to được ngay — nhả tay ra một nhịp rồi mới chụm.
 
 ## Lịch sử
 

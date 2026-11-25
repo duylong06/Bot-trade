@@ -134,7 +134,7 @@ export class ChartView {
     this.marks = []; this.botLines = []; this.levels = [];
     this.selId = null; this.draft = null; this.pending1 = null;
     this.mode = 'pan';                 // 'pan' | 'draw'
-    this.show = { levels: true, bot: true, ema: true };
+    this.show = { levels: true, bot: true, ema: true, magnet: true };
     this.on = opts.on || {};
     this.build();
   }
@@ -308,6 +308,41 @@ export class ChartView {
 
   /* ---------- chạm, kéo, kẻ đường ---------- */
 
+  /* Điểm neo từ toạ độ chạm. Nam châm: ở gần đầu râu hay mép thân nến thì bám vào đó,
+     vì trendline phải chạm đúng đầu râu / mép thân chứ không phải lơ lửng giữa không. */
+  diem(x, y) {
+    const t = this.snapT(this.tOf(x));
+    let p = null;
+    try { p = this.candle.coordinateToPrice(y); } catch (e) {}
+    if (t == null || p == null) return null;
+    if (!this.show.magnet) return { t, p, bam: null };
+    const b = this.bars, i = Math.round((t - b.t[0]) / this.step);
+    if (i < 0 || i >= b.c.length) return { t, p, bam: null };
+
+    // Nến trên điện thoại chỉ cao vài điểm ảnh, nên "bám mức gần nhất" hay nhảy lung tung:
+    // ngắm râu trên mà lệch vài điểm ảnh là nó bám sang râu dưới. Luật rõ hơn: ngón ở NỬA TRÊN
+    // cây nến thì chỉ xét râu trên và mép thân trên, nửa dưới thì chỉ xét râu dưới và mép thân dưới.
+    const px = v => this.candle.priceToCoordinate(v);
+    const yHi = px(b.h[i]), yLo = px(b.l[i]);
+    if (yHi == null || yLo == null) return { t, p, bam: null };
+    const tren = y <= (yHi + yLo) / 2;
+    const than = tren ? Math.max(b.o[i], b.c[i]) : Math.min(b.o[i], b.c[i]);
+    const ung = tren
+      ? [['râu trên', b.h[i]], ['thân trên', than]]
+      : [['râu dưới', b.l[i]], ['thân dưới', than]];
+
+    let best = null;
+    for (const [ten, v] of ung) {
+      const yy = px(v); if (yy == null) continue;
+      const d = Math.abs(yy - y);
+      if (d > 18) continue;
+      // râu được ưu ái 3 điểm ảnh — kẻ trendline thường bám đầu râu hơn là mép thân
+      const uu = ten.startsWith('râu') ? d - 3 : d;
+      if (!best || uu < best.uu) best = { uu, p: v, ten };
+    }
+    return best ? { t, p: best.p, bam: best.ten } : { t, p, bam: null };
+  }
+
   bindPointer() {
     const el = this.el;
     this.pad = document.createElement('div');
@@ -315,68 +350,104 @@ export class ChartView {
     el.style.position = 'relative';
     el.appendChild(this.pad);
 
-    let drag = null;
+    let drag = null, daKeo = false, neo = null, nPointer = 0;
 
     const pos = ev => {
       const r = el.getBoundingClientRect();
       return { x: ev.clientX - r.left, y: ev.clientY - r.top };
     };
-    const priceAt = y => { try { return this.candle.coordinateToPrice(y); } catch (e) { return null; } };
+    const bao = d => { if (this.on.live) this.on.live(d); };
+
+    /* Dựng đường từ hai điểm neo, xếp điểm cũ trước. */
+    const chot = (a, b) => {
+      if (a.t === b.t) { if (this.on.badSecond) this.on.badSecond(); return false; }
+      const [x, y] = a.t < b.t ? [a, b] : [b, a];
+      this.draft = { id: 'm' + Date.now().toString(36), ta: x.t, pa: x.p, tb: y.t, pb: y.p };
+      this.pending1 = null;
+      this.mode = 'sua';                 // vẫn giữ pad để kéo lại hai đầu
+      this.setPad(); this.ov.update();
+      if (this.on.ready) this.on.ready(this.draft);
+      return true;
+    };
 
     this.pad.addEventListener('pointerdown', ev => {
       ev.preventDefault();
-      const { x, y } = pos(ev);
-      const t = this.snapT(this.tOf(x)), p = priceAt(y);
-      if (t == null || p == null) return;
-
-      if (this.mode === 'draw') {
-        if (!this.pending1) { this.pending1 = { t, p }; this.ov.update(); }
-        else if (t === this.pending1.t) {
-          // Hai điểm neo rơi vào cùng một cây nến thì không thành đường — độ dốc vô nghĩa.
-          if (this.on.badSecond) this.on.badSecond();
-        } else {
-          // luôn xếp điểm neo cũ trước, mới sau — chạm từ phải sang trái cũng ra đúng đường
-          const a = this.pending1, b = { t, p };
-          const [x, y] = a.t < b.t ? [a, b] : [b, a];
-          const m = { id: 'm' + Date.now().toString(36), ta: x.t, pa: x.p, tb: y.t, pb: y.p };
-          this.pending1 = null; this.draft = m; this.mode = 'pan'; this.setPad();
-          this.ov.update();
-          if (this.on.drafted) this.on.drafted(m);
-        }
+      nPointer++;
+      // Hai ngón = muốn phóng to. Bỏ nét đang kẻ dở và nhả pad ra cho biểu đồ nhận.
+      if (nPointer > 1) {
+        drag = null;
+        if (this.mode === 'draw' && !this.draft) { this.pending1 = null; this.ov.update(); }
+        this.pad.style.pointerEvents = 'none';
+        setTimeout(() => { this.pad.style.pointerEvents = ''; }, 700);
         return;
       }
+      const { x, y } = pos(ev);
+      const d = this.diem(x, y);
+      if (!d) return;
+      try { this.pad.setPointerCapture(ev.pointerId); } catch (e) {}
 
-      // chế độ sửa: bắt đầu kéo một đầu neo của đường đang chọn
+      // đã có đường nháp → thử bắt một đầu neo để kéo lại
       const m = this.draft || this.marks.find(k => k.id === this.selId);
-      if (!m) return;
-      const d = (tt, pp) => {
-        const xx = this.xOf(tt), yy = this.candle.priceToCoordinate(pp);
-        return xx == null || yy == null ? 1e9 : Math.hypot(xx - x, yy - y);
-      };
-      const da = d(m.ta, m.pa), db = d(m.tb, m.pb);
-      if (Math.min(da, db) < 26) drag = { m, end: da <= db ? 'a' : 'b' };
+      if (m) {
+        const kc = (tt, pp) => {
+          const xx = this.xOf(tt), yy = this.candle.priceToCoordinate(pp);
+          return xx == null || yy == null ? 1e9 : Math.hypot(xx - x, yy - y);
+        };
+        const da = kc(m.ta, m.pa), db = kc(m.tb, m.pb);
+        if (Math.min(da, db) < 34) {
+          drag = { kieu: 'dau', m, end: da <= db ? 'a' : 'b' };
+          daKeo = false;
+          return;
+        }
+      }
+
+      if (this.mode !== 'draw') return;
+
+      // chạm lần hai của kiểu "chấm hai phát"
+      if (this.pending1) { chot(this.pending1, d); return; }
+
+      // bắt đầu kéo một mạch: đặt neo đầu, đường chạy theo tay
+      neo = d;
+      this.draft = { id: 'nhap', ta: d.t, pa: d.p, tb: d.t, pb: d.p, nhap: true };
+      drag = { kieu: 'moi' }; daKeo = false;
+      this.ov.update();
+      bao({ ...d, dau: true });
     });
 
     this.pad.addEventListener('pointermove', ev => {
-      if (!drag) return;
+      if (!drag || nPointer > 1) return;
       ev.preventDefault();
       const { x, y } = pos(ev);
-      const t = this.snapT(this.tOf(x)), p = priceAt(y);
-      if (t == null || p == null) return;
-      if (drag.end === 'a') { drag.m.ta = t; drag.m.pa = p; } else { drag.m.tb = t; drag.m.pb = p; }
+      const d = this.diem(x, y);
+      if (!d) return;
+      daKeo = true;
+      if (drag.kieu === 'moi') { this.draft.tb = d.t; this.draft.pb = d.p; }
+      else if (drag.end === 'a') { drag.m.ta = d.t; drag.m.pa = d.p; }
+      else { drag.m.tb = d.t; drag.m.pb = d.p; }
       this.ov.update();
+      bao(d);
     });
 
-    const end = () => {
-      if (drag && this.on.moved) this.on.moved(drag.m);
-      drag = null;
+    const xong = ev => {
+      nPointer = Math.max(0, nPointer - 1);
+      if (!drag) return;
+      const k = drag; drag = null;
+      if (k.kieu === 'moi') {
+        if (!daKeo) {
+          // chỉ chạm một cái, không kéo → chuyển sang kiểu chấm hai phát
+          this.pending1 = neo; this.draft = null; this.ov.update();
+          if (this.on.tapMode) this.on.tapMode();
+          return;
+        }
+        chot(neo, { t: this.draft.tb, p: this.draft.pb });
+      } else if (this.on.moved) this.on.moved(k.m);
     };
-    this.pad.addEventListener('pointerup', end);
-    this.pad.addEventListener('pointercancel', end);
+    this.pad.addEventListener('pointerup', xong);
+    this.pad.addEventListener('pointercancel', xong);
   }
 
   setPad() {
-    const active = this.mode === 'draw' || !!this.draft || !!this.selId;
+    const active = this.mode === 'draw' || this.mode === 'sua' || !!this.draft || !!this.selId;
     this.pad.style.display = active ? 'block' : 'none';
     this.pad.style.cursor = this.mode === 'draw' ? 'crosshair' : 'default';
   }
