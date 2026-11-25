@@ -13,9 +13,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'loop = chạy liên tục · scan = một lượt · dry-run = quét, in ra, không gửi không ghi'
+        description: 'loop = chạy liên tục · scan = một lượt · test-push = gửi tin thử · dry-run = quét, in ra, không gửi không ghi'
         type: choice
-        options: [loop, scan, dry-run]
+        options: [loop, scan, test-push, dry-run]
         default: loop
   # Đẩy code mới thì bot khởi động lại ngay, không phải đợi lịch.
   push:
@@ -67,7 +67,7 @@ jobs:
 
           if [ "$MODE" != "loop" ]; then
             node bot/moc.mjs
-            [ "$MODE" = "dry-run" ] || luu
+            case "$MODE" in dry-run|test-push) ;; *) luu ;; esac
             exit 0
           fi
 

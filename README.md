@@ -110,7 +110,7 @@ GitHub **bỏ gần hết lịch**: repo này đặt 2 lượt mỗi giờ mà t
 
 Tab Actions, chọn workflow rồi Run workflow.
 
-- **Mốc**: `loop` (mặc định) · `scan` (một lượt) · `dry-run` (quét, in ra, không gửi không ghi).
+- **Mốc**: `loop` (mặc định) · `scan` (một lượt) · `test-push` (gửi tin thử về iPhone) · `dry-run` (quét, in ra, không gửi không ghi).
 - **Kèo Pro**: thêm `test-push` (gửi tin thử) · `reset-open` (xoá kèo đang giữ).
 
 Kiểm tại máy, không cần mạng: `node /tmp/.../bot-local.mjs` dựng sẵn mạng giả lập rồi chạy

@@ -11,7 +11,7 @@
 // Biến môi trường:
 //   PUSH_CONFIG  khoá thông báo — GitHub Secret
 //   NTFY_TOPIC   hộp thư giữa app và bot (mặc định botrade-duylong06-moc-7k3x9q)
-//   MODE         scan (mặc định) · dry-run (không gửi, không ghi)
+//   MODE         scan (mặc định) · test-push (gửi tin thử rồi thoát) · dry-run (không gửi, không ghi)
 //   SCAN_N       số đồng quét tìm sắp phá (mặc định 60)
 
 import fs from 'node:fs';
@@ -274,6 +274,16 @@ const S = await loadMoc();
 const keoState = await loadKeoState();
 const PUSHERS = devices(parseSecret(process.env.PUSH_CONFIG), keoState);
 log(`moc.mjs — ${vn(Date.now())} · ${PUSHERS.length} máy nhận · hộp thư ${TOPIC}`);
+
+if (MODE === 'test-push') {
+  const n = await send(PUSHERS, 'Bot mốc — tin thử',
+    ['Thông báo của bot canh mốc đang chạy.', '',
+     `Hộp thư: ${TOPIC}`, `Lúc: ${vn(Date.now())} giờ VN`,
+     '', 'Nếu bạn nhận được tin này thì mốc bạn kẻ trong app sẽ báo được.'].join('\n'),
+    'moc-thu', false);
+  log(n ? `đã gửi tới ${n} máy` : 'không gửi được — kiểm lại PUSH_CONFIG');
+  process.exit(n ? 0 : 1);
+}
 
 // Mốc được canh TRƯỚC khi quét tìm đồng sắp phá: canh mốc là việc gấp, quét là việc tham khảo.
 await intake(S);
