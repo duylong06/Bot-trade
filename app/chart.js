@@ -194,6 +194,13 @@ export class ChartView {
     this.g80 = stLine('rgba(139,150,163,.3)', 1, true);
     this.g20 = stLine('rgba(139,150,163,.3)', 1, true);
 
+    // Khung Stoch có thang riêng; để lề mặc định thì 0–100 bị đệm thành −20…120.
+    try {
+      chart.panes()[1].priceScale('right').applyOptions({
+        scaleMargins: { top: .06, bottom: .06 }, borderColor: C.line,
+      });
+    } catch (e) {}
+
     this.ov = new Overlay(this);
     this.candle.attachPrimitive(this.ov);
 
