@@ -44,18 +44,42 @@ const KC = new Map();
 
 /* Luôn trả BẢN SAO. Biểu đồ có sửa mảng nến (cây cuối chạy theo giá) nên nếu đưa thẳng
    đồ trong bộ đệm ra thì nó bị sửa theo, lần sau lấy lại là dữ liệu đã hỏng. */
-const chep = k => ({ t: k.t.slice(), o: k.o.slice(), h: k.h.slice(), l: k.l.slice(), c: k.c.slice(), v: k.v.slice(), live: k.live });
+const chep = k => ({ t: k.t.slice(), o: k.o.slice(), h: k.h.slice(), l: k.l.slice(), c: k.c.slice(), v: k.v.slice(), live: k.live, bo: k.bo, cat: k.cat });
+
+/* Lọc nến rác.
+   Dữ liệu thật của sàn có lúc lẫn nến hỏng: ô trống, chữ, giá 0, giá âm, râu vọt gấp trăm
+   lần. Chỉ một cây như thế là thang giá phải kéo từ 0 tới 60000, nến thật bẹp thành một
+   vạch — nhìn đúng như mất biểu đồ. Phải chặn ngay ở đây, trước khi tới biểu đồ. */
+function loc(rows) {
+  const ok = [];
+  let bo = 0, cat = 0;
+  for (const r of rows) {
+    const t = +r[0], o = +r[1], h = +r[2], l = +r[3], c = +r[4];
+    const v = +r[5];
+    if (![t, o, h, l, c].every(x => Number.isFinite(x)) || o <= 0 || h <= 0 || l <= 0 || c <= 0) { bo++; continue; }
+    // Râu dài quá 3 lần thân gần như luôn là giá lỗi của sàn. Cắt râu, giữ nguyên thân,
+    // để hình dạng nến vẫn đúng sự thật.
+    const tren = Math.max(o, c), duoi = Math.min(o, c);
+    let H = Math.max(h, tren), L = Math.min(l, duoi);
+    if (H > tren * 3) { H = tren; cat++; }
+    if (L < duoi / 3) { L = duoi; cat++; }
+    ok.push([t, o, H, L, c, Number.isFinite(v) && v >= 0 ? v : 0, r[8]]);
+  }
+  return { ok, bo, cat };
+}
 
 export async function candles(sym, bar, limit = 300) {
   const key = sym + '|' + bar + '|' + limit, now = Date.now(), hit = KC.get(key);
   if (hit && now - hit.t < 15000) return chep(hit.d);
   const d = await api('/api/v5/market/candles', { instId: sym, bar, limit: String(limit) });
-  const rows = d.slice().reverse();
-  if (!rows.length) throw new Error('Không có dữ liệu nến');
+  if (!d.length) throw new Error('Không có dữ liệu nến');
+  const { ok: rows, bo, cat } = loc(d.slice().reverse());
+  if (rows.length < 20) throw new Error(`Dữ liệu nến hỏng (${d.length} cây, dùng được ${rows.length})`);
   const res = {
-    t: rows.map(r => +r[0]), o: rows.map(r => +r[1]), h: rows.map(r => +r[2]),
-    l: rows.map(r => +r[3]), c: rows.map(r => +r[4]), v: rows.map(r => +r[5]),
-    live: rows.at(-1)[8] === '0',
+    t: rows.map(r => r[0]), o: rows.map(r => r[1]), h: rows.map(r => r[2]),
+    l: rows.map(r => r[3]), c: rows.map(r => r[4]), v: rows.map(r => r[5]),
+    live: rows.at(-1)[6] === '0',
+    bo, cat,
   };
   if (KC.size > 400) KC.clear();
   KC.set(key, { t: now, d: res });

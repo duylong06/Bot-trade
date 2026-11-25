@@ -214,10 +214,17 @@ const CV = {
     const s = v.stochNow || {};
     const f = p => fmtPrice(p, v.dec);
     const st = (o, nm, col) => o ? `<span style="color:${col}">${nm} ${o.k == null || !isFinite(o.k) ? '—' : o.k.toFixed(1)}</span>` : '';
+    // Dòng cuối là chẩn đoán: bao nhiêu nến, thang giá từ đâu tới đâu, có lọc nến rác không.
+    // Biểu đồ mà trông trống thì chỉ cần nhìn dòng này là biết hỏng ở dữ liệu hay ở khung nhìn.
+    const bars = v.bars;
+    let lo = Infinity, hi = -Infinity;
+    for (let i = 0; i < bars.c.length; i++) { if (bars.l[i] < lo) lo = bars.l[i]; if (bars.h[i] > hi) hi = bars.h[i]; }
+    const rac = (bars.bo || 0) + (bars.cat || 0);
     $('#cvLeg').innerHTML =
       `<div><b>${esc(this.base)}</b> · ${esc((TFS.find(t => t.id === this.tf) || {}).label || this.tf)}</div>` +
       `<div>M ${f(k.o)} C ${f(k.c)} · T ${f(k.h)} Đ ${f(k.l)}</div>` +
-      `<div>${st(s.y, 'Stoch 32', '#E8C44A')} &nbsp; ${st(s.r, 'Stoch 10', '#E45A50')}</div>`;
+      `<div>${st(s.y, 'Stoch 32', '#E8C44A')} &nbsp; ${st(s.r, 'Stoch 10', '#E45A50')}</div>` +
+      `<div style="color:#5C6773">${bars.c.length} nến · ${f(lo)}–${f(hi)}${rac ? ' · lọc ' + rac : ''}</div>`;
   },
 
   async napMoc() {
