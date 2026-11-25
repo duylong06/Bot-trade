@@ -116,12 +116,16 @@ const CV = {
     if (this.view) this.view.cancelDraw();      // mở đồng mới thì bỏ hết nét đang kẻ dở
     this.nutVe('ve');
     $('#cvHint').textContent = 'Đang tải nến…';
+    this.dangNap = true;
     try {
-      await this.view.load(id, this.tf, this.tick);
+      const xong = await this.view.load(id, this.tf, this.tick);
+      if (!xong || this.sym !== id) return;            // đã bấm sang đồng khác, bỏ lượt này
       this.view.fit();
       this.leg(null);
       $('#cvHint').textContent = '';
-    } catch (e) { $('#cvHint').textContent = 'Không tải được nến: ' + e.message; }
+    } catch (e) {
+      $('#cvHint').textContent = 'Không tải được nến: ' + e.message;
+    } finally { this.dangNap = false; }
     await this.napMoc();
     if (opts.line) { this.view.draft = { ...opts.line, id: 'xem' }; this.view.ov.update(); }
     if (r) this.gia(r.last, r.open24h);
@@ -146,7 +150,12 @@ const CV = {
     el.querySelectorAll('[data-tf]').forEach(b => b.onclick = async () => {
       this.tf = b.dataset.tf;
       el.querySelectorAll('[data-tf]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
-      try { await this.view.load(this.sym, this.tf, this.tick); this.view.fit(); this.leg(null); this.napMoc(); } catch (e) {}
+      const sym = this.sym, tf = this.tf;
+      try {
+        const xong = await this.view.load(sym, tf, this.tick);
+        if (!xong || sym !== this.sym || tf !== this.tf) return;
+        this.view.fit(); this.leg(null); this.napMoc();
+      } catch (e) {}
     });
     el.querySelectorAll('[data-sw]').forEach(b => b.onclick = () => {
       const on = b.getAttribute('aria-pressed') !== 'true';
@@ -155,17 +164,23 @@ const CV = {
     });
   },
 
-  /* Sang cây nến kế tiếp thì tải lại chuỗi nến, không thì cây cuối cứ phình mãi. */
+  /* Sang cây nến kế tiếp thì tải lại chuỗi nến, không thì cây cuối cứ phình mãi.
+     Phải chắc biểu đồ đang thật sự đứng ở đồng này: lúc vừa bấm sang đồng khác thì
+     v.bars vẫn là nến của đồng cũ, tải chen vào đây là đè mất biểu đồ vừa mở. */
   async canNenMoi() {
     const v = this.view;
     if (!v || !v.bars || this.dangNap) return;
+    if (v.sym !== this.sym || v.tf !== this.tf) return;
     if (Date.now() < v.bars.t.at(-1) + tfMs(this.tf)) return;
     this.dangNap = true;
+    const sym = this.sym, tf = this.tf;
     try {
       dropCandleCache();
       const giu = v.chart.timeScale().getVisibleLogicalRange();
-      await v.load(this.sym, this.tf, this.tick);
+      const xong = await v.load(sym, tf, this.tick);
+      if (!xong || sym !== this.sym || tf !== this.tf) return;
       if (giu) try { v.chart.timeScale().setVisibleLogicalRange(giu); } catch (e) {}
+      if (!v.coNen()) v.fit();          // khung nhìn lạc ra vùng trống thì kéo về
       this.leg(null);
     } catch (e) {} finally { this.dangNap = false; }
   },
@@ -367,7 +382,20 @@ $('#save').onclick = () => {
   $('#saved').textContent = 'Đã lưu trên máy này.';
 };
 
-window.__CV = CV;            // để soi và kiểm thử từ console
+/* iPhone để app chạy nền lâu thì hay xoá trắng canvas để lấy lại bộ nhớ. Quay lại app mà
+   biểu đồ đang mở thì vẽ lại từ đầu, và kéo khung nhìn về nếu nó đang lạc ngoài vùng có nến. */
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return;
+  const v = CV.view;
+  if (!CV.sym || !v || !v.bars) return;
+  try {
+    v.setBars(v.bars);
+    if (!v.coNen()) v.fit();
+    CV.leg(null);
+  } catch (e) {}
+});
+
+window.__CV = CV; window.__TOP = TOP;   // để soi và kiểm thử từ console
 
 /* ================= khởi động ================= */
 TOP.tai();

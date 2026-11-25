@@ -297,11 +297,16 @@ export class ChartView {
 
   /* ---------- nạp dữ liệu ---------- */
 
+  /* Mỗi lần nạp mang một số thứ tự. Nạp xong mà số đã cũ nghĩa là trong lúc chờ mạng
+     người dùng đã mở đồng khác — bỏ kết quả này đi, nếu không nó đè lên biểu đồ mới. */
   async load(sym, tf, tickSz) {
-    this.sym = sym; this.tf = tf; this.step = tfMs(tf);
+    const lan = (this._lan = (this._lan || 0) + 1);
     const k = await candles(sym, tf, 300);
+    if (lan !== this._lan) return false;
+    this.sym = sym; this.tf = tf; this.step = tfMs(tf);
     this.dec = decimalsOf(tickSz || 0, k.c.at(-1));
     this.setBars(k);
+    return true;
   }
 
   setBars(k) {
@@ -345,12 +350,27 @@ export class ChartView {
     this.candle.update({ time: toSec(b.t[i]), open: b.o[i], high: b.h[i], low: b.l[i], close: last });
   }
 
+  /* Khung nhìn có đang thấy nến không, hay đã lạc ra vùng trống? */
+  coNen() {
+    const b = this.bars; if (!b) return false;
+    try {
+      const r = this.chart.timeScale().getVisibleLogicalRange();
+      if (!r) return false;
+      const chung = Math.min(r.to, b.c.length) - Math.max(r.from, 0);
+      return chung / Math.max(1, r.to - r.from) > 0.15;
+    } catch (e) { return false; }
+  }
+
   /* Đưa khung nhìn về cây nến mới nhất, chừa sẵn khoảng trống bên phải.
-     scrollToRealTime() không kéo về khi biểu đồ đã bị cuộn xa ra tương lai, nên đặt thẳng vị trí. */
+     scrollToRealTime() không kéo về khi biểu đồ đã bị cuộn xa ra tương lai, nên đặt thẳng vị trí.
+     Đặt xong còn kiểm lại: vẫn không thấy nến thì ép khung ôm trọn dữ liệu. */
   fit() {
     const ts = this.chart.timeScale();
-    try { ts.scrollToPosition(ts.options().rightOffset || 14, false); }
-    catch (e) { try { ts.scrollToRealTime(); } catch (e2) {} }
+    try { ts.scrollToPosition(ts.options().rightOffset || 14, false); } catch (e) {}
+    if (this.coNen()) return;
+    try { ts.scrollToRealTime(); } catch (e) {}
+    if (this.coNen()) return;
+    try { ts.fitContent(); } catch (e) {}
   }
 
   /* ---------- chạm, kéo, kẻ đường ---------- */
