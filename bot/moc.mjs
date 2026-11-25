@@ -169,32 +169,43 @@ async function checkMarks(S) {
   for (const [sym, ms] of bySym) {
     const rows = await closedCandles(sym, '30m', 60);
     if (!rows) { log(`  ${sym}: không lấy được nến M30`); continue; }
-    const last = rows.at(-1);
-    const [t, , hi, lo, close] = last;
-    const tClose = t + 18e5;                       // nến M30 đóng ở cuối khoảng
 
     for (const m of ms) {
-      const lp = priceOn(m, tClose);
-      if (!Number.isFinite(lp) || lp <= 0) continue;
-      const hit = m.mode === 'close'
-        ? (m.dir === 'down' ? close < lp : close > lp)
-        : (m.dir === 'down' ? lo <= lp : hi >= lp);
-      log(`  ${m.base} ${m.dir}/${m.mode}: nến ${vn(t)} đóng ${fmt(close)} · đường ${fmt(lp)} → ${hit ? 'BÁO' : 'chưa'}`);
-      if (!hit) continue;
+      // Soi lại BACK nến đã đóng, không chỉ nến cuối: job có chết vài tiếng thì cú phá ở
+      // nến cũ vẫn được báo. Chỉ xét nến đóng SAU lúc đặt mốc — nếu không, mốc vừa kẻ ở
+      // chỗ giá đã nằm sẵn bên kia đường sẽ báo ngay, vô nghĩa.
+      const xet = rows.slice(-BACK).filter(r => r[0] + 18e5 > m.at);
+      let bat = null;
+      for (const r of xet) {
+        const [t, , hi, lo, close] = r;
+        const tClose = t + 18e5;
+        const lp = priceOn(m, tClose);
+        if (!Number.isFinite(lp) || lp <= 0) continue;
+        const hit = m.mode === 'close'
+          ? (m.dir === 'down' ? close < lp : close > lp)
+          : (m.dir === 'down' ? lo <= lp : hi >= lp);
+        if (hit) { bat = { t, tClose, close, lp }; break; }     // nến cũ nhất thoả là nến báo
+      }
+      const cuoi = rows.at(-1), lpNay = priceOn(m, cuoi[0] + 18e5);
+      log(`  ${m.base} ${m.dir}/${m.mode}: soi ${xet.length} nến · nến cuối đóng ${fmt(cuoi[4])} · đường ${fmt(lpNay)} → ${bat ? 'BÁO' : 'chưa'}`);
+      if (!bat) continue;
 
+      const tre = Math.round((cuoi[0] - bat.t) / 18e5);
       const huong = m.dir === 'down' ? 'xuống dưới' : 'lên trên';
-      const kieu = m.mode === 'close' ? `Nến M30 đóng lúc ${vn(tClose)} ở ${fmt(close)}` : `Giá chạm đường, ${fmt(close)}`;
+      const kieu = m.mode === 'close' ? `Nến M30 đóng lúc ${vn(bat.tClose)} ở ${fmt(bat.close)}` : `Giá chạm đường lúc ${vn(bat.tClose)}, ${fmt(bat.close)}`;
       const body = [
         `${m.base} phá ${huong} đường bạn kẻ.`,
         '',
-        `${kieu}, đường đang ở ${fmt(lp)}.`,
-        `Lệch ${((close - lp) / lp * 100).toFixed(2)}%.`,
+        `${kieu}, đường lúc đó ở ${fmt(bat.lp)}.`,
+        `Lệch ${((bat.close - bat.lp) / bat.lp * 100).toFixed(2)}%.`,
+        tre > 0 ? `Cú phá ở nến cách đây ${tre} cây M30 — bot vừa bắt kịp.` : '',
+        `Giá lúc này ${fmt(cuoi[4])}, đường đang ở ${fmt(lpNay)}.`,
         '',
         `Đường neo ${fmt(m.pa)} (${vn(m.ta)}) → ${fmt(m.pb)} (${vn(m.tb)}), bạn kẻ trên khung ${m.tf}.`,
         `Mốc này đã tắt, sẽ không báo lại.`,
-      ].join('\n');
+      ].filter(Boolean).join('\n');
       await send(PUSHERS, `${m.base} phá ${huong} trendline`, body, 'moc-' + m.id, DRY);
-      if (!DRY) { m.state = 'done'; m.firedAt = tClose; m.firedPx = close; m.firedLine = lp; }
+      if (!DRY) { m.state = 'done'; m.firedAt = bat.tClose; m.firedPx = bat.close; m.firedLine = bat.lp; }
     }
   }
 }
@@ -202,42 +213,57 @@ async function checkMarks(S) {
 /* ---------------- tìm đồng sắp phá ---------------- */
 async function scanNear(list) {
   const out = [];
-  const TFS = [{ bar: '1H', label: '1H' }, { bar: '4H', label: '4H' }];
+  const TFS = [{ bar: '1H', label: '1H', ms: 36e5 }, { bar: '4H', label: '4H', ms: 144e5 }];
   let done = 0;
   for (const c of list) {
     for (const tf of TFS) {
+      // 300 nến là đủ: luật khung H1 chặn mô hình ở 96 nến, lấy thêm cũng ra đúng ngần ấy đường.
       const rows = await closedCandles(c.id, tf.bar, 300);
       if (!rows || rows.length < 120) continue;
       let R;
       try { R = analyze(fromRows(rows), tf.bar); } catch (e) { continue; }
-      const price = rows.at(-1)[4];
+      const price = rows.at(-1)[4], tNow = rows.at(-1)[0];
       for (const L of R.lines || []) {
-        if (L.tBreak) continue;                       // đã phá rồi thì thôi
         if ((L.touches || 0) < 2) continue;
         if (L.range) continue;                        // biên đi ngang, không phải trendline
-        const lp = lineAt(L, rows.at(-1)[0]);
+        const lp = lineAt(L, tNow);
         if (!Number.isFinite(lp) || lp <= 0) continue;
         const d = Math.abs(price - lp) / lp * 100;
-        if (d > NEAR) continue;
-        // kháng cự phải nằm TRÊN giá, hỗ trợ phải nằm DƯỚI giá
-        if (L.side === 'R' && lp < price) continue;
-        if (L.side === 'S' && lp > price) continue;
-        out.push({
-          sym: c.id, base: c.base, tf: tf.label, side: L.side,
-          touches: L.touches, span: L.span, price, linePx: lp, distPct: d,
-          line: { ta: L.ta, pa: L.pa, tb: L.tb, pb: L.pb },
-        });
+
+        if (L.tBreak) {
+          // Đã phá. Chỉ giữ cú phá còn mới — cũ quá thì không còn là kèo.
+          const nen = Math.round((tNow - L.tBreak) / tf.ms);
+          if (nen > 10) continue;
+          out.push({
+            sym: c.id, base: c.base, tf: tf.label, side: L.side, trang: 'pha',
+            touches: L.touches, span: L.span, price, linePx: lp, distPct: d, nen,
+            xacNhan: !!L.tConfirm, retest: !!L.tRetest,
+            line: { ta: L.ta, pa: L.pa, tb: L.tb, pb: L.pb },
+          });
+        } else {
+          // Còn sống. analyze đã chỉ trả đường nằm gần giá; chặn thêm cho chắc.
+          if (d > NEAR) continue;
+          // kháng cự phải nằm TRÊN giá, hỗ trợ phải nằm DƯỚI giá
+          if (L.side === 'R' && lp < price) continue;
+          if (L.side === 'S' && lp > price) continue;
+          out.push({
+            sym: c.id, base: c.base, tf: tf.label, side: L.side, trang: 'song',
+            touches: L.touches, span: L.span, price, linePx: lp, distPct: d, nen: 0,
+            line: { ta: L.ta, pa: L.pa, tb: L.tb, pb: L.pb },
+          });
+        }
       }
     }
     if (++done % 15 === 0) log(`  quét ${done}/${list.length}`);
   }
-  // mỗi đồng giữ một đường gần nhất
+  // mỗi (đồng, khung) giữ một đường: ưu tiên đường còn sống và gần giá nhất
   const best = new Map();
+  const diem = x => (x.trang === 'song' ? 0 : 100) + x.distPct;
   for (const x of out) {
     const k = x.sym + '|' + x.tf;
-    if (!best.has(k) || x.distPct < best.get(k).distPct) best.set(k, x);
+    if (!best.has(k) || diem(x) < diem(best.get(k))) best.set(k, x);
   }
-  return [...best.values()].sort((a, b) => a.distPct - b.distPct).slice(0, 25);
+  return [...best.values()].sort((a, b) => diem(a) - diem(b)).slice(0, 25);
 }
 
 /* ---------------- chạy ---------------- */

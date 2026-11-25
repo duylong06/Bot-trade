@@ -1,6 +1,6 @@
 // app/main.js — nối các phần lại: danh sách coin, màn biểu đồ, mốc báo, kèo bot vẽ.
 
-import { topCoins, tickers, fmtPrice, fmtUsd, decimalsOf } from './okx.js';
+import { topCoins, tickers, fmtPrice, fmtUsd, decimalsOf, dropCandleCache } from './okx.js';
 import { ChartView, TFS, tfMs, toMs } from './chart.js';
 import { stochTxt } from './ta.js';
 import * as store from './store.js';
@@ -63,7 +63,7 @@ const TOP = {
         }
       }
       this.ve();
-      if (CV.sym) { const x = t.get(CV.sym); if (x) CV.gia(x.last, x.open24h); }
+      if (CV.sym) { const x = t.get(CV.sym); if (x) CV.gia(x.last, x.open24h); CV.canNenMoi(); }
     } catch (e) {}
   },
 
@@ -147,6 +147,21 @@ const CV = {
       b.setAttribute('aria-pressed', String(on));
       this.view.toggle(b.dataset.sw, on);
     });
+  },
+
+  /* Sang cây nến kế tiếp thì tải lại chuỗi nến, không thì cây cuối cứ phình mãi. */
+  async canNenMoi() {
+    const v = this.view;
+    if (!v || !v.bars || this.dangNap) return;
+    if (Date.now() < v.bars.t.at(-1) + tfMs(this.tf)) return;
+    this.dangNap = true;
+    try {
+      dropCandleCache();
+      const giu = v.chart.timeScale().getVisibleLogicalRange();
+      await v.load(this.sym, this.tf, this.tick);
+      if (giu) try { v.chart.timeScale().setVisibleLogicalRange(giu); } catch (e) {}
+      this.leg(null);
+    } catch (e) {} finally { this.dangNap = false; }
   },
 
   gia(last, open24h) {
@@ -288,19 +303,29 @@ const BOT = {
       $('#botList').innerHTML = `<div class="empty">Bot chưa tìm thấy đồng nào sắp phá.<br>Bot quét lại mỗi 30 phút.</div>`;
       return;
     }
-    $('#botStat').textContent = `Bot quét lúc ${hhmm(res.ts)} — ${res.items.length} đồng đáng để mắt. Đây là tham khảo, không phải lệnh.`;
-    res.items.sort((a, b) => a.distPct - b.distPct);
-    $('#botList').innerHTML = res.items.map(x => `
-      <div class="mk">
+    const sap = res.items.filter(x => x.trang !== 'pha').length;
+    const pha = res.items.length - sap;
+    $('#botStat').textContent = `Bot quét lúc ${hhmm(res.ts)} — ${sap} đồng sắp phá, ${pha} đồng vừa phá. Tham khảo, không phải lệnh.`;
+    $('#botList').innerHTML = res.items.map(x => {
+      const daPha = x.trang === 'pha';
+      const nhan = daPha
+        ? ['done', x.nen === 0 ? 'vừa phá' : `phá ${x.nen} nến trước`]
+        : x.distPct < 0.5 ? ['on', 'sát đường'] : ['wait', 'đang tới'];
+      const y = x.side === 'R'
+        ? ['Kháng cự giảm', 'phá lên là tín hiệu <b>Long</b>']
+        : ['Hỗ trợ tăng', 'phá xuống là tín hiệu <b>Short</b>'];
+      const than = daPha
+        ? `${y[0]} <b>đã bị phá</b>${x.xacNhan ? ', đã xác nhận gãy cấu trúc' : ''}${x.retest ? ', đã retest giữ được' : ''}.<br>
+           Giá ${fmtPrice(x.price)}, đường ở ${fmtPrice(x.linePx)} — đã đi xa <b>${x.distPct.toFixed(2)}%</b>.`
+        : `${y[0]} — ${y[1]}.<br>
+           Giá ${fmtPrice(x.price)}, đường đang ở ${fmtPrice(x.linePx)} — cách <b>${x.distPct.toFixed(2)}%</b>.`;
+      return `<div class="mk">
         <div class="mk-h"><span class="sy">${esc(x.base)}</span><span class="tf">${esc(x.tf)}</span>
-          <span class="st ${x.distPct < 0.5 ? 'on' : 'wait'}">${x.distPct < 0.5 ? 'sát đường' : 'đang tới'}</span></div>
-        <div class="mk-b">
-          ${x.side === 'R' ? 'Kháng cự giảm — phá lên là tín hiệu <b>Long</b>' : 'Hỗ trợ tăng — phá xuống là tín hiệu <b>Short</b>'}.<br>
-          Giá ${fmtPrice(x.price)}, đường đang ở ${fmtPrice(x.linePx)} — cách <b>${x.distPct.toFixed(2)}%</b>.<br>
-          Đường chạm ${x.touches} lần, kéo dài ${x.span} nến.
-        </div>
+          <span class="st ${nhan[0]}">${nhan[1]}</span></div>
+        <div class="mk-b">${than}<br>Đường chạm ${x.touches} lần, kéo dài ${x.span} nến.</div>
         <div class="mk-f"><button class="ghost" data-open="${esc(x.sym)}" data-tf="${esc(x.tf)}">Mở biểu đồ</button></div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
     $('#botList').querySelectorAll('[data-open]').forEach(b => b.onclick = () => CV.mo(b.dataset.open, { tf: b.dataset.tf }));
   },
 };
