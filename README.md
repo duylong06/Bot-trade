@@ -1,91 +1,114 @@
-# Quét tín hiệu OKX
+# Bot-trade
 
-Trang web một file, phân tích futures OKX **ngay trong trình duyệt** — không server, không bot chạy nền, không thông báo.
+Biểu đồ futures OKX chạy thẳng trong trình duyệt, cộng một con bot trên GitHub Actions canh giúp
+những đường bạn tự kẻ.
 
-Mở: <https://duylong06.github.io/Bot-trade/>
-
-## Năm tab
-
-| Tab | Làm gì |
-|---|---|
-| **Phá vỡ** | Coin đang phá đường xu hướng, phá vùng tích luỹ, hoặc vừa hoàn tất mô hình giá. Trên cùng là **bảng xu hướng chung** |
-| **Sắp phá** | Coin nén sát một mức chưa bị phá, kèm một cây volume mạnh ép vào mức đó |
-| **Top 70** | 70 coin thanh khoản cao nhất, **giá chạy liên tục**. Chạm một đồng để xem biểu đồ bao quát, **hai đường Stoch** trên M15 · H1 · H4, và **kháng cự – hỗ trợ** H1 + H4 |
-| **Theo dõi** | Theo dõi **liên tục** một đồng: sổ lệnh, tường thật hay giả, dòng tiền chủ động, OI, và kết luận **Kèo Pro** trên M30 + H1 |
-| **Cài đặt** | Số coin quét, ngưỡng lọc, ngưỡng kết luận xu hướng |
-
-## Tab Top 70
-
-Danh sách 70 cặp USDT-SWAP có khối lượng USD lớn nhất, chỉ coin. Giá và % 24 giờ làm mới **mỗi 4 giây** bằng **một** lệnh gọi `tickers` cho cả sàn, nên nhẹ; giá tăng nháy xanh, giảm nháy đỏ.
-
-Chạm một đồng mới tải nến — không tải sẵn 70 đồng × 3 khung. Phần chi tiết gồm:
-
-- **Biểu đồ bao quát** 170 nến, dẹt hơn biểu đồ tab Phá vỡ để nhìn được bức tranh rộng, có EMA 200 và các mức kháng cự / hỗ trợ vẽ thẳng lên chart
-- **Hai đường Stoch** đúng thiết lập đang dùng: **32·13·5 màu vàng** (dài hạn) và **10·5·5 màu đỏ** (ngắn hạn), nét đậm là %K, nét mờ là %D, kèm mốc 80 và 20
-- **Bảng đa khung M15 · H1 · H4** với giá trị cả hai Stoch và kết luận quá mua / quá bán
-- **Kháng cự – hỗ trợ riêng cho H1 và H4**, kèm số lần chạm và khoảng cách tới giá hiện tại
-
-Tab này **không** tìm điểm phá vỡ — đó là việc của tab Phá vỡ.
-
-Mỗi thẻ có biểu đồ nến, các mức quan trọng, và giải thích bằng tiếng Việt.
-
-## Bảng xu hướng chung (độ rộng thị trường)
-
-Mỗi lần quét khung **H1**, app đếm xem bao nhiêu coin vừa phá **cả đường ngắn hạn (8–35 nến) lẫn đường trung hạn (36–120 nến)** cùng một chiều, trong 2 nến gần nhất. Đường chỉ 8–10 nến vẫn tính là trendline. Phá = nến **đóng cửa** vượt qua đường; râu đâm qua không tính; đường chưa từng bị nến nào đóng cửa xuyên qua.
-
-Từ **5 coin** trở lên (đổi được trong Cài đặt) thì app kết luận thị trường đang nghiêng về một phía. App **không liệt kê coin nào phá** — bạn tự xem danh sách bên dưới và chọn.
-
-Đo trên 3 năm, 23 coin top: ngưỡng 5 chưa có lợi thế rõ, từ 8 trở lên mới thấy lợi thế nhưng chỉ khoảng 3 lần mỗi tháng. Khi rất nhiều coin cùng phá **lên** thì mua đuổi lại hay thua — đó thường là lúc đứng ngoài.
-
-## Chỉ coin
-
-App bỏ vàng, bạc, dầu, chỉ số chứng khoán và mọi hợp đồng không phải tiền mã hoá, lọc theo phân loại của OKX.
-
-## Thời gian thực
-
-Bấm Quét là lấy giá ngay lúc đó, **tính cả nến H1 đang chạy**. Cú phá trên nến chưa đóng được ghi rõ "nến đang chạy" — giá vẫn có thể rút về trước khi hết giờ.
-
-## Chạy
-
-Không cần cài gì. Mở `index.html` bằng trình duyệt, hoặc vào đường dẫn GitHub Pages ở trên. Dữ liệu lấy thẳng từ API công khai của OKX.
-
+**App:** https://duylong06.github.io/Bot-trade/
 Thêm vào màn hình chính iPhone: mở bằng Safari → Chia sẻ → Thêm vào MH chính.
 
-## Lịch sử
+## Bốn tab
 
-Repo này từng là bot báo phá vỡ trendline chạy trên GitHub Actions, đẩy thông báo về iPhone. Bản đó đã gỡ (11/2026) để quay lại bản quét chạy thẳng trên máy. Toàn bộ code bot và app cũ vẫn còn trong lịch sử git, tại commit `172e0a3`.
+| Tab | Làm gì |
+| --- | --- |
+| **Biểu đồ** | Top đồng OKX theo khối lượng, giá chạy mỗi 4 giây. Chạm vào một đồng để mở biểu đồ đầy màn hình. |
+| **Bot vẽ** | Những đồng bot tự tìm thấy đang áp sát một đường xu hướng. Tham khảo, không phải lệnh. |
+| **Mốc của tôi** | Các đường bạn đã kẻ và đang nhờ bot canh. |
+| **Cài đặt** | Hộp thư giữa app và bot. |
+
+## Biểu đồ
+
+Dùng **Lightweight Charts v5.2.1** — thư viện mã nguồn mở của chính TradingView, để trong `vendor/`
+nên không phụ thuộc mạng ngoài. Kéo ngang, phóng to thu nhỏ, crosshair giống hệt bên TradingView.
+
+- Khung trên: nến, **EMA 200**, volume.
+- Khung dưới: hai đường **Stoch** đúng bộ đang dùng — **32·13·5 vàng** dài hạn, **10·5·5 đỏ** ngắn hạn.
+  Nét đậm %K, nét mờ %D, thang đo khoá cứng 0–100 với mốc 80 và 20.
+- Khung nến: 15m · 30m · 1H · 4H · 1D.
+- Bật tắt được: kháng cự/hỗ trợ, đường bot vẽ, EMA200.
+
+## Kẻ đường và nhờ bot canh
+
+1. Mở một đồng, bấm **Kẻ đường**.
+2. Chạm điểm thứ nhất, chạm điểm thứ hai. Điểm neo tự bám vào đúng cây nến.
+3. Chọn **phá xuống** hay **phá lên**, và lúc nào thì báo:
+   - **Nến M30 đóng ngoài đường** — chắc hơn, râu quét qua rồi thụt lại thì không báo.
+   - **Giá chạm đường** — nhanh hơn, nhiễu hơn.
+4. Bấm **Lưu mốc**.
+
+Bot nối dài đường theo đúng độ dốc hai điểm neo, kiểm mỗi lượt quét trên nến M30 **đã đóng**.
+Đúng điều kiện thì đẩy thông báo về iPhone rồi **tắt mốc đó**, không báo lặp.
+
+Tắt máy vẫn báo được, vì việc canh do bot trên GitHub làm chứ không phải app.
+
+### Mốc đi từ app sang bot bằng đường nào
+
+App chạy trên trang công khai nên **không được giữ khoá ghi vào repo** — ai xem mã nguồn cũng thấy.
+Nên đường đi là:
+
+```
+app  --(gửi lệnh)-->  ntfy.sh  --(bot rút mỗi lượt)-->  out/moc.json trên nhánh data
+app  <--(đọc trạng thái)------------------------------  out/moc.json trên nhánh data
+```
+
+`ntfy.sh` là hộp thư công khai, không cần đăng nhập, cho gửi thẳng từ trình duyệt. Tin ở đó tự hết
+hạn sau 12 giờ — nó chỉ là **đường đi**, nơi lưu thật là nhánh `data` do bot ghi. Bot rút hộp thư mỗi
+30 phút nên không kịp mất tin.
+
+Đổi hộp thư thì phải đổi **cả hai chỗ**: ô trong tab Cài đặt của app, và biến `NTFY_TOPIC` ở
+Settings → Secrets and variables → Actions → Variables.
+
+Đã thử (25/11/2026): ntfy.sh gửi và đọc lại được từ GitHub Actions, CORS mở cho trình duyệt, thân tin
+9 KB vẫn nhận. `jsonblob.com` thì **không dùng được** — Cloudflare chặn IP của GitHub Actions (403).
+
+## Bot tự tìm đồng sắp phá
+
+`bot/moc.mjs` quét top 60 đồng OKX trên khung H1 và H4 bằng `core/breakout.js` — đúng bộ dò trendline
+đã dùng từ trước. Giữ lại đường **còn sống** (chưa bị phá), chạm từ 2 lần trở lên, và giá đang cách
+đường dưới **1,5%**. Mỗi đồng giữ một đường gần nhất, lấy tối đa 25 đồng, ghi ra `out/sap-pha.json`.
+
+Chạm vào một dòng là mở biểu đồ đồng đó với đường bot vẽ hiện sẵn (màu tím), để bạn tự xem rồi kẻ lại
+theo ý mình.
 
 ## Bot thông báo Kèo Pro
 
-`bot/keo.mjs` chạy trên GitHub Actions — **tự động, không cần mở app hay bấm quét**. Quét **BTC, ETH, SOL, BNB** trên khung **M30, H1 và H4** bằng `core/keopro.js` — bản JavaScript của chỉ báo TradingView "Bot Kèo Pro" gói 100.
+`bot/keo.mjs` chạy cùng lượt, quét **BTC, ETH, SOL, BNB** trên **M30, H1, H4** bằng `core/keopro.js` —
+bản JavaScript của chỉ báo TradingView "Bot Kèo Pro" gói 100. Đẩy kèo hạng **A+** (điểm ≥ 5/7) và **A**
+(≥ 3/7). Mỗi (đồng, khung) giữ một kèo cùng lúc, có theo dõi TP1 / TP2 / SL.
 
-Đẩy thông báo cho kèo hạng **A+** (điểm đồng thuận chỉ số ≥ 5/7) và **A** (≥ 3/7), không dính cờ loại. Đổi bằng biến `GRADES` (mặc định `A+,A`; đặt `A+` nếu chỉ muốn kèo mạnh nhất). Mỗi (đồng, khung) giữ **một kèo cùng lúc**, giống luật của chỉ báo; kèo đang chạy được theo dõi và báo tiếp khi chạm TP1, TP2, SL hoặc hết hạn.
+Phong cách theo khung: **M30 và H1 = intraday** (khung lớn 4H, SL tối thiểu 0,8%, hạn 60 giờ) ·
+**H4 = swing** (khung lớn 1D, SL tối thiểu 1,5%, hạn 240 giờ).
 
-Phong cách lấy theo khung chart đúng như bản Pine: **M30 và H1 = intraday** (khung lớn 4H, SL tối thiểu 0,8%, hạn 60 giờ) · **H4 = swing** (khung lớn 1D, SL tối thiểu 1,5%, hạn 240 giờ).
+## Vì sao job chạy liên tục
 
-Mỗi tin kèm luôn phân tích: vì sao vào, điểm từng chỉ số, Entry/SL/TP1/TP2, R:R sau phí, volume, OI, mốc gần, xu hướng khung 4H.
+GitHub **bỏ gần hết lịch**: repo này đặt 2 lượt mỗi giờ mà thực tế chỉ chạy **1 trong 17 lượt**. Nên:
 
-### Vì sao bot chạy liên tục
-
-GitHub **bỏ gần hết lịch**: repo này đặt 2 lượt mỗi giờ mà thực tế chỉ chạy **1 trong 17 lượt** — tức thông báo trễ hàng giờ. Nên bot không chờ lịch gọi từng lượt nữa:
-
-- Một job **chạy liên tục ~5 giờ 40**, mỗi nhịp ngủ tới đúng lúc nến M30 / H1 / H4 đóng (phút :00 và :30, cộng 20 giây cho sàn chốt nến) rồi quét ngay. Tin tới **trong vòng một phút** sau khi nến đóng.
-- Lịch `*/15` chỉ còn việc khởi động lại job khi nó hết hạn. Nhóm concurrency giữ đúng một lượt chờ, nên job vừa hết là lượt chờ chạy tiếp — gần như không có khoảng trống. Các dòng **cancelled** trong tab Actions là những lượt chờ bị thay thế, bình thường, không phải lỗi.
+- Một job **chạy liên tục ~5 giờ 40**, mỗi nhịp ngủ tới đúng lúc nến M30 / H1 / H4 đóng (phút :00 và
+  :30, cộng 20 giây cho sàn chốt nến) rồi quét ngay. Tin tới **trong vòng một phút** sau khi nến đóng.
+- Lịch `*/15` chỉ còn việc khởi động lại job khi hết hạn. Các dòng **cancelled** trong tab Actions là
+  lượt chờ bị thay thế — bình thường, không phải lỗi.
 - Repo công khai nên Actions **không tính phút**.
-- Trạng thái được đẩy lên nhánh `data` sau **mỗi** lượt quét, nên job có chết giữa đường thì lượt sau vẫn biết kèo nào đang giữ.
+- Trạng thái đẩy lên nhánh `data` sau **mỗi** lượt, nên job chết giữa đường thì lượt sau vẫn biết.
 
-Vẫn giữ phần **bù lượt bị bỏ** cho trường hợp job chết hẳn: mỗi lượt soi lại vài nến đã đóng (M30 lùi 5 nến, H1 lùi 4, H4 lùi 2), và kèo ở nến cũ chỉ được báo nếu giá **chưa chạm SL và chưa chạm TP1** — đúng luật chờ ở vùng của chỉ báo. Tin nhắn ghi rõ nến xác nhận đóng lúc nào và trễ mấy nến.
+## Chạy tay
 
-Muốn chắc hơn nữa thì cho **cron-job.org** gọi thẳng (token bạn tự điền, không bao giờ nằm trong repo):
+Tab Actions → `mode`: `loop` (mặc định) · `scan` (một lượt) · `test-push` (gửi tin thử) ·
+`dry-run` (quét, in ra, không gửi, không ghi) · `reset-open` (xoá kèo Kèo Pro đang giữ).
 
-- URL: `https://api.github.com/repos/duylong06/Bot-trade/actions/workflows/keo.yml/dispatches`
-- Method **POST** · Headers: `Authorization: Bearer <token>` · `Accept: application/vnd.github+json` · `X-GitHub-Api-Version: 2022-11-28`
-- Body: `{"ref":"main"}` · Test run thấy **204** là xong
+## Khoá
 
-### Chạy tay
+Khoá thông báo nằm trong GitHub Secret `PUSH_CONFIG`, **không bao giờ** nằm trong code.
 
-Tab Actions → `mode`: `loop` (chạy liên tục, mặc định) · `scan` (một lượt) · `test-push` (gửi tin thử) · `dry-run` (quét, in ra, không gửi, không ghi trạng thái) · `reset-open` (xoá kèo đang giữ). Ô `grades` chọn `A+,A` hoặc chỉ `A+`.
+## Biết trước mấy điều này
 
-Khoá thông báo nằm trong GitHub Secret `PUSH_CONFIG`, không bao giờ nằm trong code.
+- Dữ liệu là của **OKX**. Nếu bạn đánh bên Binance thì giá lệch khoảng 0,01–0,04% — nhỏ hơn phí, nhưng
+  không phải bằng không.
+- Bản JS của Kèo Pro **không khớp 100%** với chỉ báo trên TradingView: khác nguồn dữ liệu, vùng OB/FVG
+  là bản rút gọn.
+- Danh sách "sắp phá" là **tham khảo**. Đo trên dữ liệu cũ cho thấy chưa có cách đặt SL nào có lợi
+  nhuận dương sau phí ở kiểu vào lệnh đã thử.
+- Mốc chỉ xoá được từ tab **Mốc của tôi**, chưa sửa được trực tiếp trên biểu đồ.
 
-**Lưu ý:** bản JS không khớp 100% với chỉ báo trên TradingView — khác nguồn dữ liệu (OKX với Binance) và vùng OB/FVG là bản rút gọn.
+## Lịch sử
+
+Repo này từng có các tab Phá vỡ, Sắp phá, Theo dõi. Gỡ ngày 25/11/2026 để app gọn lại quanh biểu đồ.
+Code cũ vẫn còn trong lịch sử git, bản đầy đủ ở commit `b1b91f7`.
