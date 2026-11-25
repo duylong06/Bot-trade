@@ -17,6 +17,11 @@ on:
         type: choice
         options: [loop, scan, dry-run]
         default: loop
+  # Đẩy code mới thì bot khởi động lại ngay, không phải đợi lịch.
+  push:
+    branches: [main]
+    paths: ['bot/**', 'core/**', '.github/workflows/moc.yml']
+
   schedule:
     - cron: '*/15 * * * *'
 
