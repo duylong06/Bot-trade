@@ -113,6 +113,7 @@ const CV = {
       });
       window.__cv = this.view;            // để soi từ console khi cần
     }
+    if (this.view) this.view.cancelDraw();      // mở đồng mới thì bỏ hết nét đang kẻ dở
     this.nutVe('ve');
     $('#cvHint').textContent = 'Đang tải nến…';
     try {

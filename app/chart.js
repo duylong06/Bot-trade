@@ -420,11 +420,18 @@ export class ChartView {
     if (!huong) return;
     const ts = this.chart.timeScale();
     this._cuon = setInterval(() => {
-      let p;
-      try { p = ts.scrollPosition(); } catch (e) { return; }
-      // chặn hai đầu để không lạc mất hẳn chuỗi nến
-      const moi = Math.max(-(this.bars ? this.bars.c.length - 10 : 0), Math.min(600, p + huong * 1.6));
-      if (moi === p) return;
+      let p, span = 50;
+      try {
+        p = ts.scrollPosition();
+        const r = ts.getVisibleLogicalRange();
+        if (r) span = r.to - r.from;
+      } catch (e) { return; }
+      // Chặn ở 60% bề ngang: cuộn quá tay thì nến bị đẩy hết ra khỏi màn hình, nhìn vào
+      // chỉ thấy khoảng trống. Muốn với xa hơn nữa thì chụm hai ngón thu nhỏ lại — giới hạn
+      // này tính theo số nến đang nhìn thấy nên tự nới ra theo.
+      const tran = Math.max(14, span * 0.6);
+      const moi = Math.max(-(this.bars ? this.bars.c.length - 10 : 0), Math.min(tran, p + huong * 1.6));
+      if (Math.abs(moi - p) < 0.01) return;
       try { ts.scrollToPosition(moi, false); } catch (e) { return; }
       this.datNgam(nx, ny);
     }, 40);
@@ -565,12 +572,69 @@ export class ChartView {
     };
     this.pad.addEventListener('pointerup', xong);
     this.pad.addEventListener('pointercancel', xong);
+    this.batDauNeo();
   }
 
+  /* Chỉnh hai đầu neo SAU KHI đã kẻ xong, mà không khoá biểu đồ.
+     Bắt sự kiện ở pha capture trên chính khung biểu đồ: cú chạm rơi sát đầu neo thì mình
+     giữ lấy, còn lại thả cho thư viện kéo và phóng như thường. */
+  batDauNeo() {
+    const el = this.el;
+    let drag = null;
+    const pos = ev => {
+      const r = el.getBoundingClientRect();
+      return { x: ev.clientX - r.left, y: ev.clientY - r.top };
+    };
+
+    el.addEventListener('pointerdown', ev => {
+      if (this.mode !== 'sua' || !this.draft) return;
+      const { x, y } = pos(ev);
+      const m = this.draft;
+      const kc = (tt, pp) => {
+        const xx = this.xOf(tt), yy = this.candle.priceToCoordinate(pp);
+        return xx == null || yy == null ? 1e9 : Math.hypot(xx - x, yy - y);
+      };
+      const da = kc(m.ta, m.pa), db = kc(m.tb, m.pb);
+      if (Math.min(da, db) > 30) return;           // xa đầu neo → để biểu đồ nhận
+      ev.preventDefault(); ev.stopPropagation();
+      drag = { m, end: da <= db ? 'a' : 'b' };
+      try { el.setPointerCapture(ev.pointerId); } catch (e) {}
+    }, true);
+
+    el.addEventListener('pointermove', ev => {
+      if (!drag) return;
+      ev.preventDefault(); ev.stopPropagation();
+      const { x, y } = pos(ev);
+      const d = this.diem(x, y);
+      if (!d) return;
+      if (drag.end === 'a') { drag.m.ta = d.t; drag.m.pa = d.p; }
+      else { drag.m.tb = d.t; drag.m.pb = d.p; }
+      this.ov.update();
+      if (this.on.live) this.on.live(d);
+    }, true);
+
+    const het = ev => {
+      if (!drag) return;
+      ev.stopPropagation();
+      const m = drag.m; drag = null;
+      if (m.ta > m.tb) {
+        const t = m.ta, p = m.pa;
+        m.ta = m.tb; m.pa = m.pb; m.tb = t; m.pb = p;
+        this.ov.update();
+      }
+      if (this.on.moved) this.on.moved(m);
+    };
+    el.addEventListener('pointerup', het, true);
+    el.addEventListener('pointercancel', het, true);
+  }
+
+  /* Lớp phủ CHỈ bật khi đang ngắm. Kẻ xong rồi thì tắt đi, trả biểu đồ lại cho ngón tay —
+     lúc đó muốn chỉnh hai đầu neo thì có bộ bắt riêng ở dưới (batDauNeo), chỉ ăn cú chạm
+     rơi sát ngay đầu neo, còn lại để biểu đồ kéo và phóng như thường. */
   setPad() {
-    const active = this.mode === 'draw' || this.mode === 'sua' || !!this.draft || !!this.selId;
+    const active = this.mode === 'draw';
     this.pad.style.display = active ? 'block' : 'none';
-    this.pad.style.cursor = this.mode === 'draw' ? 'crosshair' : 'default';
+    this.pad.style.cursor = active ? 'crosshair' : 'default';
   }
 
   /* Đặt dấu thập vào giữa khung nhìn, ngang giá hiện tại — chỗ nào cũng rê tới được. */

@@ -34,15 +34,19 @@ nên không phụ thuộc mạng ngoài. Kéo ngang, phóng to thu nhỏ, crossh
    chốt điểm thứ nhất. Rê tiếp, đường kéo theo dấu thập, chạm thêm một cái là xong điểm thứ hai.
    Giá và giờ chỗ đang ngắm hiện ở thẻ vàng bên phải và dưới đáy.
    Muốn kẻ **ra xa khỏi giá hiện tại**: rê dấu thập tới sát mép phải rồi **giữ nguyên ngón** —
-   biểu đồ tự chạy ra tương lai, giữ bao lâu đi xa bấy nhiêu (tối đa 600 nến). Nhả tay là dừng.
-   Mép trái cũng vậy. Chỗ phía sau cây nến cuối không có nến nên nam châm không bám.
+   biểu đồ tự chạy ra tương lai. Nó dừng khi khoảng trống chiếm 60% bề ngang, để nến không bị
+   đẩy hết ra ngoài; muốn với xa hơn nữa thì **chụm hai ngón thu nhỏ** rồi làm lại, vì giới hạn
+   tính theo số nến đang nhìn thấy. Mép trái cũng vậy. Chỗ sau cây nến cuối không có nến nên
+   nam châm không bám.
+4. **Kẻ xong vẫn kéo và phóng biểu đồ được như thường.** Chỉ cú chạm rơi sát ngay đầu neo mới
+   bị giữ lại để chỉnh đường; chạm chỗ khác là biểu đồ nhận.
 3. **Nam châm** bật sẵn: ngón ở nửa trên cây nến thì bám râu trên hoặc mép thân trên, nửa dưới thì bám
    râu dưới hoặc mép thân dưới — râu được ưu tiên. Tắt được bằng nút Nam châm trên thanh công cụ.
-4. Kéo lại hai đầu tròn cho khớp, rồi bấm **Xong**.
-5. Chọn **phá xuống** hay **phá lên**, và lúc nào thì báo:
+5. Vừa ý thì bấm **Xong**.
+6. Chọn **phá xuống** hay **phá lên**, và lúc nào thì báo:
    - **Nến M30 đóng ngoài đường** — chắc hơn, râu quét qua rồi thụt lại thì không báo.
    - **Giá chạm đường** — nhanh hơn, nhiễu hơn.
-6. Bấm **Lưu mốc**.
+7. Bấm **Lưu mốc**.
 
 Bot nối dài đường theo đúng độ dốc hai điểm neo, kiểm mỗi lượt quét trên nến M30 **đã đóng**.
 Đúng điều kiện thì đẩy thông báo về iPhone rồi **tắt mốc đó**, không báo lặp.
@@ -138,7 +142,7 @@ Khoá thông báo nằm trong GitHub Secret `PUSH_CONFIG`, **không bao giờ** 
 - Danh sách "sắp phá" là **tham khảo**. Đo trên dữ liệu cũ cho thấy chưa có cách đặt SL nào có lợi
   nhuận dương sau phí ở kiểu vào lệnh đã thử.
 - Mốc đã lưu chỉ **xoá** được từ tab Mốc của tôi; muốn đổi thì xoá rồi kẻ lại.
-- Đang kẻ thì hai ngón không phóng to được ngay — nhả tay ra một nhịp rồi mới chụm.
+- Đang ngắm thì hai ngón không phóng to được ngay — nhả tay ra một nhịp rồi mới chụm.
 
 ## Lịch sử
 
