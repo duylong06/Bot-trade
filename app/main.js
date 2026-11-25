@@ -202,8 +202,8 @@ const CV = {
   nutVe(trangThai) {
     const d = {
       ve:    { draw: 1, cancel: 0, redo: 0, done: 0, hint: '' },
-      dangVe:{ draw: 0, cancel: 1, redo: 0, done: 0, hint: 'Đặt ngón ở điểm thứ nhất rồi <b>kéo</b> tới điểm thứ hai.' },
-      cham2: { draw: 0, cancel: 1, redo: 0, done: 0, hint: 'Đã đặt điểm thứ nhất. Chạm điểm thứ hai.' },
+      dangVe:{ draw: 0, cancel: 1, redo: 0, done: 0, hint: '<b>Rê</b> để đưa dấu thập tới chỗ cần, rồi <b>chạm</b> để chốt.', live: 1 },
+      cham2: { draw: 0, cancel: 1, redo: 0, done: 0, hint: 'Xong điểm thứ nhất. Rê tiếp rồi chạm để chốt điểm thứ hai.' },
       xong:  { draw: 0, cancel: 1, redo: 1, done: 1, hint: 'Kéo hai đầu tròn để chỉnh cho khớp râu nến. Vừa ý thì bấm Xong.' },
     }[trangThai];
     $('#cvDraw').hidden = !d.draw;
@@ -211,13 +211,17 @@ const CV = {
     $('#cvRedo').hidden = !d.redo;
     $('#cvDone').hidden = !d.done;
     $('#cvHint').innerHTML = d.hint;
+    // chế độ ngắm: ghép luôn giá và giờ đang ngắm vào sau câu hướng dẫn
+    if (d.live && this.view && this.view.cross) this.veLive(this.view.cross, d.hint);
   },
 
-  /* Giá và giờ của đầu đang kéo, hiện ngay dưới đáy như bên OKX. */
-  veLive(p) {
+  /* Giá và giờ chỗ dấu thập đang ngắm, hiện ngay dưới đáy như bên OKX. */
+  veLive(p, dan) {
     const v = this.view;
-    $('#cvHint').innerHTML = `${fmtPrice(p.p, v.dec)} · ${hhmm(p.t)}` +
-      (p.bam ? ` <span style="color:var(--mark)">bám ${esc(p.bam)}</span>` : '');
+    const duoi = dan || (v.pending1 ? 'chạm để chốt điểm thứ hai' : 'chạm để chốt');
+    $('#cvHint').innerHTML = `<b>${fmtPrice(p.p, v.dec)}</b> · ${hhmm(p.t)}` +
+      (p.bam ? ` <span style="color:var(--mark)">bám ${esc(p.bam)}</span>` : '') +
+      `<br><span style="color:var(--faint)">${duoi}</span>`;
   },
 
   /* vừa kẻ xong hai điểm → mở tấm lưu mốc */
@@ -258,6 +262,10 @@ function dongTam() {
 $('#shDrop').onclick = dongTam;
 $('#shSave').onclick = async () => {
   const m = CV.tam; if (!m) return dongTam();
+  if (m.ta === m.tb) {
+    $('#shInfo').textContent = 'Hai đầu đang nằm trên cùng một cây nến nên chưa thành đường. Bỏ rồi kẻ lại.';
+    return;
+  }
   const mark = {
     id: m.id, sym: CV.sym, base: CV.base, tf: CV.tf,
     ta: m.ta, pa: m.pa, tb: m.tb, pb: m.pb,

@@ -29,9 +29,10 @@ nên không phụ thuộc mạng ngoài. Kéo ngang, phóng to thu nhỏ, crossh
 ## Kẻ đường và nhờ bot canh
 
 1. Mở một đồng, bấm **Kẻ đường**.
-2. Đặt ngón ở điểm thứ nhất rồi **kéo một mạch** tới điểm thứ hai — đường chạy theo tay, giá và giờ
-   của đầu đang kéo hiện ngay dưới đáy. (Chạm một cái rồi nhả cũng được: nó chuyển sang kiểu chấm hai
-   phát.)
+2. Một **dấu thập ngắm** hiện ra giữa khung. **Rê** ngón ở bất cứ đâu — dấu thập đi đúng bằng quãng
+   ngón đi, nên ngón đặt xa điểm cần ngắm cũng được, không che mất. Ngắm trúng thì **chạm một cái** để
+   chốt điểm thứ nhất. Rê tiếp, đường kéo theo dấu thập, chạm thêm một cái là xong điểm thứ hai.
+   Giá và giờ chỗ đang ngắm hiện ở thẻ vàng bên phải và dưới đáy.
 3. **Nam châm** bật sẵn: ngón ở nửa trên cây nến thì bám râu trên hoặc mép thân trên, nửa dưới thì bám
    râu dưới hoặc mép thân dưới — râu được ưu tiên. Tắt được bằng nút Nam châm trên thanh công cụ.
 4. Kéo lại hai đầu tròn cho khớp, rồi bấm **Xong**.

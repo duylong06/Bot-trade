@@ -119,6 +119,35 @@ class Overlay {
           ctx.beginPath(); ctx.arc(x, y, 5 * vr, 0, 7); ctx.fill();
         }
       }
+
+      /* --- dấu thập ngắm --- */
+      // Rê ngón ở đâu cũng được, dấu thập đi theo đúng khoảng cách đó, nên ngón không che
+      // mất chỗ cần ngắm. Chạm một cái mới chốt điểm.
+      if (v.cross) {
+        const x = X(v.cross.t), y = Y(v.cross.p);
+        if (x != null && y != null) {
+          ctx.strokeStyle = 'rgba(255,214,10,.75)';
+          ctx.lineWidth = Math.max(1, vr);
+          ctx.setLineDash([5 * hr, 4 * hr]);
+          ctx.beginPath(); ctx.moveTo(0, Math.round(y) + .5); ctx.lineTo(W, Math.round(y) + .5); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(Math.round(x) + .5, 0); ctx.lineTo(Math.round(x) + .5, H); ctx.stroke();
+          ctx.setLineDash([]);
+          // vòng ngắm
+          ctx.strokeStyle = C.sel; ctx.lineWidth = 2.2 * vr;
+          ctx.beginPath(); ctx.arc(x, y, 9 * vr, 0, 7); ctx.stroke();
+          ctx.fillStyle = C.sel;
+          ctx.beginPath(); ctx.arc(x, y, 2.2 * vr, 0, 7); ctx.fill();
+          // thẻ giá vàng bên phải, chữ tối cho nổi
+          const txt = v.fmt(v.cross.p) + (v.cross.bam ? ' · ' + v.cross.bam : '');
+          ctx.font = `700 ${Math.round(10.5 * vr)}px -apple-system,BlinkMacSystemFont,sans-serif`;
+          ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+          const wt = ctx.measureText(txt).width;
+          ctx.fillStyle = C.sel;
+          ctx.fillRect(W - wt - 12 * hr, y - 8 * vr, wt + 12 * hr, 16 * vr);
+          ctx.fillStyle = '#1A1206';
+          ctx.fillText(txt, W - 6 * hr, y);
+        }
+      }
     });
   }
 }
@@ -132,8 +161,8 @@ export class ChartView {
     this.sym = null; this.tf = '1H'; this.dec = 2;
     this.bars = null; this.step = tfMs('1H');
     this.marks = []; this.botLines = []; this.levels = [];
-    this.selId = null; this.draft = null; this.pending1 = null;
-    this.mode = 'pan';                 // 'pan' | 'draw'
+    this.selId = null; this.draft = null; this.pending1 = null; this.cross = null;
+    this.mode = 'pan';                 // 'pan' | 'draw' (đang ngắm) | 'sua' (chỉnh hai đầu)
     this.show = { levels: true, bot: true, ema: true, magnet: true };
     this.on = opts.on || {};
     this.build();
@@ -315,6 +344,14 @@ export class ChartView {
 
   /* ---------- chạm, kéo, kẻ đường ---------- */
 
+  /* Khung vẽ của phần nến, tính bằng điểm ảnh CSS (trừ cột giá bên phải và khung Stoch). */
+  khungVe() {
+    let w = this.el.clientWidth, h = this.el.clientHeight;
+    try { w -= this.chart.priceScale('right').width(); } catch (e) {}
+    try { h = this.chart.panes()[0].getHeight(); } catch (e) {}
+    return { w: Math.max(40, w), h: Math.max(40, h) };
+  }
+
   /* Điểm neo từ toạ độ chạm. Nam châm: ở gần đầu râu hay mép thân nến thì bám vào đó,
      vì trendline phải chạm đúng đầu râu / mép thân chứ không phải lơ lửng giữa không. */
   diem(x, y) {
@@ -353,7 +390,9 @@ export class ChartView {
   bindPointer() {
     const el = this.el;
     this.pad = document.createElement('div');
-    this.pad.style.cssText = 'position:absolute;inset:0;z-index:5;touch-action:none;display:none';
+    // z-index phải trên cả thanh chia khung của thư viện (z-index 50), nếu không thì chạm
+    // trúng đường ranh giữa khung nến và khung Stoch là mất, không chốt được điểm.
+    this.pad.style.cssText = 'position:absolute;inset:0;z-index:60;touch-action:none;display:none';
     el.style.position = 'relative';
     el.appendChild(this.pad);
 
@@ -364,13 +403,17 @@ export class ChartView {
       return { x: ev.clientX - r.left, y: ev.clientY - r.top };
     };
     const bao = d => { if (this.on.live) this.on.live(d); };
+    const XY = c => ({
+      x: this.xOf(c.t),
+      y: this.candle.priceToCoordinate(c.p),
+    });
 
     /* Dựng đường từ hai điểm neo, xếp điểm cũ trước. */
     const chot = (a, b) => {
       if (a.t === b.t) { if (this.on.badSecond) this.on.badSecond(); return false; }
       const [x, y] = a.t < b.t ? [a, b] : [b, a];
       this.draft = { id: 'm' + Date.now().toString(36), ta: x.t, pa: x.p, tb: y.t, pb: y.p };
-      this.pending1 = null;
+      this.pending1 = null; this.cross = null;
       this.mode = 'sua';                 // vẫn giữ pad để kéo lại hai đầu
       this.setPad(); this.ov.update();
       if (this.on.ready) this.on.ready(this.draft);
@@ -393,8 +436,9 @@ export class ChartView {
       if (!d) return;
       try { this.pad.setPointerCapture(ev.pointerId); } catch (e) {}
 
-      // đã có đường nháp → thử bắt một đầu neo để kéo lại
-      const m = this.draft || this.marks.find(k => k.id === this.selId);
+      // Đã có đường HOÀN CHỈNH → thử bắt một đầu neo để kéo lại. Đường nháp đang rê
+      // (cờ nhap) không tính: nó chỉ là nét xem trước, bắt vào nó thì chốt điểm hỏng.
+      const m = (this.draft && !this.draft.nhap) ? this.draft : this.marks.find(k => k.id === this.selId);
       if (m) {
         const kc = (tt, pp) => {
           const xx = this.xOf(tt), yy = this.candle.priceToCoordinate(pp);
@@ -410,26 +454,38 @@ export class ChartView {
 
       if (this.mode !== 'draw') return;
 
-      // chạm lần hai của kiểu "chấm hai phát"
-      if (this.pending1) { chot(this.pending1, d); return; }
-
-      // bắt đầu kéo một mạch: đặt neo đầu, đường chạy theo tay
-      neo = d;
-      this.draft = { id: 'nhap', ta: d.t, pa: d.p, tb: d.t, pb: d.p, nhap: true };
-      drag = { kieu: 'moi' }; daKeo = false;
-      this.ov.update();
-      bao({ ...d, dau: true });
+      // Kiểu dấu thập ngắm: rê ngón để dời dấu thập ĐÚNG BẰNG quãng ngón đi, nên ngón
+      // đặt chỗ nào cũng được, không che mất chỗ cần ngắm. Chạm một cái mới chốt điểm.
+      const c0 = XY(this.cross);
+      if (c0.x == null || c0.y == null) return;
+      drag = { kieu: 'ngam', fx: x, fy: y, cx: c0.x, cy: c0.y };
+      daKeo = false;
     });
 
     this.pad.addEventListener('pointermove', ev => {
       if (!drag || nPointer > 1) return;
       ev.preventDefault();
       const { x, y } = pos(ev);
+
+      if (drag.kieu === 'ngam') {
+        if (Math.hypot(x - drag.fx, y - drag.fy) > 5) daKeo = true;
+        // Chặn dấu thập trong khung nến: ra ngoài là mất tăm, không biết đang ngắm đâu.
+        const k = this.khungVe();
+        const nx = Math.max(2, Math.min(k.w - 2, drag.cx + (x - drag.fx)));
+        const ny = Math.max(2, Math.min(k.h - 2, drag.cy + (y - drag.fy)));
+        const d = this.diem(nx, ny);
+        if (!d) return;
+        this.cross = d;
+        if (this.pending1) { this.draft = { id: 'nhap', ta: this.pending1.t, pa: this.pending1.p, tb: d.t, pb: d.p, nhap: true }; }
+        this.ov.update();
+        bao(d);
+        return;
+      }
+
       const d = this.diem(x, y);
       if (!d) return;
       daKeo = true;
-      if (drag.kieu === 'moi') { this.draft.tb = d.t; this.draft.pb = d.p; }
-      else if (drag.end === 'a') { drag.m.ta = d.t; drag.m.pa = d.p; }
+      if (drag.end === 'a') { drag.m.ta = d.t; drag.m.pa = d.p; }
       else { drag.m.tb = d.t; drag.m.pb = d.p; }
       this.ov.update();
       bao(d);
@@ -439,15 +495,28 @@ export class ChartView {
       nPointer = Math.max(0, nPointer - 1);
       if (!drag) return;
       const k = drag; drag = null;
-      if (k.kieu === 'moi') {
-        if (!daKeo) {
-          // chỉ chạm một cái, không kéo → chuyển sang kiểu chấm hai phát
-          this.pending1 = neo; this.draft = null; this.ov.update();
+      if (k.kieu === 'ngam') {
+        if (daKeo) return;                       // chỉ là rê để ngắm, chưa chốt gì
+        // chạm một cái = chốt điểm tại dấu thập
+        if (!this.pending1) {
+          this.pending1 = { t: this.cross.t, p: this.cross.p };
+          this.ov.update();
           if (this.on.tapMode) this.on.tapMode();
-          return;
+        } else {
+          this.draft = null;
+          chot(this.pending1, { t: this.cross.t, p: this.cross.p });
         }
-        chot(neo, { t: this.draft.tb, p: this.draft.pb });
-      } else if (this.on.moved) this.on.moved(k.m);
+        return;
+      }
+      // Kéo một đầu vượt qua đầu kia thì hai điểm neo đảo thứ tự — xếp lại cho đúng
+      // "điểm cũ trước, điểm mới sau", vì phần hiển thị và bot đều đọc theo thứ tự đó.
+      const m = k.m;
+      if (m && m.ta > m.tb) {
+        const t = m.ta, p = m.pa;
+        m.ta = m.tb; m.pa = m.pb; m.tb = t; m.pb = p;
+        this.ov.update();
+      }
+      if (this.on.moved) this.on.moved(m);
     };
     this.pad.addEventListener('pointerup', xong);
     this.pad.addEventListener('pointercancel', xong);
@@ -459,8 +528,28 @@ export class ChartView {
     this.pad.style.cursor = this.mode === 'draw' ? 'crosshair' : 'default';
   }
 
-  startDraw() { this.mode = 'draw'; this.pending1 = null; this.draft = null; this.selId = null; this.setPad(); this.ov.update(); }
-  cancelDraw() { this.mode = 'pan'; this.pending1 = null; this.draft = null; this.setPad(); this.ov.update(); }
+  /* Đặt dấu thập vào giữa khung nhìn, ngang giá hiện tại — chỗ nào cũng rê tới được. */
+  datCross() {
+    const b = this.bars; if (!b) return;
+    let i = b.c.length - 1;
+    try {
+      const r = this.chart.timeScale().getVisibleLogicalRange();
+      if (r) i = Math.round((r.from + r.to) / 2);
+    } catch (e) {}
+    i = Math.max(0, Math.min(b.c.length - 1, i));
+    // giá lấy ở giữa khung đang nhìn, không lấy giá hiện tại — giá hiện tại có thể đang
+    // nằm sát mép trên, dấu thập hiện ra chỗ khó thấy
+    let p = b.c.at(-1);
+    try { const q = this.candle.coordinateToPrice(this.khungVe().h / 2); if (q != null) p = q; } catch (e) {}
+    this.cross = { t: b.t[i], p, bam: null };
+  }
+
+  startDraw() {
+    this.mode = 'draw'; this.pending1 = null; this.draft = null; this.selId = null;
+    this.datCross(); this.setPad(); this.ov.update();
+    if (this.on.live && this.cross) this.on.live(this.cross);
+  }
+  cancelDraw() { this.mode = 'pan'; this.pending1 = null; this.draft = null; this.cross = null; this.setPad(); this.ov.update(); }
   select(id) { this.selId = id; this.draft = null; this.mode = 'pan'; this.setPad(); this.ov.update(); }
   setMarks(a) { this.marks = a || []; this.ov.update(); }
   setBotLines(a) { this.botLines = a || []; this.ov.update(); }
