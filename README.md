@@ -136,6 +136,12 @@ Tab Actions, chọn workflow rồi Run workflow.
 Kiểm tại máy, không cần mạng: `node /tmp/.../bot-local.mjs` dựng sẵn mạng giả lập rồi chạy
 `bot/moc.mjs` thật — bắt được loại lỗi mà `node --check` không thấy.
 
+## Đẩy bản mới
+
+Chạy `node tools/ver.mjs` **trước khi commit**. Nó đánh `?v=<số>` vào mọi đường dẫn JS trong
+`index.html` và các lệnh import. Không có bước này thì app trên màn hình chính giữ cache tới 10
+phút, mở ra vẫn chạy file cũ.
+
 ## Khoá
 
 Khoá thông báo nằm trong GitHub Secret `PUSH_CONFIG`, **không bao giờ** nằm trong code.

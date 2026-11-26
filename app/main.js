@@ -1,9 +1,9 @@
 // app/main.js — nối các phần lại: danh sách coin, màn biểu đồ, mốc báo, kèo bot vẽ.
 
-import { topCoins, tickers, fmtPrice, fmtUsd, decimalsOf, dropCandleCache, candles } from './okx.js';
-import { ChartView, TFS, tfMs, toMs } from './chart.js';
-import { stochTxt, stoch, keyLevels } from './ta.js';
-import * as store from './store.js';
+import { topCoins, tickers, fmtPrice, fmtUsd, decimalsOf, dropCandleCache, candles } from './okx.js?v=202611260406';
+import { ChartView, TFS, tfMs, toMs } from './chart.js?v=202611260406';
+import { stochTxt, stoch, keyLevels } from './ta.js?v=202611260406';
+import * as store from './store.js?v=202611260406';
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));

@@ -103,3 +103,20 @@ Sửa:
   rơi vào vùng vẽ được không.
 - Thêm bộ canh chừng chạy mỗi 1,5 giây. Thư viện chỉ báo khi khung nhìn đổi theo chiều ngang;
   thang giá trôi thì không có sự kiện nào, nên phải tự hỏi.
+
+## Vì sao `autoScale: true` không chữa được
+
+Đảo lại: `priceScale.setAutoScale(t)` trong thư viện chỉ là `applyOptions({autoScale:t})`.
+Khi khoảng giá bị ghim mà **tuỳ chọn vẫn đang là `true`**, gán lại đúng giá trị đó là thư viện
+bỏ qua, không tính lại gì cả. Ảnh người dùng gửi đúng cảnh này: thang giá ghim ở 1.500–2.200
+của ETH trong khi SOL chạy 64,79–80,56.
+
+`batTuCo()` đảo `false` rồi `true` nên tuỳ chọn thật sự đổi giá trị, buộc tính lại. Thư viện
+tính ở khung hình sau, nên kiểm ngay lập tức vẫn thấy "chưa chữa" — bộ canh chừng 1,5 giây
+là chỗ bắt lại. `epThangGia()` là phương án cuối: ép thẳng khoảng giá về vùng nến đang nhìn.
+
+## Cache của app màn hình chính
+
+App thêm vào màn hình chính giữ cache tới 10 phút. Đẩy bản vá xong mở app vẫn chạy file cũ,
+hoặc tệ hơn là `index.html` mới ghép với `app/chart.js` cũ — sinh ra lỗi không giống bản nào.
+`node tools/ver.mjs` đánh `?v=<số>` vào mọi đường dẫn JS, chạy **trước mỗi lần commit**.

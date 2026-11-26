@@ -6,8 +6,8 @@
 // Bố cục: khung trên là nến + EMA200 + volume, khung dưới là hai đường Stoch
 // (32·13·5 vàng dài hạn, 10·5·5 đỏ ngắn hạn) — đúng bộ bạn đang dùng.
 
-import { candles, decimalsOf, fmtPrice } from './okx.js';
-import { ema, stoch, keyLevels } from './ta.js';
+import { candles, decimalsOf, fmtPrice } from './okx.js?v=202611260406';
+import { ema, stoch, keyLevels } from './ta.js?v=202611260406';
 
 const L = () => window.LightweightCharts;
 
@@ -344,7 +344,7 @@ export class ChartView {
 
   setBars(k) {
     this.bars = k;
-    try { this.chart.priceScale('right').applyOptions({ autoScale: true }); } catch (e) {}
+    this.batTuCo();
     const n = k.c.length;
     const cd = [], vd = [];
     for (let i = 0; i < n; i++) {
@@ -439,17 +439,51 @@ export class ChartView {
   /* Đưa khung nhìn về cây nến mới nhất, chừa sẵn khoảng trống bên phải.
      scrollToRealTime() không kéo về khi biểu đồ đã bị cuộn xa ra tương lai, nên đặt thẳng vị trí.
      Đặt xong còn kiểm lại: vẫn không thấy nến thì ép khung ôm trọn dữ liệu. */
+  /* Thang giá của chính chuỗi nến — không hỏi qua chart.priceScale('right') vì có nhiều
+     khung, dễ trỏ nhầm khung Stoch. */
+  thangGia() {
+    try { return this.candle.priceScale(); } catch (e) {}
+    try { return this.chart.priceScale('right'); } catch (e) {}
+    return null;
+  }
+
+  /* Bật lại tự co giãn.
+     Phải ĐẢO qua false rồi mới true. Thư viện ghim khoảng giá mà không phải lúc nào cũng
+     đổi giá trị tuỳ chọn, nên gán lại đúng giá trị đang có là nó bỏ qua, không tính lại —
+     thang giá cứ kẹt ở khoảng của đồng xem trước đó. */
+  batTuCo() {
+    const ps = this.thangGia(); if (!ps) return;
+    try { ps.applyOptions({ autoScale: false }); } catch (e) {}
+    try { ps.applyOptions({ autoScale: true }); } catch (e) {}
+  }
+
+  /* Phương án cuối: ép thẳng khoảng giá về đúng vùng nến đang nhìn. */
+  epThangGia() {
+    const b = this.bars, ps = this.thangGia();
+    if (!b || !ps) return;
+    let i0 = 0, i1 = b.c.length - 1;
+    try {
+      const r = this.chart.timeScale().getVisibleLogicalRange();
+      if (r) { i0 = Math.max(0, Math.floor(r.from)); i1 = Math.min(b.c.length - 1, Math.ceil(r.to)); }
+    } catch (e) {}
+    if (i1 < i0) { i0 = 0; i1 = b.c.length - 1; }
+    let lo = Infinity, hi = -Infinity;
+    for (let i = i0; i <= i1; i++) { if (b.l[i] < lo) lo = b.l[i]; if (b.h[i] > hi) hi = b.h[i]; }
+    if (!Number.isFinite(lo) || !Number.isFinite(hi) || hi <= 0) return;
+    const dem = Math.max((hi - lo) * 0.12, hi * 0.002);
+    try { ps.setVisibleRange({ from: Math.max(0, lo - dem), to: hi + dem }); } catch (e) {}
+  }
+
   fit() {
-    // Bật lại tự co giãn thang giá. Chỉ cần một cú kéo nhầm vào trục giá là thư viện tắt nó
-    // và giữ nguyên khoảng giá cũ mãi mãi — đổi sang đồng có giá khác hẳn là nến bay ra
-    // ngoài màn hình.
-    try { this.chart.priceScale('right').applyOptions({ autoScale: true }); } catch (e) {}
+    this.batTuCo();
     const ts = this.chart.timeScale();
     try { ts.scrollToPosition(ts.options().rightOffset || 14, false); } catch (e) {}
     if (this.coNen()) return;
     try { ts.scrollToRealTime(); } catch (e) {}
     if (this.coNen()) return;
     try { ts.fitContent(); } catch (e) {}
+    if (this.coNen()) return;
+    this.epThangGia();            // ngang đã đúng mà vẫn trống thì hỏng ở thang giá
   }
 
   /* ---------- chạm, kéo, kẻ đường ---------- */

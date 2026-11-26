@@ -1,7 +1,7 @@
 // Dựng lại đúng ảnh chụp của người dùng: thang giá bị khoá ở 5,5–8,0 trong khi NEAR
 // chỉ chạy 2,5–3,6, nên nến nằm ngoài màn hình theo CHIỀU DỌC.
 const { chromium } = require('playwright');
-const PX={BIG:7.0, NEAR:3.05};
+const PX={ETH:1650, SOL:71.2};
 const B=Object.keys(PX);
 function mk(base){const step=36e5,now=Math.floor(Date.now()/step)*step,rows=[];
 let r=base.length*7919,p=PX[base];
@@ -28,7 +28,7 @@ page.on('pageerror',e=>{console.log('  [LỖI JS]',e.message);hong++;});
 await page.route('**www.okx.com/**',r=>{const u=new URL(r.request().url());let data=[];
  if(u.pathname.endsWith('/market/tickers'))data=B.map((x,i)=>({instId:`${x}-USDT-SWAP`,last:String(PX[x]),open24h:String(PX[x]*.98),volCcy24h:String(1e7/(i+1))}));
  else if(u.pathname.endsWith('/public/instruments'))data=B.map(x=>({instId:`${x}-USDT-SWAP`,state:'live',instCategory:'1',tickSz:'0.001'}));
- else if(u.pathname.endsWith('/market/candles'))data=mk((u.searchParams.get('instId')||'BIG-X').split('-')[0]);
+ else if(u.pathname.endsWith('/market/candles'))data=mk((u.searchParams.get('instId')||'ETH-X').split('-')[0]);
  r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({code:'0',data})});});
 await page.route('**raw.githubusercontent.com/**',r=>r.fulfill({status:200,contentType:'application/json',body:'{"marks":[],"ts":0,"items":[]}'}));
 await page.route('**ntfy.sh/**',r=>r.fulfill({status:200,body:'{}'}));
@@ -65,16 +65,32 @@ say(s.coNen===true, 'phép kiểm nhận ra là có nến');
 say(!s.loi, 'không phải hiện bảng chẩn đoán');
 await page.screenshot({path:'thangGia.png'});
 
-console.log('4. Phép kiểm có bắt được lỗi dọc không (ép thang giá ra xa rồi hỏi)');
-const batDuoc=await page.evaluate(()=>{
-  const v=window.__cv, ps=v.chart.priceScale('right');
-  ps.applyOptions({autoScale:false});
-  ps.setVisibleRange({from:50,to:80});           // xa hẳn vùng giá 2,5–3,6
-  return v.coNen();
+console.log('4. Kiểu hỏng thật: thang giá bị GHIM mà tuỳ chọn vẫn báo tự co giãn');
+const truoc4=await page.evaluate(()=>{
+  const v=window.__cv, ps=v.candle.priceScale();
+  ps.setVisibleRange({from:1500,to:2200});       // ghim ở khoảng giá ETH
+  ps.applyOptions({autoScale:true});             // tuỳ chọn báo true, nhưng khoảng vẫn ghim
+  return {tuCo:ps.options().autoScale, khoang:ps.getVisibleRange(), coNen:v.coNen()};
 });
-say(batDuoc===false,'ép thang giá ra xa thì coNen() báo KHÔNG có nến (bản cũ báo có)');
+console.log('   ',JSON.stringify(truoc4));
+say(truoc4.tuCo===true && truoc4.coNen===false,
+  'đúng cảnh trong ảnh: tuỳ chọn true nhưng không thấy nến');
+// (không kiểm cách cũ ở đây: bộ canh chừng 1,5 giây hay chen vào trước, làm phép kiểm chập chờn)
+// lệnh MỚI: đảo false rồi true
+await page.evaluate(()=>window.__cv.batTuCo());
+await page.waitForTimeout(400);          // thư viện tính lại ở khung hình sau
+const moi=await page.evaluate(()=>({coNen:window.__cv.coNen(), khoang:window.__cv.candle.priceScale().getVisibleRange()}));
+say(moi.coNen===true,`đảo false rồi true (cách mới) thì chữa được: khoảng về ${JSON.stringify(moi.khoang)}`);
+
+console.log('5. Và bộ canh chừng tự làm việc đó');
+await page.evaluate(()=>{
+  const ps=window.__cv.candle.priceScale();
+  ps.setVisibleRange({from:1500,to:2200});
+  ps.applyOptions({autoScale:true});
+});
 await page.waitForTimeout(3500);
 const chua=await soi(page);
-say(chua.sang>2000 && chua.tuCo===true, `và app tự chữa: ${chua.sang} điểm sáng`);
+say(chua.sang>2000 && chua.coNen, `app tự chữa không cần đụng vào: ${chua.sang} điểm sáng`);
+await page.screenshot({path:'thangGia.png'});
 console.log(hong?`\n==> ${hong} chỗ sai`:'\n==> Tất cả đạt');
 await b.close(); process.exit(hong?1:0);})();

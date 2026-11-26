@@ -31,7 +31,7 @@
  * Retest: giá chạy ra xa ít nhất 2 ATR rồi quay về chạm đường và đóng cửa giữ được.
  */
 
-import { TUNE, TF_RULES } from './config.js';
+import { TUNE, TF_RULES } from './config.js?v=202611260406';
 
 const DEFAULTS = {
   WINDOW: 1000,       // tối đa 1000 nến H1 (≈ 42 ngày) — bắt được cả đường dài 500–1000 nến
