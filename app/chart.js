@@ -185,7 +185,7 @@ export class ChartView {
         attributionLogo: false,
       },
       grid: { vertLines: { color: C.grid }, horzLines: { color: C.grid } },
-      rightPriceScale: { borderColor: C.line, scaleMargins: { top: .08, bottom: .22 } },
+      rightPriceScale: { borderColor: C.line, scaleMargins: { top: .08, bottom: .22 }, autoScale: true },
       // rightOffset: chừa sẵn khoảng trống bên phải cây nến cuối, để còn chỗ kẻ đường
       // vượt qua giá hiện tại
       timeScale: { borderColor: C.line, timeVisible: true, secondsVisible: false, rightOffset: 14, barSpacing: 7, minBarSpacing: .6 },
@@ -194,7 +194,11 @@ export class ChartView {
         vertLine: { color: 'rgba(139,150,163,.5)', width: 1, style: 2, labelBackgroundColor: '#26313C' },
         horzLine: { color: 'rgba(139,150,163,.5)', width: 1, style: 2, labelBackgroundColor: '#26313C' },
       },
-      handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: true },
+      // vertTouchDrag PHẢI tắt. Bật thì mỗi cú vuốt dọc đều kéo thang giá, mà kéo thang giá
+      // là thư viện TẮT LUÔN tự co giãn và giữ nguyên khoảng giá đó. Trên điện thoại không ai
+      // vuốt ngang tuyệt đối, nên chỉ vài thao tác là thang giá bị khoá ở một khoảng cũ —
+      // sang đồng khác có giá khác hẳn là nến nằm ngoài màn hình, nhìn như mất biểu đồ.
+      handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false },
       handleScale: { axisPressedMouseMove: true, mouseWheel: true, pinch: true },
       localization: { priceFormatter: p => this.fmt(p) },
     });
@@ -250,6 +254,13 @@ export class ChartView {
     addEventListener('resize', () => this.layout());
     addEventListener('orientationchange', () => setTimeout(() => this.layout(), 250));
     try { new ResizeObserver(() => this.layout()).observe(this.el); } catch (e) {}
+
+    // Canh chừng định kỳ. Thư viện chỉ báo khi khung nhìn đổi theo chiều NGANG; thang giá
+    // trôi đi thì không có sự kiện nào cả, mà đó chính là kiểu hỏng khó thấy nhất.
+    this._canh = setInterval(() => {
+      if (!this.bars || !this.el.clientHeight) return;
+      this.tuChua();
+    }, 1500);
   }
 
   /* Tự đo khung rồi tự đặt kích thước cho biểu đồ.
@@ -333,6 +344,7 @@ export class ChartView {
 
   setBars(k) {
     this.bars = k;
+    try { this.chart.priceScale('right').applyOptions({ autoScale: true }); } catch (e) {}
     const n = k.c.length;
     const cd = [], vd = [];
     for (let i = 0; i < n; i++) {
@@ -380,14 +392,32 @@ export class ChartView {
     this.candle.update({ time: toSec(b.t[i]), open: b.o[i], high: b.h[i], low: b.l[i], close: last });
   }
 
-  /* Khung nhìn có đang thấy nến không, hay đã lạc ra vùng trống? */
+  /* Khung nhìn có đang thấy nến không, hay đã lạc ra vùng trống?
+     Phải xét CẢ HAI chiều. Bản trước chỉ xét chiều ngang nên vẫn báo "ổn" trong khi thang
+     giá đang ở 5,5–8,0 còn nến thì nằm ở 2,5–3,6 — tức là trống trơn. */
   coNen() {
     const b = this.bars; if (!b) return false;
     try {
       const r = this.chart.timeScale().getVisibleLogicalRange();
       if (!r) return false;
       const chung = Math.min(r.to, b.c.length) - Math.max(r.from, 0);
-      return chung / Math.max(1, r.to - r.from) > 0.15;
+      if (chung / Math.max(1, r.to - r.from) <= 0.15) return false;
+    } catch (e) { return false; }
+
+    // chiều dọc: lấy khoảng giá của phần nến ĐANG nằm trong tầm nhìn, xem nó có rơi vào
+    // vùng vẽ được không
+    try {
+      const r = this.chart.timeScale().getVisibleLogicalRange();
+      const i0 = Math.max(0, Math.floor(r.from)), i1 = Math.min(b.c.length - 1, Math.ceil(r.to));
+      let lo = Infinity, hi = -Infinity;
+      for (let i = i0; i <= i1; i++) { if (b.l[i] < lo) lo = b.l[i]; if (b.h[i] > hi) hi = b.h[i]; }
+      if (!Number.isFinite(lo) || !Number.isFinite(hi)) return false;
+      const yLo = this.candle.priceToCoordinate(lo), yHi = this.candle.priceToCoordinate(hi);
+      if (yLo == null || yHi == null) return false;
+      const cao = this.khungVe().h;
+      const tren = Math.min(yLo, yHi), duoi = Math.max(yLo, yHi);
+      const phan = Math.min(duoi, cao) - Math.max(tren, 0);     // phần nằm trong khung
+      return phan > Math.min(20, cao * 0.05);
     } catch (e) { return false; }
   }
 
@@ -410,6 +440,10 @@ export class ChartView {
      scrollToRealTime() không kéo về khi biểu đồ đã bị cuộn xa ra tương lai, nên đặt thẳng vị trí.
      Đặt xong còn kiểm lại: vẫn không thấy nến thì ép khung ôm trọn dữ liệu. */
   fit() {
+    // Bật lại tự co giãn thang giá. Chỉ cần một cú kéo nhầm vào trục giá là thư viện tắt nó
+    // và giữ nguyên khoảng giá cũ mãi mãi — đổi sang đồng có giá khác hẳn là nến bay ra
+    // ngoài màn hình.
+    try { this.chart.priceScale('right').applyOptions({ autoScale: true }); } catch (e) {}
     const ts = this.chart.timeScale();
     try { ts.scrollToPosition(ts.options().rightOffset || 14, false); } catch (e) {}
     if (this.coNen()) return;
@@ -733,5 +767,5 @@ export class ChartView {
   setBotLines(a) { this.botLines = a || []; this.ov.update(); }
   toggle(key, on) { this.show[key] = on; if (key === 'ema') this.setBars(this.bars); else this.ov.update(); }
 
-  destroy() { this.dungCuon(); try { this.chart.remove(); } catch (e) {} }
+  destroy() { this.dungCuon(); clearInterval(this._canh); try { this.chart.remove(); } catch (e) {} }
 }

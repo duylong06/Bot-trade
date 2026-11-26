@@ -19,6 +19,7 @@ node gocloi.cjs                     # chạy từng bài
 | `rac.cjs` | **Nến rác của sàn**: ô trống, chữ, giá 0, giá âm, râu vọt 300 lần, chuỗi ngắn. |
 | `phan.cjs` | Tấm **Phân tích**: bảng Stoch M15/H1/H4, kháng cự hỗ trợ H1 và H4. |
 | `bop.cjs` | Khung biểu đồ bị **lề an toàn bóp thấp** như iPhone ở chế độ app màn hình chính, và xoay màn hình. |
+| `thangGia.cjs` | **Thang giá bị khoá** ở khoảng của đồng cũ nên nến đồng mới nằm ngoài màn hình theo chiều dọc. |
 | `botve.cjs` | Mở biểu đồ **từ tab Bot vẽ**, đọc kèo thật trên nhánh `moc-data`. Màn hình iPhone 3x, chạm ngón. |
 
 ## Lỗi "ấn đồng khác là mất biểu đồ" — gốc ở đâu
@@ -80,3 +81,25 @@ bị ép, kích thước màn, khoảng đang nhìn, số điểm sáng. Chụp 
 
 `autoSize` của thư viện đã bị bỏ: nó đo khung qua ResizeObserver, chạy lệch nhịp với lúc mở màn
 biểu đồ. Giờ tự đo, tự đặt kích thước, và ép một chiều cao dùng được nếu khung đo ra quá thấp.
+
+## Lỗi thứ tư — chính là lỗi người dùng gặp: thang giá bị khoá
+
+Người dùng chụp bảng chẩn đoán gửi về, trong đó có `nhìn -242…300 · sáng 0` và thang giá hiện
+**5.500–8.000** trong khi NEAR chỉ chạy **2.547–3.556**. Nến nằm ngoài màn hình theo **chiều dọc**.
+
+Nguyên nhân: `handleScroll.vertTouchDrag` đang bật. Mỗi cú vuốt dọc đều kéo thang giá, mà kéo
+thang giá thì thư viện **tắt luôn tự co giãn** và giữ nguyên khoảng giá đó. Trên điện thoại không
+ai vuốt ngang tuyệt đối, nên chỉ vài thao tác là thang giá khoá ở khoảng của đồng cũ. Sang đồng
+có giá khác hẳn là trống trơn.
+
+Vì sao ba lần trước không bắt được: `coNen()` chỉ xét **chiều ngang**, nên nó vẫn báo "ổn" trong
+khi màn hình trống. Bài kiểm cũng chỉ kéo ngang bằng toạ độ chính xác, không bao giờ kéo lệch dọc.
+
+Sửa:
+
+- `vertTouchDrag: false` — vuốt dọc không còn kéo thang giá.
+- Bật lại `autoScale: true` ở ba chỗ: lúc dựng, mỗi lần nạp nến, và trong `fit()`.
+- `coNen()` xét **cả hai chiều**: lấy khoảng giá của phần nến đang trong tầm nhìn rồi xem nó có
+  rơi vào vùng vẽ được không.
+- Thêm bộ canh chừng chạy mỗi 1,5 giây. Thư viện chỉ báo khi khung nhìn đổi theo chiều ngang;
+  thang giá trôi thì không có sự kiện nào, nên phải tự hỏi.
