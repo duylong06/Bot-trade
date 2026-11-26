@@ -173,7 +173,11 @@ export class ChartView {
   build() {
     const Lib = L();
     const chart = this.chart = Lib.createChart(this.el, {
-      autoSize: true,
+      // KHÔNG dùng autoSize. Nó đo khung qua ResizeObserver, chạy lệch nhịp với lúc mình
+      // mở màn biểu đồ; trên iPhone ở chế độ app màn hình chính, khung lúc đó có khi còn
+      // bằng 0 nên biểu đồ vẽ ra rỗng. Tự đo, tự đặt kích thước, và tự kiểm lại.
+      width: Math.max(80, this.el.clientWidth || 360),
+      height: Math.max(120, this.el.clientHeight || 420),
       layout: {
         background: { color: '#0E1318' }, textColor: C.text, fontSize: 11,
         fontFamily: '-apple-system,BlinkMacSystemFont,"SF Pro Text",Roboto,sans-serif',
@@ -244,14 +248,29 @@ export class ChartView {
     this.layout();
     this.bindPointer();
     addEventListener('resize', () => this.layout());
+    addEventListener('orientationchange', () => setTimeout(() => this.layout(), 250));
+    try { new ResizeObserver(() => this.layout()).observe(this.el); } catch (e) {}
   }
 
+  /* Tự đo khung rồi tự đặt kích thước cho biểu đồ.
+     Trên iPhone ở chế độ app màn hình chính, lề an toàn trên dưới có thể bóp khung còn rất
+     thấp, có lúc bằng 0 ngay lúc vừa mở — lúc đó biểu đồ vẽ ra rỗng. Gặp vậy thì ÉP một
+     chiều cao dùng được và ghi lại để còn biết đường mà báo. */
   layout() {
+    const el = this.el;
+    const wThat = el.clientWidth, hThat = el.clientHeight;
+    let w = wThat, h = hThat;
+    let ep = false;
+    if (!(h > 120)) { h = Math.max(260, Math.round((window.innerHeight || 700) * 0.55)); ep = true; }
+    if (!(w > 80)) { w = Math.max(280, window.innerWidth || 360); ep = true; }
+    if (ep) el.style.minHeight = h + 'px';
+    this.khung = { w, h, wThat, hThat, ep };
+    try { this.chart.resize(w, h, true); } catch (e) {}
     try {
       const panes = this.chart.panes();
-      const h = this.el.clientHeight || 420;
       if (panes[1]) { panes[0].setHeight(Math.round(h * 0.72)); panes[1].setHeight(Math.round(h * 0.28)); }
     } catch (e) {}
+    if (this.ov) this.ov.update();
   }
 
   /* ---------- đổi qua lại giữa giờ và toạ độ ---------- */
@@ -403,7 +422,8 @@ export class ChartView {
 
   /* Khung vẽ của phần nến, tính bằng điểm ảnh CSS (trừ cột giá bên phải và khung Stoch). */
   khungVe() {
-    let w = this.el.clientWidth, h = this.el.clientHeight;
+    const k = this.khung || { w: this.el.clientWidth, h: this.el.clientHeight };
+    let w = k.w, h = k.h;
     try { w -= this.chart.priceScale('right').width(); } catch (e) {}
     try { h = this.chart.panes()[0].getHeight(); } catch (e) {}
     return { w: Math.max(40, w), h: Math.max(40, h) };

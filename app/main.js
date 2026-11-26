@@ -122,9 +122,11 @@ const CV = {
     try {
       const xong = await this.view.load(id, this.tf, this.tick);
       if (!xong || this.sym !== id) return;            // đã bấm sang đồng khác, bỏ lượt này
+      this.view.layout();                              // đo lại khung, phòng khi vừa mở nó còn bằng 0
       this.view.fit();
       this.leg(null);
       $('#cvHint').textContent = '';
+      this.tuKiem();
     } catch (e) {
       // Không để màn hình trống không nói gì: nói rõ hỏng ở đâu và cho bấm lại.
       this.loi(`Không tải được nến ${this.base} khung ${this.tf}.\n${e.message}\n\nThường là OKX chặn tạm vì gọi quá dày. Chờ vài giây rồi thử lại.`);
@@ -287,6 +289,42 @@ const CV = {
     } catch (e) {
       $('#phBody').innerHTML = `<p class="note" style="margin:0">Không tải được: ${esc(e.message)}</p>`;
     }
+  },
+
+  /* Vẽ xong thì tự soi lại: biểu đồ có thật sự hiện ra không.
+     Đếm điểm ảnh sáng trên canvas — cách duy nhất biết chắc, vì mọi phép kiểm gián tiếp
+     đều có thể nói "ổn" trong khi màn hình trống trơn. Rỗng thì tự chữa một lần, vẫn rỗng
+     thì hiện bảng chẩn đoán để còn biết hỏng ở đâu. */
+  tuKiem(lanHai) {
+    setTimeout(() => {
+      const v = this.view;
+      if (!v || !v.bars || this.sym !== v.sym) return;
+      let sang = -1;
+      try {
+        const c = $('#chart').querySelector('canvas');
+        if (c && c.width > 10 && c.height > 10) {
+          const g = c.getContext('2d');
+          const d = g.getImageData(0, 0, c.width, Math.min(400, c.height)).data;
+          sang = 0;
+          for (let i = 0; i < d.length; i += 4) if (d[i] + d[i + 1] + d[i + 2] > 120) sang++;
+        }
+      } catch (e) { return; }                 // không đọc được canvas thì thôi, đừng báo bừa
+      if (sang > 400) return;                 // có vẽ ra, yên tâm
+
+      if (!lanHai) { v.layout(); v.fit(); this.tuKiem(true); return; }
+
+      const k = v.khung || {}, b = v.bars;
+      let lo = Infinity, hi = -Infinity;
+      for (let i = 0; i < b.c.length; i++) { if (b.l[i] < lo) lo = b.l[i]; if (b.h[i] > hi) hi = b.h[i]; }
+      let r = null; try { r = v.chart.timeScale().getVisibleLogicalRange(); } catch (e) {}
+      this.loi(
+        `Biểu đồ không vẽ ra được. Chụp màn hình này gửi cho Claude.\n\n` +
+        `${this.base} ${this.tf} · ${b.c.length} nến · lọc ${(b.bo || 0) + (b.cat || 0)}\n` +
+        `giá ${fmtPrice(lo, v.dec)}–${fmtPrice(hi, v.dec)}\n` +
+        `khung ${k.wThat}×${k.hThat}${k.ep ? ' (ép ' + k.w + '×' + k.h + ')' : ''}\n` +
+        `màn ${window.innerWidth}×${window.innerHeight} ·${navigator.standalone ? ' app màn hình chính' : ' trình duyệt'}\n` +
+        `nhìn ${r ? r.from.toFixed(0) + '…' + r.to.toFixed(0) : '?'} · sáng ${sang}`);
+    }, lanHai ? 500 : 350);
   },
 
   loi(txt) {

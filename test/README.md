@@ -18,6 +18,7 @@ node gocloi.cjs                     # chạy từng bài
 | `chua.cjs` | Khung nhìn trôi ra chỗ trống thì tự kéo về; OKX lỗi thì báo rõ và Thử lại được. |
 | `rac.cjs` | **Nến rác của sàn**: ô trống, chữ, giá 0, giá âm, râu vọt 300 lần, chuỗi ngắn. |
 | `phan.cjs` | Tấm **Phân tích**: bảng Stoch M15/H1/H4, kháng cự hỗ trợ H1 và H4. |
+| `bop.cjs` | Khung biểu đồ bị **lề an toàn bóp thấp** như iPhone ở chế độ app màn hình chính, và xoay màn hình. |
 | `botve.cjs` | Mở biểu đồ **từ tab Bot vẽ**, đọc kèo thật trên nhánh `moc-data`. Màn hình iPhone 3x, chạm ngón. |
 
 ## Lỗi "ấn đồng khác là mất biểu đồ" — gốc ở đâu
@@ -69,3 +70,13 @@ Sửa: bên trái cho phép bằng, bên phải bắt buộc thấp hơn. Một 
 đỉnh. Trên cùng bộ dữ liệu: 0 đỉnh → 8 đỉnh, 0 đáy → 10 đáy, 0 mức → 4 mức chạm từ 2 lần.
 
 Lỗi này ảnh hưởng cả **đường kháng cự hỗ trợ vẽ trên biểu đồ**, không riêng tấm phân tích.
+
+## Tự soi sau khi vẽ
+
+Mọi phép kiểm gián tiếp đều có thể nói "ổn" trong khi màn hình trống trơn, nên sau mỗi lần mở
+đồng app **đếm điểm ảnh sáng trên canvas**. Dưới 400 thì tự đo lại khung và kéo khung nhìn về
+một lần; vẫn rỗng thì hiện bảng chẩn đoán ghi số nến, thang giá, kích thước khung thật và khung
+bị ép, kích thước màn, khoảng đang nhìn, số điểm sáng. Chụp bảng đó là đủ để biết hỏng ở đâu.
+
+`autoSize` của thư viện đã bị bỏ: nó đo khung qua ResizeObserver, chạy lệch nhịp với lúc mở màn
+biểu đồ. Giờ tự đo, tự đặt kích thước, và ép một chiều cao dùng được nếu khung đo ra quá thấp.
