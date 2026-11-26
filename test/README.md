@@ -17,6 +17,7 @@ node gocloi.cjs                     # chạy từng bài
 | `doi.cjs` | Đổi qua lại nhiều đồng, nến cũ, bấm nhanh. |
 | `chua.cjs` | Khung nhìn trôi ra chỗ trống thì tự kéo về; OKX lỗi thì báo rõ và Thử lại được. |
 | `rac.cjs` | **Nến rác của sàn**: ô trống, chữ, giá 0, giá âm, râu vọt 300 lần, chuỗi ngắn. |
+| `phan.cjs` | Tấm **Phân tích**: bảng Stoch M15/H1/H4, kháng cự hỗ trợ H1 và H4. |
 | `botve.cjs` | Mở biểu đồ **từ tab Bot vẽ**, đọc kèo thật trên nhánh `moc-data`. Màn hình iPhone 3x, chạm ngón. |
 
 ## Lỗi "ấn đồng khác là mất biểu đồ" — gốc ở đâu
@@ -54,3 +55,17 @@ Tìm ra ngay sau đó, bằng `rac.cjs`. Dữ liệu thật của OKX có lúc l
 Thang giá phải kéo từ 0 tới 60000 nên nến thật co lại thành một vạch. `loc()` trong
 `app/okx.js` bỏ cây hỏng và cắt râu dài quá 3 lần thân, giữ nguyên thân để hình nến vẫn thật.
 Còn dưới 20 cây dùng được thì báo lỗi hẳn thay vì vẽ bừa.
+
+## Lỗi thứ ba: không có đỉnh đáy nào khi hai nến cao bằng nhau
+
+`phan.cjs` bắt được: bảng kháng cự hỗ trợ ra **rỗng hoàn toàn**. Lần ngược lại thì `swings()`
+trả về 0 đỉnh, 0 đáy trên 300 nến.
+
+`swings()` đòi nến đỉnh phải cao hơn **hẳn** cả hai bên (`>=` là loại). Khi hai nến cạnh nhau
+cao bằng nhau — chuyện rất thường ở coin thanh khoản thấp, hoặc khi sàn làm tròn giá — thì cả
+hai cùng bị loại, nên một đỉnh bằng phẳng biến mất sạch. Nhiều đỉnh phẳng thì không còn mức nào.
+
+Sửa: bên trái cho phép bằng, bên phải bắt buộc thấp hơn. Một vùng bằng phẳng cho đúng **một**
+đỉnh. Trên cùng bộ dữ liệu: 0 đỉnh → 8 đỉnh, 0 đáy → 10 đáy, 0 mức → 4 mức chạm từ 2 lần.
+
+Lỗi này ảnh hưởng cả **đường kháng cự hỗ trợ vẽ trên biểu đồ**, không riêng tấm phân tích.

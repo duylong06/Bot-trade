@@ -1,8 +1,8 @@
 // app/main.js — nối các phần lại: danh sách coin, màn biểu đồ, mốc báo, kèo bot vẽ.
 
-import { topCoins, tickers, fmtPrice, fmtUsd, decimalsOf, dropCandleCache } from './okx.js';
+import { topCoins, tickers, fmtPrice, fmtUsd, decimalsOf, dropCandleCache, candles } from './okx.js';
 import { ChartView, TFS, tfMs, toMs } from './chart.js';
-import { stochTxt } from './ta.js';
+import { stochTxt, stoch, keyLevels } from './ta.js';
 import * as store from './store.js';
 
 const $ = s => document.querySelector(s);
@@ -136,6 +136,7 @@ const CV = {
   },
 
   dong() {
+    $('#phan').classList.remove('on');
     $('#cv').classList.remove('on');
     document.body.style.overflow = '';
     this.sym = null;
@@ -148,11 +149,13 @@ const CV = {
     el.innerHTML = TFS.map(t => `<button data-tf="${t.id}" aria-pressed="${t.id === this.tf}">${t.label}</button>`).join('')
       + `<span class="sp"></span>`
       + `<button data-act="fit" class="hot">Về nến</button>`
+      + `<button data-act="phan">Phân tích</button>`
       + `<span class="sp"></span>`
       + `<button data-sw="magnet" aria-pressed="${s.magnet}">Nam châm</button>`
       + `<button data-sw="levels" aria-pressed="${s.levels}">Kháng cự</button>`
       + `<button data-sw="bot" aria-pressed="${s.bot}">Đường bot</button>`
       + `<button data-sw="ema" aria-pressed="${s.ema}">EMA200</button>`;
+    el.querySelector('[data-act="phan"]').onclick = () => this.phanTich();
     el.querySelector('[data-act="fit"]').onclick = () => {
       if (!this.view) return;
       this.view.fit();
@@ -237,6 +240,55 @@ const CV = {
     this.view.setBotLines(this.botLines);
   },
 
+  /* Phân tích đa khung — đúng phần dưới biểu đồ của tab Top 70 bản cũ:
+     bảng Stoch M15 · H1 · H4, và kháng cự / hỗ trợ tách riêng H1 với H4. */
+  async phanTich() {
+    const sym = this.sym; if (!sym) return;
+    $('#phTtl').textContent = this.base + ' — phân tích';
+    $('#phBody').innerHTML = '<p class="note" style="margin:0">Đang tải nến ba khung…</p>';
+    $('#phan').classList.add('on');
+    try {
+      const [m15, h1, h4] = await Promise.all([
+        candles(sym, '15m', 300), candles(sym, '1H', 300), candles(sym, '4H', 300),
+      ]);
+      if (this.sym !== sym) return;                    // đã sang đồng khác
+      const K = { M15: m15, H1: h1, H4: h4 };
+      const f1 = v => Number.isFinite(v) ? v.toFixed(1) : '—';
+      const cls = v => !Number.isFinite(v) ? '' : v >= 80 ? 'tp-dn' : v <= 20 ? 'tp-up' : '';
+
+      const hang = Object.entries(K).map(([ten, k]) => {
+        const A = stoch(k, 32, 13, 5), B = stoch(k, 10, 5, 5);
+        const a = A.k.at(-1), ad = A.d.at(-1), b = B.k.at(-1), bd = B.d.at(-1);
+        const ket = !Number.isFinite(a) || !Number.isFinite(b) ? '—'
+          : (a >= 80 && b >= 80) ? 'cả hai quá mua'
+          : (a <= 20 && b <= 20) ? 'cả hai quá bán'
+          : `dài hạn ${stochTxt(a)}, ngắn hạn ${stochTxt(b)}`;
+        return `<tr><td>${ten}</td><td class="tp-y">${f1(a)} / ${f1(ad)}</td>` +
+               `<td class="tp-rd">${f1(b)} / ${f1(bd)}</td><td class="${cls(b)}">${ket}</td></tr>`;
+      }).join('');
+
+      const mucGia = k => {
+        const lv = keyLevels(k, 160, .6), gia = k.c.at(-1), dec = this.view.dec;
+        const res = lv.filter(x => x.side === 'res').slice(0, 4);
+        const sup = lv.filter(x => x.side === 'sup').slice(0, 4);
+        const dong = (L, nhan) => `<div class="tp-lv"><span>${nhan} <b class="${L.side === 'res' ? 'tp-dn' : 'tp-up'}">${fmtPrice(L.lvl, dec)}</b> · chạm ${L.n} lần</span><span>${L.dist.toFixed(2)}%</span></div>`;
+        return (res.length ? res.slice().reverse().map(L => dong(L, 'Kháng cự')).join('')
+                           : '<p class="note" style="margin:0">Không có kháng cự rõ phía trên.</p>')
+          + `<div class="tp-lv" style="border-top:1px solid var(--line);border-bottom:0;margin-top:4px;padding-top:7px"><span><b>Giá hiện tại</b></span><span><b>${fmtPrice(gia, dec)}</b></span></div>`
+          + (sup.length ? sup.map(L => dong(L, 'Hỗ trợ')).join('')
+                        : '<p class="note" style="margin:0">Không có hỗ trợ rõ phía dưới.</p>');
+      };
+
+      $('#phBody').innerHTML =
+        `<table class="tp-tb"><thead><tr><th>Khung</th><th>Stoch dài hạn</th><th>Stoch ngắn hạn</th><th>Trạng thái</th></tr></thead><tbody>${hang}</tbody></table>` +
+        `<p class="note" style="margin:0 0 4px">Vàng là Stoch 32·13·5 dài hạn, đỏ là 10·5·5 ngắn hạn. Số trước là %K, số sau là %D.</p>` +
+        `<h3>Kháng cự – hỗ trợ H1</h3>${mucGia(h1)}` +
+        `<h3>Kháng cự – hỗ trợ H4</h3>${mucGia(h4)}`;
+    } catch (e) {
+      $('#phBody').innerHTML = `<p class="note" style="margin:0">Không tải được: ${esc(e.message)}</p>`;
+    }
+  },
+
   loi(txt) {
     $('#cvErrTxt').textContent = txt;
     $('#cvErr').hidden = false;
@@ -281,6 +333,8 @@ const CV = {
   },
 };
 $('#cvBack').onclick = () => CV.dong();
+$('#phDong').onclick = () => $('#phan').classList.remove('on');
+$('#phan').onclick = e => { if (e.target.id === 'phan') $('#phan').classList.remove('on'); };
 $('#cvRetry').onclick = () => { dropCandleCache(); store.quenCache(); if (CV.sym) CV.mo(CV.sym, { tf: CV.tf }); };
 $('#cvDraw').onclick = () => { CV.view.startDraw(); CV.nutVe('dangVe'); };
 $('#cvRedo').onclick = () => { CV.view.startDraw(); CV.nutVe('dangVe'); };

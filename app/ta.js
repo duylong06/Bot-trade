@@ -42,12 +42,20 @@ export function stoch(k, len, kSm, dSm) {
 export const stochTxt = v => !Number.isFinite(v) ? '—' : v >= 80 ? 'quá mua' : v <= 20 ? 'quá bán' : 'trung tính';
 
 /* Đỉnh / đáy cục bộ. */
+/* Đỉnh / đáy cục bộ.
+   Hai nến cao BẰNG NHAU là chuyện thường, nhất là coin thanh khoản thấp hay khi sàn làm
+   tròn giá. Nếu đòi phải cao hơn hẳn cả hai bên thì một đỉnh bằng phẳng sẽ bị loại sạch,
+   kéo theo kháng cự hỗ trợ ra rỗng. Nên bên trái cho phép bằng, bên phải bắt buộc thấp hơn:
+   một vùng bằng phẳng vẫn cho đúng một đỉnh, không cho hai mà cũng không cho không cái nào. */
 export function swings(k, left = 2, right = 2) {
   const hi = [], lo = [], n = k.c.length;
   for (let i = left; i < n - right; i++) {
     let isHi = true, isLo = true;
-    for (let j = i - left; j <= i + right; j++) {
-      if (j === i) continue;
+    for (let j = i - left; j < i; j++) {
+      if (k.h[j] > k.h[i]) isHi = false;
+      if (k.l[j] < k.l[i]) isLo = false;
+    }
+    for (let j = i + 1; j <= i + right; j++) {
       if (k.h[j] >= k.h[i]) isHi = false;
       if (k.l[j] <= k.l[i]) isLo = false;
     }

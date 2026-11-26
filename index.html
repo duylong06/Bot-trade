@@ -101,8 +101,8 @@ input:focus,select:focus{outline:2px solid var(--mark);outline-offset:-1px}
 .cv-hint{flex:1;line-height:1.4}
 
 /* ---- tấm lưu mốc ---- */
-#sheet{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.55);display:none;align-items:flex-end}
-#sheet.on{display:flex}
+#sheet,#phan{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.55);display:none;align-items:flex-end}
+#sheet.on,#phan.on{display:flex}
 .sh{background:var(--panel);width:100%;border-radius:16px 16px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));
   max-height:86vh;overflow:auto}
 .sh h2{margin:0 0 4px;font-size:16px;font-weight:600}
@@ -125,6 +125,23 @@ input:focus,select:focus{outline:2px solid var(--mark);outline-offset:-1px}
 .mk-f{display:flex;gap:8px;margin-top:11px}
 .mk-f button{font-size:13px;padding:8px 12px}
 .lk{background:none;border:0;color:var(--mark);font:500 13px/1 inherit;cursor:pointer;padding:8px 0}
+
+/* ---- tấm phân tích đa khung ---- */
+.tp-tb{width:100%;border-collapse:collapse;font-size:13px;margin:4px 0 10px}
+.tp-tb th{text-align:right;font-weight:500;color:var(--dim);font-size:11.5px;text-transform:uppercase;
+  letter-spacing:.3px;padding:4px 6px;border-bottom:1px solid var(--line)}
+.tp-tb th:first-child{text-align:left}
+.tp-tb td{text-align:right;padding:5px 6px;border-bottom:1px solid #161d26;
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+.tp-tb td:last-child{white-space:normal;font-size:12px;line-height:1.4}
+.tp-tb td:first-child{text-align:left;color:var(--dim)}
+.tp-y{color:#E8C44A}.tp-rd{color:#E45A50}
+.tp-lv{display:flex;justify-content:space-between;gap:10px;padding:4px 0;font-size:13.5px;
+  border-bottom:1px solid #161d26}
+.tp-lv:last-child{border-bottom:0}
+.tp-lv span:last-child{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.sh-h{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.sh-h h2{margin:0;flex:1}
 </style>
 </head>
 <body>
@@ -207,6 +224,17 @@ input:focus,select:focus{outline:2px solid var(--mark);outline-offset:-1px}
     <button class="ghost" id="cvRedo" hidden>Vẽ lại</button>
     <button class="act" id="cvDone" hidden>Xong</button>
     <button class="act" id="cvDraw">Kẻ đường</button>
+  </div>
+</div>
+
+<!-- ---------- tấm phân tích đa khung ---------- -->
+<div id="phan">
+  <div class="sh">
+    <div class="sh-h">
+      <h2 id="phTtl">Phân tích</h2>
+      <button class="ghost" id="phDong">Đóng</button>
+    </div>
+    <div id="phBody"></div>
   </div>
 </div>
 

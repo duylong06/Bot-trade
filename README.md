@@ -24,6 +24,9 @@ nên không phụ thuộc mạng ngoài. Kéo ngang, phóng to thu nhỏ, crossh
 - Khung dưới: hai đường **Stoch** đúng bộ đang dùng — **32·13·5 vàng** dài hạn, **10·5·5 đỏ** ngắn hạn.
   Nét đậm %K, nét mờ %D, thang đo khoá cứng 0–100 với mốc 80 và 20.
 - Khung nến: 15m · 30m · 1H · 4H · 1D.
+- Nút **Phân tích** mở bảng **Stoch đa khung M15 · H1 · H4** (cả hai bộ số, kèm kết luận quá mua /
+  quá bán) và **kháng cự – hỗ trợ tách riêng H1 với H4**, mỗi mức ghi số lần chạm và khoảng cách %
+  tới giá hiện tại. Đây là phần phân tích của tab Top 70 bản cũ.
 - Bật tắt được: kháng cự/hỗ trợ, đường bot vẽ, EMA200.
 
 ## Kẻ đường và nhờ bot canh
