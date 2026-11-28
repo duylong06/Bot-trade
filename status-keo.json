@@ -1,0 +1,22 @@
+{
+ "at": "2026-11-28T19:59:10.282Z",
+ "mode": "scan",
+ "coins": [
+  "BTC",
+  "ETH",
+  "SOL",
+  "BNB"
+ ],
+ "tfs": [
+  "M30",
+  "H1",
+  "H4"
+ ],
+ "grades": [
+  "A+",
+  "A"
+ ],
+ "open": {},
+ "devices": 1,
+ "tookMs": 32115
+}
